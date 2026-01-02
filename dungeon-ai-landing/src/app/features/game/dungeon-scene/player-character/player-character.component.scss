@@ -1,0 +1,111 @@
+// src/app/features/game/dungeon-scene/player-character/player-character.component.scss
+// Estilos del personaje jugable con animaciones
+
+.player-container {
+  position: absolute;
+  width: 64px;
+  height: 80px;
+  will-change: transform;
+  transition: left 0.05s linear, top 0.05s linear;
+  z-index: 100;
+
+  &[data-facing="left"] .character-svg {
+    transform: scaleX(-1);
+  }
+}
+
+.character-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: center center;
+}
+
+// Animación de llama
+.flame-head {
+  transform-origin: 32px 40px;
+
+  .flame-main {
+    animation: flameWobble 0.3s ease-in-out infinite alternate;
+  }
+
+  .flame-inner {
+    animation: flameFlicker 0.2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes flameWobble {
+  0% { transform: scaleX(1) scaleY(1); }
+  100% { transform: scaleX(0.92) scaleY(1.08); }
+}
+
+@keyframes flameFlicker {
+  0% { opacity: 0.5; }
+  100% { opacity: 0.9; }
+}
+
+// Animación de visor (pulso Matrix)
+.visor {
+  animation: visorPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes visorPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+// Animaciones de caminar
+.walking {
+  .leg-left {
+    animation: legSwing 0.15s ease-in-out infinite;
+    transform-origin: center top;
+  }
+
+  .leg-right {
+    animation: legSwing 0.15s ease-in-out infinite reverse;
+    transform-origin: center top;
+  }
+
+  .arm-left {
+    animation: armSwing 0.15s ease-in-out infinite reverse;
+    transform-origin: center top;
+  }
+
+  .arm-right {
+    animation: armSwing 0.15s ease-in-out infinite;
+    transform-origin: center top;
+  }
+
+  // Bounce del cuerpo al caminar
+  .body, .visor, .flame-head {
+    animation: bodyBounce 0.15s ease-in-out infinite;
+  }
+}
+
+@keyframes legSwing {
+  0%, 100% { transform: rotate(-20deg); }
+  50% { transform: rotate(20deg); }
+}
+
+@keyframes armSwing {
+  0%, 100% { transform: rotate(10deg); }
+  50% { transform: rotate(-10deg); }
+}
+
+@keyframes bodyBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+// Sombra del personaje
+.player-container::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 10px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
+  pointer-events: none;
+}

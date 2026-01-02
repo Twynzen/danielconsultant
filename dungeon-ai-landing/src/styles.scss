@@ -1,4 +1,4 @@
-/* Global Styles - Dungeon AI Landing */
+/* Global Styles - Dungeon AI Game */
 // Font-face removido - usando Courier New nativo del sistema
 
 * {
@@ -9,23 +9,23 @@
 
 html, body {
   height: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
   background: #0a0a0a;
   color: #00ff44;
   font-family: "Courier New", monospace;
-  
+
   // CURSOR VERDE NATIVO - Flecha Matrix
   cursor: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="%2300ff44" d="M0 0v16l6-6h6l4-4z"/></svg>') 0 0, auto;
 }
 
-// CURSOR MANO VERDE - Minimalista y limpia
-a, 
-button, 
-[role="button"], 
-.torch-container, 
-.service-card, 
-.consultation-btn,
-.clickeable {
+// CURSOR MANO VERDE - Para elementos interactivos
+a,
+button,
+[role="button"],
+.door,
+.cta-button,
+.back-button,
+.clickable {
   cursor: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="20" viewBox="0 0 16 20"><rect x="4" y="0" width="2" height="10" fill="%2300ff44"/><rect x="7" y="2" width="2" height="8" fill="%2300ff44"/><rect x="10" y="3" width="2" height="7" fill="%2300ff44"/><rect x="13" y="5" width="2" height="5" fill="%2300ff44"/><rect x="1" y="8" width="14" height="10" rx="2" fill="%2300ff44"/></svg>') 6 0, pointer !important;
 }
 
@@ -40,7 +40,7 @@ button,
   --matrix-light: #00550f;
 }
 
-// Hide scrollbar but keep functionality
+// Custom scrollbar Matrix style
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -65,17 +65,17 @@ button,
   color: var(--matrix-black);
 }
 
-// Animations
+// Global animations
 @keyframes flicker {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.8; }
 }
 
 @keyframes glow {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 10px var(--matrix-green-glow);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 20px var(--matrix-green), 0 0 30px var(--matrix-green-glow);
   }
 }
@@ -83,12 +83,6 @@ button,
 // Utility classes
 .hidden {
   display: none !important;
-}
-
-.illuminated {
-  opacity: 1 !important;
-  filter: brightness(1.2);
-  transition: all 0.5s ease;
 }
 
 .matrix-text {
@@ -101,4 +95,10 @@ button,
   body {
     cursor: auto; // Show default cursor on mobile
   }
+}
+
+// Focus styles for accessibility
+:focus-visible {
+  outline: 2px solid var(--matrix-green);
+  outline-offset: 2px;
 }
