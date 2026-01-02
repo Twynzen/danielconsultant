@@ -1,235 +1,221 @@
-# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v5.1 FINAL
+# 🎮 CLAUDE.md - Dungeon AI Game Portfolio - v6.0
 
-## 🎯 **ESTADO ACTUAL - SISTEMA COMPLETO Y FUNCIONAL**
-**Fecha**: Septiembre 6, 2025  
-**Status**: ✅ PRODUCCIÓN READY
+## 🎯 **ESTADO ACTUAL - JUEGO DUNGEON INTERACTIVO**
+**Fecha**: Enero 2, 2026
+**Status**: ✅ DESARROLLO COMPLETADO - RAMA `claude/refactor-portfolio-dungeon-game-sTbSO`
 
-Landing page profesional Matrix para **Daniel Castiblanco - Consultor IA** con sistema de iluminación por proximidad calibrado y todas las características implementadas.
-
-### **🎯 TÍTULO FINAL SIMPLIFICADO:**
-- **Hero Section**: "CONSULTOR IA" (sin "de" - más corto y directo)
-- **Page Title**: "Consultor IA" (favicon actualizado manualmente)
-- **Font System**: Courier New nativo (sin flash inicial)
-
-## 📋 **ESTADO ACTUAL - SISTEMA MODAL FUNCIONAL**
-**Fecha**: Septiembre 05, 2025 - v4.4
-
-### ✅ **IMPLEMENTACIONES COMPLETADAS:**
-- **Sistema de modales informativos** para 6 servicios completamente funcional
-- **Iconos SVG animados personalizados** (ECG pulse, eye blink, brain pulse, chart bars, escudo medieval)
-- **Event handlers híbridos** (Angular + Native listeners para máxima compatibilidad)
-- **Z-index nuclear** para modal (999999) con backdrop click funcional
-- **Dot verde clickeable** en terminal header para cerrar modal
-- **Scroll horizontal eliminado** en modales
-- **Estética Matrix completa** con efectos visuales coherentes
-
-### 🚨 **ISSUE PENDIENTE CRÍTICO:**
-1. **Botón CTA Z-index**: El botón "AGENDAR SESIÓN GRATUITA" sigue apareciendo encima del modal
-   - **Cambio de requerimientos**: Originalmente se quería que el botón estuviera siempre visible, pero ahora debe quedarse DETRÁS de los modales porque se ve feo que se interponga
-   - **Estado actual**: Probados z-index extremos (999999 vs 10) con `!important` sin éxito
-   - **Posible causa**: Stacking context issue o CSS conflictivo más profundo
-
-## 🏗️ **ARQUITECTURA TÉCNICA**
-
-### **📁 ESTRUCTURA DE COMPONENTES:**
-
-#### **Componente Modal** ✅
-```
-src/app/components/modal-service/
-├── modal-service.component.ts      # Event handlers híbridos + lifecycle hooks
-├── modal-service.component.html    # Template con dot verde clickeable  
-├── modal-service.component.scss    # Z-index 999999 + overflow hidden
-└── modal-service.component.spec.ts
-```
-
-#### **Servicios de Datos** ✅
-```
-src/app/services/services-data.service.ts
-- Interface ServiceDetail con iconos animados
-- 6 servicios con features y tecnologías detalladas
-- Métodos getServiceDetail() y getAllServiceDetails()
-```
-
-#### **Integración Principal** ✅
-```
-src/app/components/service-hieroglyphs/
-├── service-hieroglyphs.component.ts   # Modal state management
-└── service-hieroglyphs.component.html # Modal component render
-```
-
-### **🎯 FUNCIONALIDADES IMPLEMENTADAS:**
-
-#### **1. Sistema Modal Completo**
-- **Apertura**: Click en tarjeta servicio iluminada
-- **Cierre método 1**: Click en dot verde del terminal header  
-- **Cierre método 2**: Click en backdrop (fuera del contenido)
-- **Protección**: Click dentro del modal NO lo cierra
-- **Animaciones**: Matrix rain, terminal header, glow effects
-
-#### **2. Iconos SVG Personalizados**
-- **ECG Pulse**: `modal-service.component.html:54-59` - Waveform médico animado
-- **Eye Blink**: `modal-service.component.html:61-70` - Parpadeo realista
-- **Brain Pulse**: `modal-service.component.html:72-84` - Pulso cerebral con glow
-- **Chart Bars**: `modal-service.component.html:86-92` - Barras animadas
-- **Shield Medieval**: `modal-service.component.html:90-95` - Escudo futurista con checkmark
-
-#### **3. Event Handling Robusto**
-- **Angular Bindings**: `(click)="onClose()"` en dot verde
-- **Native Listeners**: `addEventListener` en backdrop con `afterViewInit`
-- **Change Detection**: Forzada con `ChangeDetectorRef.detectChanges()`
-- **Error Handling**: Try-catch con debugging comentado
-
-#### **4. Estilos Matrix Coherentes**
-- **Terminal Header**: Dots rojos/amarillos/verdes con hover effects
-- **Typography**: Courier New monospace con green glow
-- **Scrollbar Custom**: Verde Matrix con border-radius
-- **Responsive**: Mobile-friendly con breakpoints
-
-### **🔧 CONFIGURACIÓN TÉCNICA ACTUAL:**
-
-#### **Z-Index Hierarchy (PROBLEMÁTICA)**
-```css
-Modal Backdrop:     999999 !important  ← Máximo intentado
-Botón Consulta:     10 !important      ← Mínimo intentado  
-Partículas:         9 !important       ← Mínimo intentado
-Otros elementos:    < 9                 ← Normal
-```
-
-#### **Event Listeners**
-```typescript
-// Angular bindings
-(click)="onClose()" 
-(click)="onBackdropClick($event)"
-
-// Native listeners (fallback)
-backdrop.addEventListener('click', handler)
-greenDot.addEventListener('click', handler)
-```
-
-#### **CSS Overflow Control**
-```scss
-.modal-container {
-  overflow: hidden;
-  overflow-x: hidden;  // Sin scroll horizontal
-}
-
-.modal-content {
-  overflow-y: auto;    // Solo vertical
-  overflow-x: hidden;  // Sin horizontal
-  word-wrap: break-word;
-  box-sizing: border-box;
-}
-```
-
-## 🚨 **ROADMAP PARA PRÓXIMO DESARROLLADOR**
-
-### **PRIORIDAD 1 - CRÍTICA (Z-index Issue)**
-**Problema**: Botón "AGENDAR SESIÓN GRATUITA" aparece encima del modal  
-**Ubicación**: `consultation-button.component.scss:6` 
-
-**Intentos realizados SIN éxito:**
-- Z-index extremos (999999 vs 10) con `!important`
-- Inline styles en modal backdrop  
-- Múltiples niveles de z-index
-- Verificación de CSS conflicts
-
-**Próximas estrategias a probar:**
-1. **Stacking Context Reset**: Crear nuevo stacking context para modal
-2. **CSS Transform Fix**: Usar `transform: translateZ(0)` para forzar layer
-3. **Position Strategy**: Cambiar position del botón de `fixed` a `absolute`
-4. **DOM Order**: Mover modal al final del body con `document.body.appendChild`
-5. **CSS Isolation**: Usar `isolation: isolate` en modal container
-
-### **Código sugerido para probar:**
-```scss
-// Opción 1: Stacking context
-.modal-backdrop {
-  z-index: 999999 !important;
-  isolation: isolate;
-  transform: translateZ(0);
-}
-
-// Opción 2: Cambiar botón
-.consultation-container {
-  position: absolute;  // En lugar de fixed
-  z-index: 1;
-}
-```
-
-### **PRIORIDAD 2 - MEJORAS OPCIONALES**
-
-#### **A. Re-activar Animaciones Angular**
-**Estado**: Deshabilitadas por errores que mataban event handlers  
-**Ubicación**: `modal-service.component.ts:15`  
-**Causa**: `ExpressionChangedAfterItHasBeenCheckedException`
-
-#### **B. Limpieza de Debug Code**
-**Ubicación**: Múltiples console.log comentados en:
-- `modal-service.component.ts` 
-- `service-hieroglyphs.component.ts`
-- `app.component.ts`
-
-## 🎮 **GUÍA DE USO ACTUAL**
-
-### **Para el Usuario:**
-1. **Abrir modal**: Click en cualquier servicio iluminado  
-2. **Ver información**: Scroll dentro del modal para ver features/tecnologías
-3. **Cerrar modal**: Click en dot verde (terminal header) O click fuera del contenido
-
-### **Para el Desarrollador:**
-```bash
-ng serve          # Testing local
-ng build          # Build producción
-ng lint          # Verificar código
-```
-
-### **Testing Checklist:**
-- [ ] Modal abre con click en servicio
-- [ ] Dot verde cierra modal  
-- [ ] Backdrop click cierra modal
-- [ ] Click dentro NO cierra modal
-- [ ] **PENDIENTE: Botón CTA queda detrás del modal**
-- [ ] Sin scroll horizontal en modal
-- [ ] Iconos SVG se renderizan y animan
-- [ ] Responsive funciona en mobile
-
-## 🤝 **METODOLOGÍA DE DESARROLLO ESTABLECIDA**
-
-### **Principios:**
-- **"Ultra Think"** - Análisis profundo antes de implementar
-- **Debugging extremo** - Console logs detallados para diagnóstico  
-- **Event handling híbrido** - Angular + Native para máxima compatibilidad
-- **Z-index nuclear** - Valores extremos cuando sea necesario
-- **Comunicación constante** - Documentar TODO en CLAUDE.md
-
-### **Git Workflow:**
-- **Branch actual**: `main` (desarrollo directo)
-- **Commits**: Descriptivos con emoji + Claude Code signature
-- **Documentation**: CLAUDE.md siempre actualizado antes de commits
-
-## 🎯 **ACTUALIZACIONES FINALES - SEPTIEMBRE 6, 2025**
-
-### **✅ CAMBIOS IMPLEMENTADOS:**
-1. **Título simplificado**: "CONSULTOR IA" (removido "de" para mayor impacto)
-2. **Font system consistente**: Courier New nativo sin flash inicial
-3. **Favicon actualizado**: Robot verde Matrix (actualizado manualmente)
-4. **Page title**: Simplificado a "Consultor IA" en navegador
-5. **Bundle optimizado**: 342.94 kB → 86.94 kB compressed
-6. **Documentación completa**: v5.1 FINAL con todos los cambios
-
-### **🚀 COMMITS REALIZADOS:**
-- `chore: simplify title and fix fonts` - Título sin "de" + fonts consistentes
-- `docs: update CLAUDE.md v5.1 FINAL` - Documentación completa actualizada
-- `build: production deployment` - Build final deployado a main
-
-### **📊 MÉTRICAS FINALES:**
-- **Performance**: Smooth 60fps en todas las animaciones
-- **Responsive**: Mobile + desktop funcional
-- **Bundle**: ~86kB compressed final
-- **Git**: Branch main actualizado y deployado
+Refactorización completa del portfolio a un juego interactivo estilo dungeon 2D para **Daniel Castiblanco - Consultor IA**.
 
 ---
 
-**🎯 PRÓXIMO DESARROLLADOR**: Sistema completamente funcional y deployado. Título simplificado a "CONSULTOR IA", fonts consistentes, favicon actualizado. Solo pendiente opcional: resolver z-index del botón CTA si se considera necesario.
+## 🆕 **CAMBIOS v6.0 - REFACTORIZACIÓN DUNGEON GAME**
 
-**🚀 ESTADO FINAL**: Landing page profesional Matrix completamente funcional, optimizada, y deployada en producción con todas las mejoras solicitadas implementadas.
+### **Transformación Completa:**
+El portfolio estático se transformó en un juego interactivo donde un personaje "Flame Head Voxel" navega por un espacio 2D con iluminación dinámica, interactuando con 5 puertas que llevan a diferentes destinos.
+
+### **Características Implementadas:**
+- ✅ Personaje jugable con animaciones de caminar y llama animada
+- ✅ Sistema de iluminación dinámica con CSS radial-gradients
+- ✅ 5 puertas interactivas con detección de proximidad
+- ✅ Modales enriquecidos con información de servicios
+- ✅ Game loop con requestAnimationFrame (60fps)
+- ✅ Control por teclado (WASD/Flechas + Enter)
+- ✅ Transiciones fade a negro entre navegaciones
+- ✅ Página placeholder para MultiDesktopFlow
+
+---
+
+## 🏗️ **NUEVA ARQUITECTURA**
+
+### **📁 ESTRUCTURA DE ARCHIVOS:**
+
+```
+src/app/
+├── core/
+│   ├── config/
+│   │   └── game.config.ts              # Constantes del juego + servicios
+│   ├── interfaces/
+│   │   └── game-state.interfaces.ts    # Types e interfaces
+│   └── services/
+│       ├── game-state.service.ts       # Estado con Signals
+│       ├── game-loop.service.ts        # Loop fuera de NgZone
+│       ├── input.service.ts            # Manejo de teclado
+│       ├── lighting.service.ts         # Sistema de iluminación
+│       └── navigation.service.ts       # Navegación y modales
+│
+├── features/game/
+│   ├── game-container.component.ts     # Contenedor principal
+│   ├── dungeon-scene/
+│   │   ├── dungeon-scene.component.ts  # Escena del juego
+│   │   ├── player-character/           # Personaje SVG animado
+│   │   ├── door/                       # Puertas interactivas
+│   │   └── lighting-overlay/           # Overlay de iluminación
+│   └── ui-overlay/
+│       └── ui-overlay.component.ts     # HUD del juego
+│
+├── shared/modals/
+│   ├── about-modal.component.ts        # Modal Sobre Mí
+│   └── consulting-modal.component.ts   # Modal Servicios
+│
+└── pages/multidesktopflow/
+    └── multidesktopflow.component.ts   # Placeholder
+```
+
+---
+
+## 🎮 **SISTEMA DE JUEGO**
+
+### **Controles:**
+- **WASD / Flechas**: Movimiento del personaje
+- **Enter / Space**: Interactuar con puertas
+- **ESC / Enter** (en modal): Cerrar modal
+
+### **Las 5 Puertas:**
+| Puerta | Color | Tipo | Destino |
+|--------|-------|------|---------|
+| NUVARIS | Verde | Externa | https://nuvaris.com |
+| MULTIDESKTOP | Cyan | Interna | /multidesktopflow |
+| AGENDAR | Naranja | Externa | Calendly |
+| SERVICIOS | Magenta | Modal | Consulting modal |
+| SOBRE MÍ | Amarillo | Modal | About modal |
+
+### **Sistema de Iluminación:**
+- Luz dinámica sigue al personaje
+- Radio de luz: 180px
+- Puertas se iluminan al acercarse
+- Transiciones fade a negro entre navegaciones
+
+---
+
+## 🔧 **CONFIGURACIÓN TÉCNICA**
+
+### **Tecnologías Usadas:**
+- Angular 17.3.0 (standalone components)
+- Angular Signals para estado reactivo
+- requestAnimationFrame fuera de NgZone
+- CSS radial-gradients para iluminación
+- SVG inline para personaje animado
+
+### **Archivos de Configuración Clave:**
+
+**game.config.ts** - Todas las constantes modificables:
+```typescript
+GAME_CONFIG = {
+  player: { speed: 200, lightRadius: 180 },
+  world: { width: 800, height: 600 },
+  doors: [...],  // 5 puertas configurables
+  lighting: { ambientDarkness: 0.92 },
+  interaction: { proximityRadius: 80 },
+  profile: { name, title, calendlyUrl }
+}
+```
+
+### **Servicios del Juego:**
+1. **GameStateService** - Estado central con Signals
+2. **GameLoopService** - requestAnimationFrame a 60fps
+3. **InputService** - Manejo de teclado con normalización diagonal
+4. **LightingService** - Generación de gradients dinámicos
+5. **NavigationService** - Rutas, modales y transiciones
+
+---
+
+## 📊 **MÉTRICAS DE BUILD**
+
+```
+Initial chunk files   |  Raw size | Compressed
+chunk-Q5QQCDEG.js     | 188.80 kB |    51.79 kB
+main-ZH4GOJQC.js      |  62.31 kB |    16.49 kB
+polyfills-FFHMD2TL.js |  33.71 kB |    11.02 kB
+styles-SOH4KCSC.css   |   1.75 kB |   595 bytes
+─────────────────────────────────────────────────
+Initial total         | 286.56 kB |    79.88 kB
+
+Lazy chunks:
+game-container        |  42.26 kB |     9.72 kB
+multidesktopflow      |   4.94 kB |     1.58 kB
+```
+
+---
+
+## 🚀 **DEPLOYMENT**
+
+### **Branch Actual:**
+`claude/refactor-portfolio-dungeon-game-sTbSO`
+
+### **Para Mergear a Main:**
+```bash
+git checkout main
+git merge claude/refactor-portfolio-dungeon-game-sTbSO
+git push origin main
+```
+
+### **Netlify:**
+- Build: `npm ci && npm run build`
+- Publish: `dist/dungeon-ai-landing/browser`
+- Node: 20
+
+---
+
+## 📝 **NOTAS IMPORTANTES**
+
+### **Lo que se preservó:**
+- ✅ Todos los datos de servicios de consultoría
+- ✅ URL de Calendly original
+- ✅ Estética Matrix (colores, fonts, cursores)
+- ✅ Información de perfil de Daniel Castiblanco
+
+### **Lo que se reemplazó:**
+- ❌ Landing estático → Juego interactivo
+- ❌ Sistema de iluminación por cursor → Iluminación por personaje
+- ❌ Servicios como tarjetas → Modal con grid de servicios
+- ❌ Hero section → HUD del juego
+
+### **Pendiente (MultiDesktopFlow):**
+- El usuario indicó que proporcionará el contenido después
+- Actualmente es una página placeholder con mensaje "EN DESARROLLO"
+
+---
+
+## 🎯 **GUÍA PARA EL PRÓXIMO DESARROLLADOR**
+
+### **Para modificar las puertas:**
+Editar `src/app/core/config/game.config.ts`:
+```typescript
+doors: [
+  {
+    id: 'nueva-puerta',
+    label: 'ETIQUETA',
+    position: { x: 100, y: 200 },
+    size: { width: 80, height: 120 },
+    type: 'external' | 'internal' | 'modal',
+    destination: 'URL o ruta o modalId',
+    color: '#hexcolor',
+  }
+]
+```
+
+### **Para agregar más modales:**
+1. Crear componente en `src/app/shared/modals/`
+2. Agregar tipo en `NavigationService`
+3. Agregar case en `game-container.component.ts`
+
+### **Para ajustar el juego:**
+- Velocidad: `GAME_CONFIG.player.speed`
+- Tamaño luz: `GAME_CONFIG.player.lightRadius`
+- Radio interacción: `GAME_CONFIG.interaction.proximityRadius`
+- Duración fade: `GAME_CONFIG.lighting.fadeTransitionDuration`
+
+---
+
+## 🔄 **HISTORIAL DE VERSIONES**
+
+| Versión | Fecha | Descripción |
+|---------|-------|-------------|
+| v6.0 | Ene 2, 2026 | Refactorización a juego dungeon interactivo |
+| v5.1 | Sep 6, 2025 | Título simplificado, fonts consistentes |
+| v5.0 | Sep 6, 2025 | Sistema de iluminación calibrado |
+| v4.4 | Sep 5, 2025 | Sistema modal funcional |
+
+---
+
+**🎮 ESTADO FINAL**: Juego dungeon interactivo completamente funcional en rama de desarrollo. Listo para review y merge a main cuando se apruebe.
