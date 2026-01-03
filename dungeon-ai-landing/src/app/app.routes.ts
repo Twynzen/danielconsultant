@@ -12,7 +12,12 @@ export const routes: Routes = [
     component: VampireSurvivorsGameComponent
   },
   {
+    path: 'multidesktopflow',
+    loadComponent: () => import('./pages/multidesktopflow/multidesktopflow.component')
+      .then(m => m.MultidesktopflowComponent),
+  },
+  {
     path: '**',
-    redirectTo: ''
-  }
+    redirectTo: '',
+  },
 ];

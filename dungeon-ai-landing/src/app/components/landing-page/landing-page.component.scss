@@ -1,192 +1,132 @@
-.dungeon-app {
-  position: relative;
-  min-height: 100vh;
-  width: 100%;
-  overflow-x: hidden;
-  overflow-y: visible;
-  font-family: "Courier New", monospace;
+/**
+ * Dungeon Container Styles
+ * AI Habitat with Matrix aesthetic
+ */
+
+.dungeon-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0a0a;
+  font-family: 'Courier New', monospace;
 }
 
-.main-content {
-  position: relative;
-  z-index: 5;
-  padding: 2rem;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding-top: 4rem;
-}
-
-.hero-section {
+/**
+ * Floor Title - Engraved in the dungeon floor
+ * Subtle, "carved in stone" effect
+ */
+.floor-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
   text-align: center;
-  margin-bottom: 4rem;
-  opacity: 0;
-  transition: all 0.6s ease;
-  filter: blur(0.5px);
+  pointer-events: none;
+  user-select: none;
+}
 
-  &.illuminated {
-    opacity: 1 !important;
-    filter: blur(0px) !important;
-  }
+.floor-title .main-title {
+  display: block;
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 900;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 68, 0.08);
+  text-shadow:
+    0 0 30px rgba(0, 255, 68, 0.05),
+    0 0 60px rgba(0, 255, 68, 0.03),
+    2px 2px 0 rgba(0, 0, 0, 0.3),
+    -1px -1px 0 rgba(40, 40, 40, 0.2);
+  font-family: 'Courier New', monospace;
+  animation: floor-pulse 8s ease-in-out infinite;
+}
 
-  .typing {
-    .typing-text {
-      display: inline-block;
-      font-family: "Courier New", monospace;
-      border-right: none;
-      padding-right: 2px;
+.floor-title .subtitle {
+  display: block;
+  font-size: clamp(0.8rem, 2vw, 1.2rem);
+  font-weight: 400;
+  letter-spacing: 0.6em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 68, 0.05);
+  text-shadow:
+    0 0 15px rgba(0, 255, 68, 0.03),
+    1px 1px 0 rgba(0, 0, 0, 0.2);
+  margin-top: 1rem;
+  font-family: 'Courier New', monospace;
+}
 
-      &[style*="border-right"] {
-        text-shadow:
-          0 0 5px currentColor,
-          0 0 10px currentColor,
-          0 0 15px rgba(0, 255, 68, 0.4);
-      }
-    }
-  }
-
-  .author-name {
-    font-size: 0.9rem;
-    font-weight: 400;
-    margin: 0 0 1rem 0;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #333;
-    text-shadow: none;
-    opacity: 0.5;
-    font-family: "Courier New", monospace;
-    filter: blur(0.5px);
-    transition: all 0.4s ease;
-  }
-
-  &.illuminated .author-name {
-    color: #00ff44 !important;
-    text-shadow: 0 0 5px rgba(0, 255, 68, 0.5);
-    opacity: 0.9;
-    filter: blur(0.3px);
-  }
-
-  .main-title {
-    font-size: 4.2rem;
-    font-weight: 900;
-    margin: 0 0 0.8rem 0;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #222;
-    text-shadow: none;
-    font-family: "Courier New", monospace;
-    filter: blur(1px);
-    animation: none;
-    transition: all 0.4s ease;
-  }
-
-  &.illuminated .main-title {
-    color: #00ff44 !important;
+@keyframes floor-pulse {
+  0%, 100% {
+    opacity: 1;
     text-shadow:
-      0 0 30px rgba(0, 255, 68, 1),
-      0 0 60px rgba(0, 255, 68, 0.8),
-      0 0 90px rgba(0, 255, 68, 0.6);
-    filter: blur(0.2px) drop-shadow(0 0 45px rgba(0, 255, 68, 0.9));
-    animation: heroGlow 3s infinite alternate ease-in-out;
+      0 0 30px rgba(0, 255, 68, 0.05),
+      0 0 60px rgba(0, 255, 68, 0.03),
+      2px 2px 0 rgba(0, 0, 0, 0.3),
+      -1px -1px 0 rgba(40, 40, 40, 0.2);
   }
-
-  .blur-subtitle {
-    font-size: 1.5rem;
-    font-weight: 400;
-    margin: 0 0 2rem 0;
-    color: #222;
-    text-shadow: none;
-    opacity: 0.3;
-    font-family: "Courier New", monospace;
-    letter-spacing: 0.12em;
-    filter: blur(1.2px);
-    text-transform: uppercase;
-    transition: all 0.4s ease;
-  }
-
-  &.illuminated .blur-subtitle {
-    color: #00cc33 !important;
-    text-shadow: 0 0 12px rgba(0, 255, 68, 0.7);
-    opacity: 0.8;
-    filter: blur(0.8px);
+  50% {
+    opacity: 0.9;
+    text-shadow:
+      0 0 40px rgba(0, 255, 68, 0.08),
+      0 0 80px rgba(0, 255, 68, 0.05),
+      2px 2px 0 rgba(0, 0, 0, 0.3),
+      -1px -1px 0 rgba(40, 40, 40, 0.2);
   }
 }
 
-@keyframes heroGlow {
-  0% {
-    text-shadow:
-      0 0 20px rgba(0, 255, 68, 0.8),
-      0 0 40px rgba(0, 255, 68, 0.6),
-      0 0 60px rgba(0, 255, 68, 0.4);
-    filter: drop-shadow(0 0 30px rgba(0, 255, 68, 0.8));
+/**
+ * Z-index hierarchy:
+ * 1  - Floor title (background)
+ * 2  - Circuits background
+ * 5  - Pillar system
+ * 10 - Individual pillars
+ * 20 - Character
+ * 100+ - Modals
+ */
+
+// Ensure proper layering
+:host ::ng-deep {
+  app-circuits-background {
+    z-index: 2;
   }
-  100% {
-    text-shadow:
-      0 0 30px rgba(0, 255, 68, 1),
-      0 0 50px rgba(0, 255, 68, 0.8),
-      0 0 80px rgba(0, 255, 68, 0.6);
-    filter: drop-shadow(0 0 50px rgba(0, 255, 68, 1));
+
+  app-pillar-system {
+    z-index: 5;
+  }
+
+  app-flame-head-character {
+    z-index: 20;
+  }
+
+  app-modal-service {
+    z-index: 100;
   }
 }
 
 // Mobile responsive
 @media (max-width: 768px) {
-  .hero-section {
-    margin-bottom: 3rem;
-
-    .author-name {
-      font-size: 0.8rem;
-      margin-bottom: 1rem;
-      letter-spacing: 0.12em;
-    }
-
-    .main-title {
-      font-size: 3.2rem;
-      line-height: 1.1;
-      margin-bottom: 0.8rem;
-      letter-spacing: 0.03em;
-    }
-
-    .blur-subtitle {
-      font-size: 1.1rem;
-      letter-spacing: 0.08em;
-      line-height: 1.4;
-      margin-bottom: 2.5rem;
-    }
+  .floor-title .main-title {
+    letter-spacing: 0.2em;
   }
 
-  .main-content {
-    padding: 1.5rem;
-    padding-top: 3rem;
+  .floor-title .subtitle {
+    letter-spacing: 0.3em;
+    font-size: 0.7rem;
   }
 }
 
 @media (max-width: 480px) {
-  .hero-section {
-    .author-name {
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      margin-bottom: 0.8rem;
-    }
-
-    .main-title {
-      font-size: 2.8rem;
-      letter-spacing: 0.02em;
-      line-height: 1.05;
-    }
-
-    .blur-subtitle {
-      font-size: 1rem;
-      letter-spacing: 0.06em;
-      line-height: 1.3;
-      margin-bottom: 2rem;
-    }
+  .floor-title .main-title {
+    font-size: 2rem;
+    letter-spacing: 0.15em;
   }
 
-  .main-content {
-    padding: 1rem;
-    padding-top: 2rem;
+  .floor-title .subtitle {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    margin-top: 0.5rem;
   }
 }

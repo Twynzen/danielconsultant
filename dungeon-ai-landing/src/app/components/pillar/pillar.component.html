@@ -1,0 +1,43 @@
+<div class="pillar"
+     [style.left.%]="config.position.x"
+     [style.top.%]="config.position.y"
+     [style.--pillar-color]="config.color"
+     [style.--illumination]="illumination"
+     [class.highlighted]="isHighlighted"
+     [class.interactable]="isInteractable"
+     [attr.data-pillar-id]="config.id">
+
+  <!-- Glow effect behind pillar -->
+  <div class="pillar-glow"></div>
+
+  <!-- Main pillar structure -->
+  <div class="pillar-column">
+    <!-- Top with icon -->
+    <div class="pillar-top">
+      <div class="pillar-icon" [innerHTML]="iconSvg"></div>
+      <div class="icon-glow"></div>
+    </div>
+
+    <!-- Body with tech patterns -->
+    <div class="pillar-body">
+      <div class="tech-lines">
+        <span class="line"></span>
+        <span class="line"></span>
+        <span class="line"></span>
+      </div>
+    </div>
+
+    <!-- Base -->
+    <div class="pillar-base"></div>
+  </div>
+
+  <!-- Label (appears when highlighted) -->
+  <div class="pillar-label" *ngIf="isHighlighted || illumination > 0.3">
+    <span class="label-text">{{ config.label }}</span>
+  </div>
+
+  <!-- Enter prompt (appears when interactable) -->
+  <div class="enter-prompt" *ngIf="isInteractable">
+    <span class="key">ENTER</span>
+  </div>
+</div>

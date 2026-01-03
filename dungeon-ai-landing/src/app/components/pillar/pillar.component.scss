@@ -1,0 +1,297 @@
+/**
+ * Pillar Component Styles
+ * Matrix/Dungeon hybrid aesthetic
+ */
+
+.pillar {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  // CSS variable for pillar color
+  --pillar-color: #00ff44;
+  --illumination: 0;
+}
+
+// Glow effect behind pillar
+.pillar-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 160px;
+  background: radial-gradient(
+    ellipse at center,
+    var(--pillar-color) 0%,
+    transparent 70%
+  );
+  opacity: calc(var(--illumination) * 0.4);
+  filter: blur(20px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.highlighted .pillar-glow {
+  opacity: 0.6;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+// Main pillar structure
+.pillar-column {
+  position: relative;
+  width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 0 5px rgba(0, 255, 68, calc(var(--illumination) * 0.5)));
+  transition: filter 0.3s ease;
+}
+
+.highlighted .pillar-column {
+  filter: drop-shadow(0 0 15px var(--pillar-color));
+}
+
+// Top section with icon
+.pillar-top {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(
+    135deg,
+    #1a1a1a 0%,
+    #2a2a2a 50%,
+    #1a1a1a 100%
+  );
+  border: 2px solid rgba(0, 255, 68, calc(var(--illumination) * 0.5 + 0.1));
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.highlighted .pillar-top {
+  border-color: var(--pillar-color);
+  box-shadow:
+    0 0 10px var(--pillar-color),
+    inset 0 0 10px rgba(0, 255, 68, 0.2);
+}
+
+.pillar-icon {
+  width: 28px;
+  height: 28px;
+  color: rgba(0, 255, 68, calc(var(--illumination) * 0.8 + 0.2));
+  filter: drop-shadow(0 0 2px currentColor);
+  transition: all 0.3s ease;
+
+  :host ::ng-deep svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+    fill: none;
+  }
+}
+
+.highlighted .pillar-icon {
+  color: var(--pillar-color);
+  filter: drop-shadow(0 0 8px var(--pillar-color));
+  transform: scale(1.15);
+
+  :host ::ng-deep svg {
+    animation: icon-glow-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes icon-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50% { filter: drop-shadow(0 0 12px currentColor); }
+}
+
+.icon-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    var(--pillar-color) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.highlighted .icon-glow {
+  opacity: 0.3;
+  animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+
+// Body section
+.pillar-body {
+  width: 40px;
+  height: 70px;
+  background: linear-gradient(
+    180deg,
+    #1a1a1a 0%,
+    #0d0d0d 50%,
+    #1a1a1a 100%
+  );
+  border-left: 2px solid rgba(0, 255, 68, calc(var(--illumination) * 0.3 + 0.05));
+  border-right: 2px solid rgba(0, 255, 68, calc(var(--illumination) * 0.3 + 0.05));
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease;
+}
+
+.highlighted .pillar-body {
+  border-color: rgba(0, 255, 68, 0.4);
+}
+
+// Tech lines animation
+.tech-lines {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 8px 0;
+}
+
+.tech-lines .line {
+  display: block;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--pillar-color) 50%,
+    transparent 100%
+  );
+  opacity: calc(var(--illumination) * 0.6);
+  transform: scaleX(0);
+  transition: opacity 0.3s ease;
+}
+
+.highlighted .tech-lines .line {
+  animation: tech-line-scan 2s ease-in-out infinite;
+}
+
+.tech-lines .line:nth-child(1) { animation-delay: 0s; }
+.tech-lines .line:nth-child(2) { animation-delay: 0.3s; }
+.tech-lines .line:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes tech-line-scan {
+  0% { transform: scaleX(0); opacity: 0; }
+  50% { transform: scaleX(1); opacity: 0.8; }
+  100% { transform: scaleX(0); opacity: 0; }
+}
+
+// Base section
+.pillar-base {
+  width: 60px;
+  height: 15px;
+  background: linear-gradient(
+    180deg,
+    #2a2a2a 0%,
+    #1a1a1a 100%
+  );
+  border: 2px solid rgba(0, 255, 68, calc(var(--illumination) * 0.3 + 0.05));
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  transition: border-color 0.3s ease;
+}
+
+.highlighted .pillar-base {
+  border-color: rgba(0, 255, 68, 0.4);
+}
+
+// Label
+.pillar-label {
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  animation: label-appear 0.3s ease forwards;
+}
+
+@keyframes label-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.label-text {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--pillar-color);
+  text-shadow:
+    0 0 5px var(--pillar-color),
+    0 0 10px rgba(0, 255, 68, 0.5);
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--pillar-color);
+  border-radius: 2px;
+}
+
+// Enter prompt
+.enter-prompt {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: enter-bounce 0.8s ease-in-out infinite;
+}
+
+@keyframes enter-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-5px); }
+}
+
+.enter-prompt .key {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: bold;
+  color: #ffffff;
+  background: var(--pillar-color);
+  padding: 4px 10px;
+  border-radius: 3px;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.5),
+    0 0 15px var(--pillar-color);
+  text-shadow: none;
+}
+
+// Interactable state - more intense
+.interactable .pillar-column {
+  animation: pillar-ready 1s ease-in-out infinite;
+}
+
+@keyframes pillar-ready {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.interactable .pillar-top {
+  box-shadow:
+    0 0 20px var(--pillar-color),
+    0 0 40px var(--pillar-color),
+    inset 0 0 15px rgba(0, 255, 68, 0.3);
+}

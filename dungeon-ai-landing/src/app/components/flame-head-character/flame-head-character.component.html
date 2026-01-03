@@ -1,0 +1,205 @@
+<!-- Dialog Box - Positioned to the right of character, optimized for space -->
+<div class="dialog-box"
+     *ngIf="showDialog()"
+     [style.left.px]="x() + 140"
+     [style.top.px]="y() + 20">
+  <div class="dialog-content">
+    <div class="dialog-header">
+      <span class="dialog-indicator"></span>
+      <span class="dialog-title">// SISTEMA IA</span>
+    </div>
+    <div class="dialog-text">
+      <span class="typing-effect">{{ displayedText() }}</span>
+      <span class="cursor" *ngIf="isTyping()">_</span>
+    </div>
+    <div class="dialog-prompt" *ngIf="!isTyping()">
+      <span class="blink">[SPACE / ENTER]</span>
+    </div>
+  </div>
+  <div class="dialog-arrow-left"></div>
+</div>
+
+<svg
+  [class]="characterClasses()"
+  [style.left.px]="x()"
+  [style.top.px]="y()"
+  [style.transform]="characterTransform()"
+  width="120"
+  height="180"
+  viewBox="0 0 120 180">
+  <defs>
+    <!-- Gradientes verdes Matrix -->
+    <linearGradient id="fg" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#1a5a1a"/>
+      <stop offset="50%" stop-color="#3a9a3a"/>
+      <stop offset="100%" stop-color="#6afa6a"/>
+    </linearGradient>
+    <linearGradient id="fi" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#3a8a3a"/>
+      <stop offset="100%" stop-color="#8afa8a"/>
+    </linearGradient>
+    <radialGradient id="gg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4afa4a" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0a2a0a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="gl"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="glow"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+
+  <!-- Glow verde -->
+  <ellipse class="glow-effect" cx="60" cy="55" rx="55" ry="60" fill="url(#gg)" filter="url(#gl)"/>
+
+  <!-- Particulas de fuego -->
+  <g filter="url(#glow)">
+    <rect class="particle p1" x="55" y="10" width="3" height="3" fill="#6afa6a"/>
+    <rect class="particle p2" x="64" y="14" width="2" height="2" fill="#8afa8a"/>
+    <rect class="particle p3" x="48" y="12" width="2" height="2" fill="#aaffaa"/>
+    <rect class="particle p4" x="70" y="16" width="2" height="2" fill="#5aca5a"/>
+  </g>
+
+  <g class="body-main">
+    <!-- Llama verde animada -->
+    <g filter="url(#glow)">
+      <!-- Llama exterior -->
+      <path class="flame-outer" fill="url(#fg)">
+        <animate attributeName="d" dur="0.15s" repeatCount="indefinite"
+          values="M60 8 Q75 22 70 40 Q65 52 60 62 Q55 52 50 40 Q45 22 60 8;
+                  M60 5 Q78 20 68 38 Q63 51 60 62 Q57 51 52 38 Q42 20 60 5;
+                  M60 7 Q73 24 69 42 Q64 53 60 62 Q56 53 51 42 Q47 24 60 7"/>
+      </path>
+      <!-- Llama interior -->
+      <path class="flame-inner" fill="url(#fi)">
+        <animate attributeName="d" dur="0.12s" repeatCount="indefinite"
+          values="M60 22 Q68 32 65 45 Q62 55 60 60 Q58 55 55 45 Q52 32 60 22;
+                  M60 20 Q70 30 64 43 Q61 54 60 60 Q59 54 56 43 Q50 30 60 20;
+                  M60 23 Q67 34 64 47 Q62 56 60 60 Q58 56 56 47 Q53 34 60 23"/>
+      </path>
+      <!-- Nucleo brillante -->
+      <ellipse class="flame-core" cx="60" cy="44" rx="5" ry="9" fill="#aaffaa">
+        <animate attributeName="ry" values="9;11;8;9" dur="0.2s" repeatCount="indefinite"/>
+      </ellipse>
+    </g>
+
+    <!-- Visor/Cara pixelada -->
+    <rect x="48" y="54" width="24" height="22" fill="#1a4a1a" rx="2" stroke="#2a6a2a" stroke-width="1"/>
+    <rect x="50" y="57" width="20" height="16" fill="#0a2a0a"/>
+    <g fill="#3a8a3a">
+      <rect x="52" y="59" width="2" height="2"/><rect x="56" y="59" width="2" height="2"/>
+      <rect x="60" y="59" width="2" height="2"/><rect x="64" y="59" width="2" height="2"/>
+      <rect x="54" y="63" width="2" height="2"/><rect x="58" y="63" width="2" height="2"/>
+      <rect x="62" y="63" width="2" height="2"/><rect x="66" y="63" width="2" height="2"/>
+      <rect x="52" y="67" width="2" height="2"/><rect x="56" y="67" width="2" height="2"/>
+      <rect x="60" y="67" width="2" height="2"/><rect x="64" y="67" width="2" height="2"/>
+    </g>
+    <!-- Pixeles brillantes del visor -->
+    <rect x="58" y="63" width="2" height="2" fill="#6afa6a"/>
+    <rect x="52" y="67" width="2" height="2" fill="#6afa6a"/>
+
+    <!-- Cuello -->
+    <rect x="55" y="76" width="10" height="5" fill="#2a6a2a"/>
+
+    <!-- Torso -->
+    <rect x="50" y="81" width="20" height="24" fill="#2a7a2a"/>
+    <rect x="52" y="83" width="16" height="3" fill="#3a8a3a"/>
+    <rect x="52" y="99" width="16" height="3" fill="#1a5a1a"/>
+
+    <!-- Cintura -->
+    <rect x="52" y="105" width="16" height="5" fill="#1a4a1a"/>
+  </g>
+
+  <!-- ==================== VISTA LATERAL ==================== -->
+  <g class="view-side">
+    <!-- Brazo izquierdo -->
+    <g class="arm-left">
+      <rect x="52" y="83" width="8" height="14" fill="#2a7a2a"/>
+      <rect x="50" y="85" width="3" height="10" fill="#3a8a3a"/>
+      <rect x="48" y="97" width="8" height="8" fill="#3a8a3a"/>
+    </g>
+
+    <!-- Brazo derecho -->
+    <g class="arm-right">
+      <rect x="60" y="83" width="8" height="14" fill="#2a7a2a"/>
+      <rect x="67" y="85" width="3" height="10" fill="#3a8a3a"/>
+      <rect x="64" y="97" width="8" height="8" fill="#3a8a3a"/>
+    </g>
+
+    <!-- Pierna izquierda -->
+    <g class="leg-left">
+      <rect x="54" y="110" width="10" height="22" fill="#2a7a2a"/>
+      <rect x="52" y="112" width="3" height="18" fill="#3a8a3a"/>
+      <rect x="52" y="130" width="10" height="4" fill="#1a4a1a"/>
+      <rect x="52" y="134" width="10" height="16" fill="#2a7a2a"/>
+      <rect x="52" y="150" width="22" height="5" fill="#1a5a1a"/>
+      <rect x="54" y="153" width="24" height="4" fill="#0a3a0a"/>
+    </g>
+
+    <!-- Pierna derecha -->
+    <g class="leg-right">
+      <rect x="56" y="110" width="10" height="22" fill="#2a7a2a"/>
+      <rect x="65" y="112" width="3" height="18" fill="#3a8a3a"/>
+      <rect x="56" y="130" width="10" height="4" fill="#1a4a1a"/>
+      <rect x="56" y="134" width="10" height="16" fill="#2a7a2a"/>
+      <rect x="56" y="150" width="22" height="5" fill="#1a5a1a"/>
+      <rect x="58" y="153" width="24" height="4" fill="#0a3a0a"/>
+    </g>
+  </g>
+
+  <!-- ==================== VISTA FRONTAL ==================== -->
+  <g class="view-front">
+    <!-- FRAME 1 -->
+    <g class="frame1">
+      <!-- Brazos -->
+      <rect x="38" y="83" width="12" height="12" fill="#2a7a2a"/>
+      <rect x="36" y="85" width="3" height="8" fill="#3a8a3a"/>
+      <rect x="34" y="95" width="10" height="14" fill="#2a7a2a"/>
+      <rect x="32" y="109" width="8" height="7" fill="#3a8a3a"/>
+
+      <rect x="70" y="85" width="12" height="10" fill="#1a5a1a"/>
+      <rect x="74" y="95" width="10" height="12" fill="#1a5a1a"/>
+      <rect x="78" y="107" width="8" height="5" fill="#2a6a2a"/>
+
+      <!-- Piernas -->
+      <rect x="50" y="110" width="12" height="22" fill="#2a7a2a"/>
+      <rect x="48" y="112" width="3" height="18" fill="#3a8a3a"/>
+      <rect x="48" y="130" width="12" height="4" fill="#1a4a1a"/>
+      <rect x="46" y="134" width="12" height="16" fill="#2a7a2a"/>
+      <rect x="40" y="150" width="18" height="5" fill="#1a5a1a"/>
+      <rect x="38" y="153" width="20" height="4" fill="#0a3a0a"/>
+
+      <rect x="60" y="110" width="12" height="18" fill="#1a5a1a"/>
+      <rect x="70" y="112" width="3" height="14" fill="#0a3a0a"/>
+      <rect x="62" y="126" width="10" height="4" fill="#0a3a0a"/>
+      <rect x="66" y="130" width="10" height="14" fill="#1a5a1a"/>
+      <rect x="68" y="144" width="14" height="4" fill="#0a3a0a"/>
+      <rect x="70" y="146" width="14" height="4" fill="#082808"/>
+    </g>
+
+    <!-- FRAME 2 -->
+    <g class="frame2">
+      <!-- Brazos invertidos -->
+      <rect x="70" y="83" width="12" height="12" fill="#2a7a2a"/>
+      <rect x="81" y="85" width="3" height="8" fill="#3a8a3a"/>
+      <rect x="76" y="95" width="10" height="14" fill="#2a7a2a"/>
+      <rect x="80" y="109" width="8" height="7" fill="#3a8a3a"/>
+
+      <rect x="38" y="85" width="12" height="10" fill="#1a5a1a"/>
+      <rect x="36" y="95" width="10" height="12" fill="#1a5a1a"/>
+      <rect x="34" y="107" width="8" height="5" fill="#2a6a2a"/>
+
+      <!-- Piernas invertidas -->
+      <rect x="60" y="110" width="12" height="22" fill="#2a7a2a"/>
+      <rect x="70" y="112" width="3" height="18" fill="#3a8a3a"/>
+      <rect x="60" y="130" width="12" height="4" fill="#1a4a1a"/>
+      <rect x="62" y="134" width="12" height="16" fill="#2a7a2a"/>
+      <rect x="62" y="150" width="18" height="5" fill="#1a5a1a"/>
+      <rect x="62" y="153" width="20" height="4" fill="#0a3a0a"/>
+
+      <rect x="50" y="110" width="12" height="18" fill="#1a5a1a"/>
+      <rect x="48" y="112" width="3" height="14" fill="#0a3a0a"/>
+      <rect x="48" y="126" width="10" height="4" fill="#0a3a0a"/>
+      <rect x="44" y="130" width="10" height="14" fill="#1a5a1a"/>
+      <rect x="38" y="144" width="14" height="4" fill="#0a3a0a"/>
+      <rect x="36" y="146" width="14" height="4" fill="#082808"/>
+    </g>
+  </g>
+</svg>

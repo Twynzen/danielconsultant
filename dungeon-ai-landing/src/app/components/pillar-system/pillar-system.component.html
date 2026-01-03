@@ -1,0 +1,9 @@
+<div class="pillar-system">
+  <app-pillar
+    *ngFor="let state of pillarStates(); trackBy: trackByPillarId"
+    [config]="state.config"
+    [isHighlighted]="state.isHighlighted"
+    [isInteractable]="state.isInteractable"
+    [illumination]="state.illumination">
+  </app-pillar>
+</div>

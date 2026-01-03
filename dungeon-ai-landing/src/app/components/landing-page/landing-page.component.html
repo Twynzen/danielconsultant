@@ -1,44 +1,25 @@
-<div class="dungeon-app">
-  <!-- Background with circuits CSS approach (no Canvas) -->
+<div class="dungeon-container">
+  <!-- Background with circuits CSS approach -->
   <app-circuits-background></app-circuits-background>
 
-  <!-- Torch system for illumination -->
+  <!-- Torch system for ambient illumination -->
   <app-torch-system></app-torch-system>
 
-  <!-- Main content area -->
-  <div class="main-content">
-    <!-- Hero section -->
-    <header class="hero-section" [class.illuminated]="heroIlluminated">
-      <!-- Nombre pequeño sutil arriba -->
-      <div class="author-name"
-           [class.typing]="heroIlluminated"
-           [attr.data-text]="'DANIEL CASTIBLANCO'">
-        <span class="typing-text">DANIEL CASTIBLANCO</span>
-      </div>
-
-      <!-- Título principal MUY grande -->
-      <h1 class="main-title"
-          [class.typing]="heroIlluminated"
-          [attr.data-text]="'CONSULTOR IA'">
-        <span class="typing-text">CONSULTOR IA</span>
-      </h1>
-
-      <!-- Subtítulo con efecto borroso especial -->
-      <p class="blur-subtitle"
-         [class.typing]="heroIlluminated"
-         [attr.data-text]="'Para PERSONAS y NEGOCIOS'">
-        <span class="typing-text">Para PERSONAS y NEGOCIOS</span>
-      </p>
-    </header>
-
-    <!-- Service hieroglyphs -->
-    <app-service-hieroglyphs (openModal)="onServiceModalOpen($event)"></app-service-hieroglyphs>
-
-    <!-- CTA Button -->
-    <app-consultation-button></app-consultation-button>
+  <!-- Floor Title - Engraved in the dungeon floor -->
+  <div class="floor-title">
+    <span class="main-title">CONSULTOR IA</span>
+    <span class="subtitle">DANIEL CASTIBLANCO</span>
   </div>
 
-  <!-- Modal Service -->
+  <!-- Pillar System - Interactive navigation -->
+  <app-pillar-system
+    (pillarActivated)="onPillarActivated($event)">
+  </app-pillar-system>
+
+  <!-- Flame Head Character - Controllable with WASD -->
+  <app-flame-head-character></app-flame-head-character>
+
+  <!-- Modal Service - Opens when pillars are activated -->
   <app-modal-service
     [serviceId]="selectedServiceId"
     [isOpen]="isModalOpen"
