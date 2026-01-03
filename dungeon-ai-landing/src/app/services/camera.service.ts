@@ -1,42 +1,34 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { WORLD_CONFIG, getAreaAtPosition, AreaConfig } from '../config/world.config';
+import { SIDESCROLLER_CONFIG } from '../config/sidescroller.config';
 
 /**
- * Camera Service
- * Manages camera position and smooth following for the expanded 3x3 world
- * Uses GPU-accelerated CSS transforms via translate3d
+ * Camera Service - Side-Scroller Mode
+ * Horizontal-only scrolling with look-ahead and world wrapping
+ * Y is fixed (no vertical scroll)
  */
 @Injectable({
   providedIn: 'root'
 })
 export class CameraService {
-  // Camera position signals (world coordinates)
+  // Camera position (only X matters for side-scroller)
   private _cameraX = signal(0);
-  private _cameraY = signal(0);
 
-  // Target position (character position)
+  // Target position
   private _targetX = signal(0);
-  private _targetY = signal(0);
 
-  // Current area tracking
-  private _currentArea = signal<AreaConfig | null>(null);
-
-  // Camera configuration
-  private readonly LERP_FACTOR = 0.08;  // Lower = smoother, higher = snappier
-  private readonly DEADZONE = 2;         // Pixels of movement before camera reacts
+  // Player velocity for look-ahead
+  private _velocityX = signal(0);
 
   // Public readonly signals
   readonly cameraX = this._cameraX.asReadonly();
-  readonly cameraY = this._cameraY.asReadonly();
-  readonly currentArea = this._currentArea.asReadonly();
 
   /**
    * CSS offset for transform: translate3d()
-   * Negative values because we move the world opposite to camera
+   * Only horizontal offset, Y is always 0
    */
   cameraOffset = computed(() => ({
     x: -this._cameraX(),
-    y: -this._cameraY()
+    y: 0  // Fixed Y - no vertical scroll
   }));
 
   /**
@@ -47,155 +39,130 @@ export class CameraService {
     return `translate3d(${offset.x}px, ${offset.y}px, 0)`;
   });
 
-  /**
-   * Initialize camera at world center
-   */
   constructor() {
-    // Start camera centered in the world
-    const centerX = WORLD_CONFIG.getWorldCenterX() - window.innerWidth / 2;
-    const centerY = WORLD_CONFIG.getWorldCenterY() - window.innerHeight / 2;
-    this._cameraX.set(centerX);
-    this._cameraY.set(centerY);
+    // Start camera at beginning of level
+    this._cameraX.set(0);
   }
 
   /**
-   * Update camera to follow target (called every frame)
-   * Uses lerp for smooth following with frame-rate independence
+   * Update camera to follow target with look-ahead
+   * @param targetX Player X position in world coords
+   * @param velocityX Player horizontal velocity (for look-ahead)
+   * @param deltaTime Time since last frame
    */
-  updateCamera(targetX: number, targetY: number, deltaTime: number): void {
+  updateCamera(targetX: number, velocityX: number, deltaTime: number): void {
     this._targetX.set(targetX);
-    this._targetY.set(targetY);
+    this._velocityX.set(velocityX);
 
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const worldW = WORLD_CONFIG.getWorldWidth();
-    const worldH = WORLD_CONFIG.getWorldHeight();
+    const levelWidth = SIDESCROLLER_CONFIG.LEVEL_WIDTH;
 
-    // Calculate ideal camera position (center target in viewport)
-    const idealX = targetX - vw / 2;
-    const idealY = targetY - vh / 2;
+    // Look-ahead: shift camera target based on movement direction
+    const lookAhead = velocityX > 0 ? SIDESCROLLER_CONFIG.CAMERA_LOOK_AHEAD :
+                      velocityX < 0 ? -SIDESCROLLER_CONFIG.CAMERA_LOOK_AHEAD : 0;
 
-    // Clamp to world bounds
-    const clampedX = Math.max(0, Math.min(worldW - vw, idealX));
-    const clampedY = Math.max(0, Math.min(worldH - vh, idealY));
+    // Calculate ideal camera position (center target in viewport + look-ahead)
+    let idealX = targetX + lookAhead - vw / 2;
+
+    // Handle world wrapping for camera
+    // When player is near the edges, the camera needs special handling
+    const wrapMargin = SIDESCROLLER_CONFIG.WRAP_MARGIN;
+
+    // Clamp to level bounds (with wrap consideration)
+    // For a circular level, we don't clamp - we let it wrap
+    // But we need to handle the visual wrap smoothly
+
+    // Simple approach: just clamp for now, world wrapping handled separately
+    idealX = Math.max(0, Math.min(levelWidth - vw, idealX));
 
     // Calculate lerp amount (frame-rate independent)
-    const lerpAmount = 1 - Math.pow(1 - this.LERP_FACTOR, deltaTime * 60);
+    const lerpAmount = 1 - Math.pow(1 - SIDESCROLLER_CONFIG.CAMERA_LERP, deltaTime * 60);
 
     const currentX = this._cameraX();
-    const currentY = this._cameraY();
-
-    // Calculate delta
-    const dx = clampedX - currentX;
-    const dy = clampedY - currentY;
+    const dx = idealX - currentX;
 
     // Apply deadzone to prevent micro-jitter
-    if (Math.abs(dx) > this.DEADZONE || Math.abs(dy) > this.DEADZONE) {
+    if (Math.abs(dx) > SIDESCROLLER_CONFIG.CAMERA_DEADZONE) {
       this._cameraX.set(currentX + dx * lerpAmount);
-      this._cameraY.set(currentY + dy * lerpAmount);
-    }
-
-    // Update current area
-    const area = getAreaAtPosition(targetX, targetY);
-    if (area && area.id !== this._currentArea()?.id) {
-      this._currentArea.set(area);
     }
   }
 
   /**
-   * Convert world coordinates to screen coordinates
+   * Convert world X to screen X
    */
-  worldToScreen(worldX: number, worldY: number): { x: number; y: number } {
-    return {
-      x: worldX - this._cameraX(),
-      y: worldY - this._cameraY()
-    };
+  worldToScreenX(worldX: number): number {
+    return worldX - this._cameraX();
   }
 
   /**
-   * Convert screen coordinates to world coordinates
+   * Convert screen X to world X
    */
-  screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
-    return {
-      x: screenX + this._cameraX(),
-      y: screenY + this._cameraY()
-    };
+  screenToWorldX(screenX: number): number {
+    return screenX + this._cameraX();
   }
 
   /**
-   * Check if a world position is visible on screen
-   * @param margin Extra pixels around viewport to consider "visible"
+   * Check if a world X position is visible on screen
+   * @param margin Extra pixels around viewport
    */
-  isVisible(worldX: number, worldY: number, margin: number = 100): boolean {
-    const screen = this.worldToScreen(worldX, worldY);
-    return screen.x > -margin &&
-           screen.x < window.innerWidth + margin &&
-           screen.y > -margin &&
-           screen.y < window.innerHeight + margin;
+  isVisibleX(worldX: number, margin: number = 100): boolean {
+    const screenX = this.worldToScreenX(worldX);
+    return screenX > -margin && screenX < window.innerWidth + margin;
   }
 
   /**
-   * Check if camera is at world edge
+   * Check if a world X position is visible, accounting for world wrap
+   * Returns true if visible either directly or via wrap
    */
-  isAtEdge(): { top: boolean; right: boolean; bottom: boolean; left: boolean } {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const worldW = WORLD_CONFIG.getWorldWidth();
-    const worldH = WORLD_CONFIG.getWorldHeight();
-    const threshold = 5;
+  isVisibleWithWrap(worldX: number, margin: number = 100): boolean {
+    const levelWidth = SIDESCROLLER_CONFIG.LEVEL_WIDTH;
 
-    return {
-      top: this._cameraY() <= threshold,
-      right: this._cameraX() >= worldW - vw - threshold,
-      bottom: this._cameraY() >= worldH - vh - threshold,
-      left: this._cameraX() <= threshold
-    };
+    // Check direct visibility
+    if (this.isVisibleX(worldX, margin)) return true;
+
+    // Check wrapped positions
+    if (this.isVisibleX(worldX - levelWidth, margin)) return true;
+    if (this.isVisibleX(worldX + levelWidth, margin)) return true;
+
+    return false;
   }
 
   /**
    * Get viewport bounds in world coordinates
    */
-  getViewportBounds(): { left: number; top: number; right: number; bottom: number } {
+  getViewportBounds(): { left: number; right: number } {
     const x = this._cameraX();
-    const y = this._cameraY();
     return {
       left: x,
-      top: y,
-      right: x + window.innerWidth,
-      bottom: y + window.innerHeight
+      right: x + window.innerWidth
     };
   }
 
   /**
    * Instantly set camera position (no lerp)
-   * Use sparingly - mainly for initialization
    */
-  setCameraPosition(x: number, y: number): void {
+  setCameraPosition(x: number): void {
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const worldW = WORLD_CONFIG.getWorldWidth();
-    const worldH = WORLD_CONFIG.getWorldHeight();
+    const levelWidth = SIDESCROLLER_CONFIG.LEVEL_WIDTH;
 
     // Clamp to bounds
-    const clampedX = Math.max(0, Math.min(worldW - vw, x - vw / 2));
-    const clampedY = Math.max(0, Math.min(worldH - vh, y - vh / 2));
-
+    const clampedX = Math.max(0, Math.min(levelWidth - vw, x - vw / 2));
     this._cameraX.set(clampedX);
-    this._cameraY.set(clampedY);
+  }
+
+  /**
+   * Reset camera to start
+   */
+  reset(): void {
+    this._cameraX.set(0);
   }
 
   /**
    * Get normalized camera position (0-1 range for minimap)
    */
-  getNormalizedPosition(): { x: number; y: number } {
-    const worldW = WORLD_CONFIG.getWorldWidth();
-    const worldH = WORLD_CONFIG.getWorldHeight();
+  getNormalizedPosition(): number {
+    const levelWidth = SIDESCROLLER_CONFIG.LEVEL_WIDTH;
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    return {
-      x: this._cameraX() / (worldW - vw),
-      y: this._cameraY() / (worldH - vh)
-    };
+    return this._cameraX() / (levelWidth - vw);
   }
 }

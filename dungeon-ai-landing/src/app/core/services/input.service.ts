@@ -15,19 +15,28 @@ export class InputService implements OnDestroy {
     down: false,
     left: false,
     right: false,
+    jump: false,
     action: false,
   });
 
+  // Track if jump was just pressed this frame (for one-shot jump trigger)
+  private _jumpJustPressed = signal(false);
+  readonly jumpJustPressed = this._jumpJustPressed.asReadonly();
+
   private readonly keyMap: Record<string, keyof InputState> = {
-    'KeyW': 'up',
-    'ArrowUp': 'up',
+    // Side-scroller: Up keys now trigger jump
+    'KeyW': 'jump',
+    'ArrowUp': 'jump',
+    'Space': 'jump',
+    // Down still available but unused in side-scroller
     'KeyS': 'down',
     'ArrowDown': 'down',
+    // Left/Right for horizontal movement
     'KeyA': 'left',
     'ArrowLeft': 'left',
     'KeyD': 'right',
     'ArrowRight': 'right',
-    'Space': 'action',
+    // Enter for pillar interaction
     'Enter': 'action',
   };
 
@@ -57,6 +66,16 @@ export class InputService implements OnDestroy {
     }
     if (event.repeat) return;
 
+    // Detect jump just pressed (one-shot)
+    const isJumpKey = this.keyMap[event.code] === 'jump';
+    if (isJumpKey && !this.pressedKeys.has(event.code)) {
+      this.ngZone.run(() => {
+        this._jumpJustPressed.set(true);
+        // Reset on next tick
+        requestAnimationFrame(() => this._jumpJustPressed.set(false));
+      });
+    }
+
     this.pressedKeys.add(event.code);
     this.updateInputState();
   }
@@ -72,6 +91,7 @@ export class InputService implements OnDestroy {
       down: this.isPressed('down'),
       left: this.isPressed('left'),
       right: this.isPressed('right'),
+      jump: this.isPressed('jump'),
       action: this.isPressed('action'),
     };
 
@@ -86,23 +106,30 @@ export class InputService implements OnDestroy {
     );
   }
 
+  /**
+   * Get movement vector for side-scroller (horizontal only)
+   * Y is always 0 - vertical movement handled by physics/jump
+   */
   getMovementVector(): { x: number; y: number } {
     const state = this.inputState();
-    let x = 0, y = 0;
+    let x = 0;
 
     if (state.left) x -= 1;
     if (state.right) x += 1;
-    if (state.up) y -= 1;
-    if (state.down) y += 1;
 
-    // Normalizar diagonal
-    if (x !== 0 && y !== 0) {
-      const length = Math.sqrt(x * x + y * y);
-      x /= length;
-      y /= length;
-    }
+    // No Y movement in side-scroller (handled by physics)
+    return { x, y: 0 };
+  }
 
-    return { x, y };
+  /**
+   * Get horizontal input (-1, 0, or 1)
+   */
+  getHorizontalInput(): number {
+    const state = this.inputState();
+    let x = 0;
+    if (state.left) x -= 1;
+    if (state.right) x += 1;
+    return x;
   }
 
   private clearAllKeys(): void {

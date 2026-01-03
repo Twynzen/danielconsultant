@@ -2,16 +2,18 @@ import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } 
 import { CommonModule } from '@angular/common';
 import { LightingService } from '../../services/lighting.service';
 import { CameraService } from '../../services/camera.service';
-import { WORLD_CONFIG } from '../../config/world.config';
+import { PhysicsService } from '../../core/services/physics.service';
+import { InputService } from '../../core/services/input.service';
+import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 
-type Direction = 'up' | 'down' | 'left' | 'right';
+type Direction = 'left' | 'right';
 
-/** Mensajes de bienvenida del personaje */
+/** Welcome messages */
 const WELCOME_MESSAGES = [
   '> Hola! Bienvenido al hábitat...',
-  '> Soy una IA que vive aquí. Este es mi espacio.',
-  '> Explora los pilares con WASD. Cada uno guarda conocimiento sobre lo que hacemos.',
-  '> Acércate y presiona ENTER para descubrir más. Adelante!'
+  '> Soy una IA que vive aquí.',
+  '> Usa A/D para caminar, ESPACIO para saltar.',
+  '> Explora los pilares y presiona ENTER para descubrir más!'
 ];
 
 @Component({
@@ -24,22 +26,33 @@ const WELCOME_MESSAGES = [
 export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private lightingService = inject(LightingService);
   private cameraService = inject(CameraService);
+  private physicsService = inject(PhysicsService);
+  private inputService = inject(InputService);
 
-  // World multiplier for 3x3 grid
-  private readonly WORLD_MULTIPLIER = 3;
+  // Character dimensions
+  private readonly CHARACTER_WIDTH = 120;
+  private readonly CHARACTER_HEIGHT = 140;
 
-  // Position signals - WORLD COORDINATES (start at world center)
-  // Character starts at center of the 3x3 world (area 1,1)
-  x = signal(WORLD_CONFIG.getWorldCenterX() - 60);
-  y = signal(WORLD_CONFIG.getWorldCenterY() - 70);
-
-  // Screen position for rendering (character appears at fixed screen position)
+  // Screen position - X is centered, Y varies with jump
   screenX = computed(() => window.innerWidth / 2 - this.CHARACTER_WIDTH / 2);
-  screenY = computed(() => window.innerHeight / 2 - this.CHARACTER_HEIGHT / 2);
+  screenY = computed(() => {
+    const state = this.physicsService.state();
+    const groundY = SIDESCROLLER_CONFIG.getGroundY();
+    // Y position relative to ground (character feet at ground level)
+    const characterBottom = state.y;
+    // Convert to screen Y (screen bottom = ground, character moves up when jumping)
+    return characterBottom - this.CHARACTER_HEIGHT;
+  });
+
+  // World position (for other systems)
+  x = computed(() => this.physicsService.state().x);
+  y = computed(() => this.physicsService.state().y);
 
   // Movement state
-  facing = signal<Direction>('down'); // Face down initially
+  facing = signal<Direction>('right');
   isMoving = signal(false);
+  isJumping = computed(() => this.physicsService.isJumping());
+  isGrounded = computed(() => this.physicsService.isGrounded());
 
   // Dialog state
   showDialog = signal(true);
@@ -54,40 +67,33 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   characterClasses = computed(() => {
     const classes: string[] = ['character'];
 
-    if (this.isMoving()) {
+    if (this.isMoving() || this.isJumping()) {
       classes.push('walking');
     }
 
-    // Vista lateral para left/right, frontal para up/down
-    if (this.facing() === 'left' || this.facing() === 'right') {
-      classes.push('facing-side');
-    } else {
-      classes.push('facing-front');
+    // Side-scroller: always facing-side view
+    classes.push('facing-side');
+
+    if (this.isJumping()) {
+      classes.push('jumping');
     }
 
     return classes.join(' ');
   });
 
-  // Transform para voltear el personaje
+  // Transform for flipping character
   characterTransform = computed(() => {
-    return this.facing() === 'left' ? 'scaleX(-1)' : 'scaleX(1)';
+    return this.physicsService.facingRight() ? 'scaleX(1)' : 'scaleX(-1)';
   });
 
-  // Input state
-  private pressedKeys = new Set<string>();
+  // Game loop
   private animationFrameId: number | null = null;
   private lastTime = 0;
-
-  // Movement config
-  private readonly SPEED = 250; // px/s
-  private readonly CHARACTER_WIDTH = 120;
-  private readonly CHARACTER_HEIGHT = 140; // Reduced after removing flame
+  private lastJumpPressed = false;
 
   ngOnInit(): void {
     this.startGameLoop();
-    // Actualizar luz inicial
     this.updateLightPosition();
-    // Iniciar el diálogo de bienvenida
     this.startWelcomeDialog();
   }
 
@@ -100,17 +106,11 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Inicia el diálogo de bienvenida con efecto typing
-   */
   private startWelcomeDialog(): void {
     this.showDialog.set(true);
     this.typeCurrentMessage();
   }
 
-  /**
-   * Escribe el mensaje actual caracter por caracter
-   */
   private typeCurrentMessage(): void {
     if (this.currentMessageIndex >= WELCOME_MESSAGES.length) {
       this.dismissDialog();
@@ -130,20 +130,15 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
         clearInterval(this.typingInterval);
         this.isTyping.set(false);
       }
-    }, 35); // Velocidad de typing
+    }, 35);
   }
 
-  /**
-   * Avanza al siguiente mensaje o cierra el diálogo
-   */
   private advanceDialog(): void {
     if (this.isTyping()) {
-      // Si está escribiendo, mostrar todo el texto
       clearInterval(this.typingInterval);
       this.displayedText.set(WELCOME_MESSAGES[this.currentMessageIndex]);
       this.isTyping.set(false);
     } else {
-      // Avanzar al siguiente mensaje
       this.currentMessageIndex++;
       if (this.currentMessageIndex < WELCOME_MESSAGES.length) {
         this.typeCurrentMessage();
@@ -153,9 +148,6 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Cierra el diálogo y permite movimiento
-   */
   private dismissDialog(): void {
     this.showDialog.set(false);
     this.dialogDismissed = true;
@@ -166,27 +158,14 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    const key = event.code;
-
-    // Si el diálogo está visible, manejar avance
+    // Handle dialog advancement
     if (this.showDialog()) {
-      if (['Space', 'Enter', 'Escape'].includes(key)) {
+      if (['Space', 'Enter', 'Escape'].includes(event.code)) {
         event.preventDefault();
         this.advanceDialog();
       }
-      return; // No permitir movimiento mientras hay diálogo
+      return;
     }
-
-    // Movimiento normal cuando no hay diálogo
-    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
-      event.preventDefault();
-      this.pressedKeys.add(key);
-    }
-  }
-
-  @HostListener('window:keyup', ['$event'])
-  onKeyUp(event: KeyboardEvent): void {
-    this.pressedKeys.delete(event.code);
   }
 
   private startGameLoop(): void {
@@ -205,69 +184,42 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   }
 
   private update(deltaTime: number): void {
-    const movement = this.getMovementVector();
+    // Don't process movement while dialog is showing
+    if (this.showDialog()) return;
 
-    if (movement.x !== 0 || movement.y !== 0) {
-      this.isMoving.set(true);
+    // Get input
+    const horizontalInput = this.inputService.getHorizontalInput();
+    const jumpPressed = this.inputService.jumpJustPressed();
 
-      // Actualizar dirección
-      if (Math.abs(movement.x) > Math.abs(movement.y)) {
-        this.facing.set(movement.x > 0 ? 'right' : 'left');
-      } else {
-        this.facing.set(movement.y > 0 ? 'down' : 'up');
-      }
+    // Update physics
+    this.physicsService.update(deltaTime, horizontalInput, jumpPressed);
 
-      // Calcular nueva posición
-      const newX = this.x() + movement.x * this.SPEED * deltaTime;
-      const newY = this.y() + movement.y * this.SPEED * deltaTime;
+    // Update movement state
+    const state = this.physicsService.state();
+    this.isMoving.set(Math.abs(state.velocityX) > 10);
 
-      // Clamp dentro del MUNDO (3x viewport)
-      const worldWidth = WORLD_CONFIG.getWorldWidth();
-      const worldHeight = WORLD_CONFIG.getWorldHeight();
-
-      const clampedX = Math.max(0, Math.min(worldWidth - this.CHARACTER_WIDTH, newX));
-      const clampedY = Math.max(0, Math.min(worldHeight - this.CHARACTER_HEIGHT, newY));
-
-      this.x.set(clampedX);
-      this.y.set(clampedY);
-
-      // Actualizar cámara para seguir al personaje
-      this.cameraService.updateCamera(
-        clampedX + this.CHARACTER_WIDTH / 2,
-        clampedY + this.CHARACTER_HEIGHT / 2,
-        deltaTime
-      );
-
-      // Actualizar luz del personaje (en coordenadas mundo)
-      this.updateLightPosition();
-    } else {
-      this.isMoving.set(false);
-    }
-  }
-
-  private getMovementVector(): { x: number; y: number } {
-    let x = 0;
-    let y = 0;
-
-    if (this.pressedKeys.has('KeyW') || this.pressedKeys.has('ArrowUp')) y -= 1;
-    if (this.pressedKeys.has('KeyS') || this.pressedKeys.has('ArrowDown')) y += 1;
-    if (this.pressedKeys.has('KeyA') || this.pressedKeys.has('ArrowLeft')) x -= 1;
-    if (this.pressedKeys.has('KeyD') || this.pressedKeys.has('ArrowRight')) x += 1;
-
-    // Normalizar diagonal
-    if (x !== 0 && y !== 0) {
-      const length = Math.sqrt(x * x + y * y);
-      x /= length;
-      y /= length;
+    // Update facing direction
+    if (state.velocityX > 0) {
+      this.facing.set('right');
+    } else if (state.velocityX < 0) {
+      this.facing.set('left');
     }
 
-    return { x, y };
+    // Update camera
+    this.cameraService.updateCamera(
+      state.x,
+      state.velocityX,
+      deltaTime
+    );
+
+    // Update light position
+    this.updateLightPosition();
   }
 
   private updateLightPosition(): void {
-    // Centro del personaje
-    const centerX = this.x() + this.CHARACTER_WIDTH / 2;
-    const centerY = this.y() + this.CHARACTER_HEIGHT / 3; // Un poco arriba del centro (donde está la llama)
+    const state = this.physicsService.state();
+    const centerX = state.x + this.CHARACTER_WIDTH / 2;
+    const centerY = state.y - this.CHARACTER_HEIGHT / 2;
 
     this.lightingService.updateCharacterLight(centerX, centerY);
   }

@@ -1,30 +1,25 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { LightingService, LightSource } from '../../services/lighting.service';
-import { Subscription } from 'rxjs';
-import { throttleTime } from 'rxjs/operators';
-import { WORLD_CONFIG } from '../../config/world.config';
+/**
+ * Circuits Background Component - Side-Scroller Mode
+ * Circuits light up when player approaches, then fade out after 3-5 seconds
+ * Optimized with viewport culling
+ */
 
-// Mismas interfaces pero adaptadas para CSS approach
-interface FixedCircuit {
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
+import { PhysicsService } from '../../core/services/physics.service';
+import { ViewportCullingService } from '../../core/services/viewport-culling.service';
+
+interface Circuit {
+  id: number;
   x: number;
   y: number;
   pattern: string;
-  baseOpacity: number;
-  litOpacity: number;
   isLit: boolean;
+  litTime: number;
+  fadeOutDuration: number;
+  opacity: number;
 }
-
-interface DynamicConnection {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-  progress: number;
-  isActive: boolean;
-  connectedCircuits: FixedCircuit[];
-}
-
 
 @Component({
   selector: 'app-circuits-background',
@@ -35,142 +30,135 @@ interface DynamicConnection {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CircuitsBackgroundComponent implements OnInit, OnDestroy {
-  // Circuit system - OPTIMIZED: Reduced count for performance
-  fixedCircuits: FixedCircuit[] = [];
-  dynamicConnections: DynamicConnection[] = [];
+  private physicsService = inject(PhysicsService);
+  private cullingService = inject(ViewportCullingService);
 
-  // World dimensions for SVG viewBox (3x viewport)
-  worldWidth = WORLD_CONFIG.getWorldWidth();
-  worldHeight = WORLD_CONFIG.getWorldHeight();
+  circuits: Circuit[] = [];
+  visibleCircuits: Circuit[] = [];
 
-  // Subscriptions
-  private lightingSubscription!: Subscription;
+  // World dimensions
+  levelWidth = SIDESCROLLER_CONFIG.LEVEL_WIDTH;
+  levelHeight = SIDESCROLLER_CONFIG.getLevelHeight();
 
-  constructor(private lightingService: LightingService) {}
+  // Animation
+  private animationFrameId: number | null = null;
+  private lastUpdateTime = 0;
+  private readonly UPDATE_INTERVAL = 100; // 10fps for circuit updates
 
   ngOnInit(): void {
-    this.generateFixedCircuits();
-    this.generateDynamicConnections();
-    this.setupLightingSubscription();
+    this.generateCircuits();
+    this.startUpdateLoop();
   }
 
   ngOnDestroy(): void {
-    if (this.lightingSubscription) {
-      this.lightingSubscription.unsubscribe();
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
     }
   }
 
-  @HostListener('window:resize')
-  onResize() {
-    this.worldWidth = WORLD_CONFIG.getWorldWidth();
-    this.worldHeight = WORLD_CONFIG.getWorldHeight();
-  }
-
-  private generateFixedCircuits(): void {
-    // Patrones de circuitos Matrix binarios
+  private generateCircuits(): void {
     const patterns = ['-', '|', '+', '0', '1'];
+    const levelW = this.levelWidth;
+    const levelH = this.levelHeight;
 
-    // OPTIMIZED: Drastically reduced circuit count for performance
-    // Only ~100-150 circuits total instead of 700+
-    const worldW = this.worldWidth;
-    const worldH = this.worldHeight;
+    // Sparse grid for performance
+    const cols = 40;  // Across 6000px level
+    const rows = 8;   // Across screen height
+    const cellWidth = levelW / cols;
+    const cellHeight = levelH / rows;
 
-    // Smaller grid = fewer elements = better performance
-    const rows = 12; // Reduced from 30
-    const cols = 18; // Reduced from 48
-    const cellWidth = worldW / cols;
-    const cellHeight = worldH / rows;
+    let id = 0;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // Skip 60% of cells for performance
+        if (Math.random() < 0.6) continue;
 
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        // Skip 65% of cells for performance
-        if (Math.random() < 0.65) continue;
+        // Don't place circuits in ground area
+        const y = row * cellHeight + (cellHeight / 2) + (Math.random() - 0.5) * 30;
+        if (y > SIDESCROLLER_CONFIG.getGroundY() - 50) continue;
 
-        const circuitX = j * cellWidth + (cellWidth / 2) + (Math.random() - 0.5) * 20;
-        const circuitY = i * cellHeight + (cellHeight / 2) + (Math.random() - 0.5) * 20;
-
-        const circuit: FixedCircuit = {
-          x: circuitX,
-          y: circuitY,
+        const circuit: Circuit = {
+          id: id++,
+          x: col * cellWidth + (cellWidth / 2) + (Math.random() - 0.5) * 40,
+          y,
           pattern: patterns[Math.floor(Math.random() * patterns.length)],
-          baseOpacity: 0.2,
-          litOpacity: 0.8,
-          isLit: false
+          isLit: false,
+          litTime: 0,
+          fadeOutDuration: SIDESCROLLER_CONFIG.CIRCUIT_TIMEOUT_MIN +
+            Math.random() * (SIDESCROLLER_CONFIG.CIRCUIT_TIMEOUT_MAX - SIDESCROLLER_CONFIG.CIRCUIT_TIMEOUT_MIN),
+          opacity: 0
         };
 
-        this.fixedCircuits.push(circuit);
+        this.circuits.push(circuit);
       }
     }
   }
 
-  private generateDynamicConnections(): void {
-    // OPTIMIZED: Fewer connections, simpler algorithm
-    const maxConnections = Math.min(15, Math.floor(this.fixedCircuits.length * 0.15));
+  private startUpdateLoop(): void {
+    const loop = (currentTime: number) => {
+      if (currentTime - this.lastUpdateTime >= this.UPDATE_INTERVAL) {
+        this.updateCircuits(currentTime);
+        this.lastUpdateTime = currentTime;
+      }
 
-    for (let i = 0; i < maxConnections && i < this.fixedCircuits.length - 1; i++) {
-      const startCircuit = this.fixedCircuits[i];
-      const endCircuit = this.fixedCircuits[i + 1];
+      this.animationFrameId = requestAnimationFrame(loop);
+    };
 
-      const connection: DynamicConnection = {
-        startX: startCircuit.x,
-        startY: startCircuit.y,
-        endX: endCircuit.x,
-        endY: endCircuit.y,
-        progress: 1, // Static - no animation for performance
-        isActive: false,
-        connectedCircuits: [startCircuit, endCircuit]
-      };
-
-      this.dynamicConnections.push(connection);
-    }
+    this.animationFrameId = requestAnimationFrame(loop);
   }
 
-  private setupLightingSubscription(): void {
-    // OPTIMIZED: Throttle updates to 100ms (10fps) instead of every frame
-    this.lightingSubscription = this.lightingService.getLightSources()
-      .pipe(throttleTime(100))
-      .subscribe(lightSources => {
-        this.updateCircuitIllumination(lightSources);
-      });
-  }
+  private updateCircuits(currentTime: number): void {
+    const playerState = this.physicsService.state();
+    const playerX = playerState.x;
+    const playerY = playerState.y;
+    const lightRadius = SIDESCROLLER_CONFIG.CIRCUIT_LIGHT_RADIUS;
+    const levelWidth = SIDESCROLLER_CONFIG.LEVEL_WIDTH;
 
-  private updateCircuitIllumination(lightSources: LightSource[]): void {
-    // Get character light only (most important)
-    const characterLight = lightSources.find(l => l.id === 'character-light');
-    if (!characterLight) return;
+    // Update circuit states
+    this.circuits.forEach(circuit => {
+      // Calculate distance with world wrap
+      const directDist = Math.abs(playerX - circuit.x);
+      const wrappedDist = levelWidth - directDist;
+      const distX = Math.min(directDist, wrappedDist);
+      const distY = Math.abs(playerY - circuit.y);
+      const distance = Math.sqrt(distX * distX + distY * distY);
 
-    // OPTIMIZED: Only check circuits within reasonable distance
-    const lightRadius = characterLight.radius;
-
-    this.fixedCircuits.forEach(circuit => {
-      if (circuit.isLit) return; // Already lit, skip
-
-      const dx = circuit.x - characterLight.x;
-      const dy = circuit.y - characterLight.y;
-      const distanceSquared = dx * dx + dy * dy;
-
-      if (distanceSquared <= lightRadius * lightRadius) {
+      // Light up if player is near
+      if (distance <= lightRadius && !circuit.isLit) {
         circuit.isLit = true;
+        circuit.litTime = currentTime;
+        circuit.opacity = 1;
       }
-    });
 
-    // Update connections only when circuits change
-    this.dynamicConnections.forEach(connection => {
-      if (!connection.isActive) {
-        const allConnectedLit = connection.connectedCircuits.every(c => c.isLit);
-        if (allConnectedLit) {
-          connection.isActive = true;
+      // Fade out after timeout
+      if (circuit.isLit) {
+        const elapsed = currentTime - circuit.litTime;
+
+        if (elapsed > circuit.fadeOutDuration) {
+          // Start fading
+          const fadeElapsed = elapsed - circuit.fadeOutDuration;
+          const fadeDuration = SIDESCROLLER_CONFIG.CIRCUIT_FADE_DURATION;
+
+          if (fadeElapsed >= fadeDuration) {
+            // Fully faded
+            circuit.isLit = false;
+            circuit.opacity = 0;
+          } else {
+            // Fading
+            circuit.opacity = 1 - (fadeElapsed / fadeDuration);
+          }
         }
       }
     });
+
+    // Filter to only visible circuits for rendering
+    this.visibleCircuits = this.circuits.filter(circuit => {
+      if (!circuit.isLit && circuit.opacity === 0) return false;
+      return this.cullingService.isVisible(circuit.x, 50);
+    });
   }
 
-  // TrackBy functions for ngFor optimization
-  trackCircuit(index: number, circuit: FixedCircuit): number {
-    return index;
-  }
-
-  trackConnection(index: number, connection: DynamicConnection): number {
-    return index;
+  trackCircuit(index: number, circuit: Circuit): number {
+    return circuit.id;
   }
 }

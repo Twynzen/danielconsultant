@@ -1,3 +1,9 @@
+/**
+ * Pillar System Component - Side-Scroller Mode
+ * Manages pillars distributed horizontally across the level
+ * Auto-illumination when player approaches, hologram preview
+ */
+
 import {
   Component,
   OnInit,
@@ -7,7 +13,8 @@ import {
   HostListener,
   inject,
   signal,
-  computed
+  computed,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -20,17 +27,22 @@ import {
   PILLAR_INTERACTION,
   getPillarWorldPosition
 } from '../../config/pillar.config';
-import { LightingService } from '../../services/lighting.service';
-import { CameraService } from '../../services/camera.service';
+import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
+import { PhysicsService } from '../../core/services/physics.service';
+import { ViewportCullingService } from '../../core/services/viewport-culling.service';
+import { InputService } from '../../core/services/input.service';
 
 interface PillarState {
   config: PillarConfig;
   isHighlighted: boolean;
   isInteractable: boolean;
+  showHologram: boolean;
   illumination: number;
   distance: number;
   worldX: number;
   worldY: number;
+  screenX: number;
+  isVisible: boolean;
 }
 
 @Component({
@@ -38,73 +50,47 @@ interface PillarState {
   standalone: true,
   imports: [CommonModule, PillarComponent],
   templateUrl: './pillar-system.component.html',
-  styleUrl: './pillar-system.component.scss'
+  styleUrl: './pillar-system.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PillarSystemComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  private lightingService = inject(LightingService);
-  private cameraService = inject(CameraService);
+  private physicsService = inject(PhysicsService);
+  private cullingService = inject(ViewportCullingService);
+  private inputService = inject(InputService);
 
   @Output() pillarActivated = new EventEmitter<PillarConfig>();
 
-  // Character position tracking
-  private characterX = signal(0);
-  private characterY = signal(0);
-
-  // Mouse position tracking (for hover illumination)
-  private mouseX = signal(0);
-  private mouseY = signal(0);
-
-  // Pillar states computed from character AND mouse position
+  // Pillar states
   pillarStates = signal<PillarState[]>([]);
 
-  // Active pillar (closest interactable by character)
+  // Active pillar (closest interactable)
   activePillar = computed(() => {
     const states = this.pillarStates();
     const interactable = states.filter(s => s.isInteractable);
     if (interactable.length === 0) return null;
 
-    // Return the closest interactable pillar
     return interactable.reduce((closest, current) =>
       current.distance < closest.distance ? current : closest
     );
   });
 
+  // Animation frame for updates
+  private animationFrameId: number | null = null;
+  private lastUpdateTime = 0;
+  private readonly UPDATE_INTERVAL = 50; // 20fps for pillar updates
+
   ngOnInit(): void {
-    // Initialize pillar states
     this.initializePillarStates();
-
-    // Subscribe to character light position updates (throttled for performance)
-    this.lightingService.getLightSources()
-      .pipe(
-        throttleTime(50), // 20fps max for pillar updates
-        takeUntil(this.destroy$)
-      )
-      .subscribe(lights => {
-        const characterLight = lights.find(l => l.id === 'character-light');
-        if (characterLight) {
-          this.characterX.set(characterLight.x);
-          this.characterY.set(characterLight.y);
-          this.updatePillarStates();
-        }
-      });
-
-    // Subscribe to mouse position for hover illumination (throttled)
-    this.lightingService.getMousePosition()
-      .pipe(
-        throttleTime(100), // 10fps for mouse hover
-        takeUntil(this.destroy$)
-      )
-      .subscribe(pos => {
-        this.mouseX.set(pos.x);
-        this.mouseY.set(pos.y);
-        this.updatePillarStates();
-      });
+    this.startUpdateLoop();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
   }
 
   private initializePillarStates(): void {
@@ -114,74 +100,71 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
         config,
         isHighlighted: false,
         isInteractable: false,
+        showHologram: false,
         illumination: 0,
         distance: Infinity,
         worldX: worldPos.x,
-        worldY: worldPos.y
+        worldY: worldPos.y,
+        screenX: 0,
+        isVisible: false
       };
     });
     this.pillarStates.set(states);
   }
 
+  private startUpdateLoop(): void {
+    const loop = (currentTime: number) => {
+      // Throttle updates
+      if (currentTime - this.lastUpdateTime >= this.UPDATE_INTERVAL) {
+        this.updatePillarStates();
+        this.lastUpdateTime = currentTime;
+      }
+
+      this.animationFrameId = requestAnimationFrame(loop);
+    };
+
+    this.animationFrameId = requestAnimationFrame(loop);
+  }
+
   private updatePillarStates(): void {
-    const charX = this.characterX();
-    const charY = this.characterY();
-
-    // For mouse hover, we need to convert screen coords to world coords
-    const cameraOffset = this.cameraService.cameraOffset();
-    const mouseScreenX = this.mouseX();
-    const mouseScreenY = this.mouseY();
-    // Convert mouse screen position to world position
-    const mouseWorldX = mouseScreenX - cameraOffset.x;
-    const mouseWorldY = mouseScreenY - cameraOffset.y;
-
-    // Radio de detección del mouse (más pequeño que el personaje)
-    const MOUSE_HIGHLIGHT_RADIUS = 120;
+    const playerState = this.physicsService.state();
+    const playerX = playerState.x;
+    const levelWidth = SIDESCROLLER_CONFIG.LEVEL_WIDTH;
 
     const states = PILLARS.map(config => {
-      // Get pillar world position (now in absolute world pixels)
       const worldPos = getPillarWorldPosition(config);
       const pillarX = worldPos.x;
       const pillarY = worldPos.y;
 
-      // Calculate distance from character to pillar (both in world coords)
-      const charDistance = Math.sqrt(
-        Math.pow(charX - pillarX, 2) +
-        Math.pow(charY - pillarY, 2)
-      );
+      // Calculate distance considering world wrap
+      const directDist = Math.abs(playerX - pillarX);
+      const wrappedDist = levelWidth - directDist;
+      const distance = Math.min(directDist, wrappedDist);
 
-      // Calculate distance from mouse to pillar (both in world coords)
-      const mouseDistance = Math.sqrt(
-        Math.pow(mouseWorldX - pillarX, 2) +
-        Math.pow(mouseWorldY - pillarY, 2)
-      );
+      // Illumination based on distance
+      const maxDist = PILLAR_INTERACTION.HIGHLIGHT_RADIUS * 1.5;
+      const illumination = Math.max(0, 1 - (distance / maxDist));
 
-      // Illumination from character
-      const charMaxDistance = PILLAR_INTERACTION.HIGHLIGHT_RADIUS * 1.5;
-      const charIllumination = Math.max(0, 1 - (charDistance / charMaxDistance));
+      // States based on distance thresholds
+      const isHighlighted = distance <= PILLAR_INTERACTION.HIGHLIGHT_RADIUS;
+      const showHologram = distance <= SIDESCROLLER_CONFIG.PILLAR_HOLOGRAM_RADIUS;
+      const isInteractable = distance <= PILLAR_INTERACTION.INTERACT_RADIUS;
 
-      // Illumination from mouse hover
-      const mouseIllumination = Math.max(0, 1 - (mouseDistance / (MOUSE_HIGHLIGHT_RADIUS * 1.5)));
-
-      // Use the maximum illumination from either source
-      const illumination = Math.max(charIllumination, mouseIllumination * 0.8);
-
-      // Highlighted by character OR mouse hover
-      const isHighlightedByChar = charDistance <= PILLAR_INTERACTION.HIGHLIGHT_RADIUS;
-      const isHighlightedByMouse = mouseDistance <= MOUSE_HIGHLIGHT_RADIUS;
-      const isHighlighted = isHighlightedByChar || isHighlightedByMouse;
-
-      // Interactable only by character (need to walk to it)
-      const isInteractable = charDistance <= PILLAR_INTERACTION.INTERACT_RADIUS;
+      // Screen position for rendering
+      const screenX = this.cullingService.getScreenX(pillarX);
+      const isVisible = this.cullingService.isVisible(pillarX, PILLAR_INTERACTION.PILLAR_WIDTH);
 
       return {
         config,
         isHighlighted,
         isInteractable,
+        showHologram,
         illumination,
-        distance: charDistance, // Keep character distance for Enter key activation
+        distance,
         worldX: pillarX,
-        worldY: pillarY
+        worldY: pillarY,
+        screenX,
+        isVisible
       };
     });
 
@@ -189,7 +172,6 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('window:keydown.enter', ['$event'])
-  @HostListener('window:keydown.space', ['$event'])
   onActivate(event: KeyboardEvent): void {
     const active = this.activePillar();
     if (active) {
@@ -198,7 +180,11 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Track function for ngFor optimization
+  // Only render visible pillars
+  get visiblePillars(): PillarState[] {
+    return this.pillarStates().filter(s => s.isVisible);
+  }
+
   trackByPillarId(index: number, state: PillarState): string {
     return state.config.id;
   }

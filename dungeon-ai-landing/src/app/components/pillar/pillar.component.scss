@@ -5,7 +5,8 @@
 
 .pillar {
   position: absolute;
-  transform: translate(-50%, -50%);
+  // Position from bottom center (pillar sits on ground)
+  transform: translate(-50%, -100%);
   z-index: 10;
   cursor: pointer;
   transition: all 0.3s ease;

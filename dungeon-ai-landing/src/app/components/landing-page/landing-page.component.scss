@@ -1,7 +1,6 @@
 /**
- * Dungeon Viewport/World Styles
- * AI Habitat with Matrix aesthetic
- * Expanded 3x3 world with camera system
+ * Side-Scroller Landing Page Styles
+ * Mario-style horizontal scrolling with fixed UI
  */
 
 // Viewport - Fixed window that clips the world
@@ -15,16 +14,62 @@
   font-family: 'Courier New', monospace;
 }
 
-// World - Large container that moves with camera
+// ========== FIXED UI LAYER ==========
+.fixed-ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.fixed-title {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.fixed-title .main-title {
+  display: block;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 900;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+  color: rgba(0, 255, 68, 0.9);
+  text-shadow:
+    0 0 20px rgba(0, 255, 68, 0.6),
+    0 0 40px rgba(0, 255, 68, 0.3),
+    2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.fixed-title .subtitle {
+  display: block;
+  font-size: clamp(0.7rem, 1.5vw, 1rem);
+  font-weight: 400;
+  letter-spacing: 0.6em;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+  font-family: 'Courier New', monospace;
+  color: rgba(0, 255, 68, 0.6);
+  text-shadow:
+    0 0 10px rgba(0, 255, 68, 0.4),
+    1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+// ========== WORLD LAYER ==========
 .dungeon-world {
   position: absolute;
   top: 0;
   left: 0;
-  width: 300vw;   // 3x viewport width
-  height: 300vh;  // 3x viewport height
+  height: 100vh;
+  // Width set via [style.width.px] in template
 
   // GPU-accelerated transform for smooth camera movement
-  transform: translate3d(var(--camera-x, 0), var(--camera-y, 0), 0);
+  // Transform set via [style.transform] in template
   will-change: transform;
 
   // Prevent any layout shift during transform
@@ -32,111 +77,109 @@
   -webkit-backface-visibility: hidden;
 }
 
-/**
- * Floor Title - Engraved in the dungeon floor
- * Now positioned in world coordinates (center of 3x3 world)
- */
-.floor-title {
+// Ground - Solid floor at bottom
+.ground {
   position: absolute;
-  // Position set via [style] bindings in template (worldCenterX, worldCenterY)
-  transform: translate(-50%, -50%);
-  z-index: 1;
-  text-align: center;
-  pointer-events: none;
-  user-select: none;
-}
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  // Height set via [style.height.px] in template
+  background: linear-gradient(
+    to bottom,
+    #1a3a1a 0%,
+    #0d1f0d 30%,
+    #0a170a 70%,
+    #060d06 100%
+  );
+  border-top: 3px solid #00ff44;
+  box-shadow:
+    0 -5px 20px rgba(0, 255, 68, 0.3),
+    inset 0 10px 30px rgba(0, 0, 0, 0.5);
 
-.floor-title .main-title {
-  display: block;
-  font-size: clamp(3rem, 8vw, 6rem);
-  font-weight: 900;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  font-family: 'Courier New', monospace;
-  // Color and text-shadow are now dynamically set via [style] bindings
-  // based on character proximity to the title
-  transition: color 0.3s ease-out, text-shadow 0.3s ease-out;
-}
-
-.floor-title .subtitle {
-  display: block;
-  font-size: clamp(0.8rem, 2vw, 1.2rem);
-  font-weight: 400;
-  letter-spacing: 0.6em;
-  text-transform: uppercase;
-  margin-top: 1rem;
-  font-family: 'Courier New', monospace;
-  // Color and text-shadow are now dynamically set via [style] bindings
-  transition: color 0.3s ease-out, text-shadow 0.3s ease-out;
+  // Grid pattern on ground
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 255, 68, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 68, 0.05) 1px, transparent 1px);
+    background-size: 50px 20px;
+    opacity: 0.5;
+  }
 }
 
 /**
- * Z-index hierarchy (updated for camera system):
+ * Z-index hierarchy:
  *
- * WORLD LAYER (moves with camera):
- * 1  - Floor title
- * 2  - Circuits background
- * 5  - Pillar system
- * 10 - Individual pillars
- * 15 - Torch system
+ * FIXED UI LAYER:
+ * 100 - Fixed title
+ * 200 - Modals
  *
  * SCREEN LAYER (fixed to viewport):
- * 50 - Character (stays centered on screen)
- * 60 - Minimap
- * 100+ - Modals
+ * 50 - Character
+ *
+ * WORLD LAYER (scrolls):
+ * 2  - Circuits background
+ * 5  - Pillar system
+ * 10 - Ground
  */
 
-// World layer elements (inside .dungeon-world)
+// World layer elements
 :host ::ng-deep {
   .dungeon-world {
     app-circuits-background {
       z-index: 2;
     }
 
-    app-torch-system {
-      z-index: 15;
-    }
-
     app-pillar-system {
       z-index: 5;
     }
+
+    .ground {
+      z-index: 10;
+    }
   }
 
-  // Screen layer elements (fixed to viewport)
+  // Screen layer elements
   app-flame-head-character {
     z-index: 50;
   }
 
-  app-minimap {
-    z-index: 60;
-  }
-
   app-modal-service {
-    z-index: 100;
+    z-index: 200;
   }
 }
 
 // Mobile responsive
 @media (max-width: 768px) {
-  .floor-title .main-title {
+  .fixed-title {
+    top: 20px;
+  }
+
+  .fixed-title .main-title {
     letter-spacing: 0.2em;
   }
 
-  .floor-title .subtitle {
+  .fixed-title .subtitle {
     letter-spacing: 0.3em;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 }
 
 @media (max-width: 480px) {
-  .floor-title .main-title {
-    font-size: 2rem;
+  .fixed-title {
+    top: 15px;
+  }
+
+  .fixed-title .main-title {
+    font-size: 1.5rem;
     letter-spacing: 0.15em;
   }
 
-  .floor-title .subtitle {
-    font-size: 0.6rem;
+  .fixed-title .subtitle {
+    font-size: 0.55rem;
     letter-spacing: 0.2em;
-    margin-top: 0.5rem;
+    margin-top: 0.3rem;
   }
 }

@@ -1,34 +1,20 @@
-<!-- Circuitos Matrix CSS puro - OPTIMIZED for performance -->
-<div class="circuits-container">
-  <!-- Background gradients -->
+<!-- Circuits Background - Side-Scroller Mode -->
+<div class="circuits-container" [style.width.px]="levelWidth">
+  <!-- Background gradient -->
   <div class="wall-gradient"></div>
 
-  <!-- Fixed circuit patterns - SIMPLIFIED (no matrix rain) -->
+  <!-- Circuit patterns - Only visible and lit circuits rendered -->
   <div class="circuits-grid">
     <div
-      *ngFor="let circuit of fixedCircuits; trackBy: trackCircuit"
+      *ngFor="let circuit of visibleCircuits; trackBy: trackCircuit"
       class="circuit-pattern"
       [class.lit]="circuit.isLit"
       [style.left.px]="circuit.x"
-      [style.top.px]="circuit.y">
+      [style.top.px]="circuit.y"
+      [style.opacity]="circuit.opacity">
       <span class="circuit-symbol">{{ circuit.pattern }}</span>
     </div>
   </div>
-
-  <!-- Dynamic connections SVG - SIMPLIFIED -->
-  <svg class="connections-svg" [attr.viewBox]="'0 0 ' + worldWidth + ' ' + worldHeight">
-    <line
-      *ngFor="let connection of dynamicConnections; trackBy: trackConnection"
-      [class.active]="connection.isActive"
-      [attr.x1]="connection.startX"
-      [attr.y1]="connection.startY"
-      [attr.x2]="connection.endX"
-      [attr.y2]="connection.endY"
-      stroke="#00cc33"
-      stroke-width="1"
-      [attr.opacity]="connection.isActive ? 0.5 : 0"
-    />
-  </svg>
 
   <!-- Stone texture overlay -->
   <div class="stone-texture"></div>

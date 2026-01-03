@@ -1,27 +1,26 @@
-<!-- Viewport - Fixed window into the world -->
+<!-- Viewport - Fixed window into the side-scroller world -->
 <div class="dungeon-viewport">
 
-  <!-- World - Large container that moves with camera -->
+  <!-- ========== FIXED UI LAYER (doesn't scroll) ========== -->
+  <div class="fixed-ui">
+    <!-- Title - Fixed at top of screen -->
+    <div class="fixed-title">
+      <span class="main-title">CONSULTOR IA</span>
+      <span class="subtitle">DANIEL CASTIBLANCO</span>
+    </div>
+  </div>
+
+  <!-- ========== WORLD LAYER (scrolls horizontally) ========== -->
   <div class="dungeon-world"
-       [style.--camera-x]="cameraOffset().x + 'px'"
-       [style.--camera-y]="cameraOffset().y + 'px'">
+       [style.width.px]="levelWidth"
+       [style.transform]="cameraTransform()">
 
     <!-- Background with circuits CSS approach -->
     <app-circuits-background></app-circuits-background>
 
-    <!-- Torch system for ambient illumination -->
-    <app-torch-system></app-torch-system>
-
-    <!-- Floor Title - At world center, dynamically illuminated -->
-    <div class="floor-title"
-         [style.left.px]="worldCenterX"
-         [style.top.px]="worldCenterY">
-      <span class="main-title"
-            [style.color]="titleStyle().color"
-            [style.textShadow]="titleStyle().textShadow">CONSULTOR IA</span>
-      <span class="subtitle"
-            [style.color]="subtitleStyle().color"
-            [style.textShadow]="subtitleStyle().textShadow">DANIEL CASTIBLANCO</span>
+    <!-- Ground visual -->
+    <div class="ground"
+         [style.height.px]="groundHeight">
     </div>
 
     <!-- Pillar System - Interactive navigation (world coordinates) -->
@@ -33,11 +32,8 @@
 
   <!-- ========== SCREEN LAYER (Fixed to viewport) ========== -->
 
-  <!-- Character - Stays centered on screen, not affected by camera -->
+  <!-- Character - Fixed X (centered), Y moves with jump -->
   <app-flame-head-character></app-flame-head-character>
-
-  <!-- Minimap - Shows world position and area tracking -->
-  <app-minimap></app-minimap>
 
   <!-- Modal Service - Opens when pillars are activated -->
   <app-modal-service

@@ -61,7 +61,8 @@ export interface InputState {
   down: boolean;
   left: boolean;
   right: boolean;
-  action: boolean;  // Enter o Space
+  jump: boolean;    // Space, W, or ArrowUp (side-scroller)
+  action: boolean;  // Enter (pillar interaction)
 }
 
 // Interfaces para servicios de consultoría
