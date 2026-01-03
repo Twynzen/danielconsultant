@@ -1,27 +1,43 @@
-<div class="dungeon-container">
-  <!-- Background with circuits CSS approach -->
-  <app-circuits-background></app-circuits-background>
+<!-- Viewport - Fixed window into the world -->
+<div class="dungeon-viewport">
 
-  <!-- Torch system for ambient illumination -->
-  <app-torch-system></app-torch-system>
+  <!-- World - Large container that moves with camera -->
+  <div class="dungeon-world"
+       [style.--camera-x]="cameraOffset().x + 'px'"
+       [style.--camera-y]="cameraOffset().y + 'px'">
 
-  <!-- Floor Title - Dynamically illuminated based on character proximity -->
-  <div class="floor-title">
-    <span class="main-title"
-          [style.color]="titleStyle().color"
-          [style.textShadow]="titleStyle().textShadow">CONSULTOR IA</span>
-    <span class="subtitle"
-          [style.color]="subtitleStyle().color"
-          [style.textShadow]="subtitleStyle().textShadow">DANIEL CASTIBLANCO</span>
+    <!-- Background with circuits CSS approach -->
+    <app-circuits-background></app-circuits-background>
+
+    <!-- Torch system for ambient illumination -->
+    <app-torch-system></app-torch-system>
+
+    <!-- Floor Title - At world center, dynamically illuminated -->
+    <div class="floor-title"
+         [style.left.px]="worldCenterX"
+         [style.top.px]="worldCenterY">
+      <span class="main-title"
+            [style.color]="titleStyle().color"
+            [style.textShadow]="titleStyle().textShadow">CONSULTOR IA</span>
+      <span class="subtitle"
+            [style.color]="subtitleStyle().color"
+            [style.textShadow]="subtitleStyle().textShadow">DANIEL CASTIBLANCO</span>
+    </div>
+
+    <!-- Pillar System - Interactive navigation (world coordinates) -->
+    <app-pillar-system
+      (pillarActivated)="onPillarActivated($event)">
+    </app-pillar-system>
+
   </div>
 
-  <!-- Pillar System - Interactive navigation -->
-  <app-pillar-system
-    (pillarActivated)="onPillarActivated($event)">
-  </app-pillar-system>
+  <!-- ========== SCREEN LAYER (Fixed to viewport) ========== -->
 
-  <!-- Flame Head Character - Controllable with WASD -->
+  <!-- Character - Stays centered on screen, not affected by camera -->
   <app-flame-head-character></app-flame-head-character>
+
+  <!-- Minimap - Shows world position and area tracking -->
+  <app-minimap></app-minimap>
 
   <!-- Modal Service - Opens when pillars are activated -->
   <app-modal-service
@@ -29,4 +45,5 @@
     [isOpen]="isModalOpen"
     (closeModal)="onCloseModal()">
   </app-modal-service>
+
 </div>

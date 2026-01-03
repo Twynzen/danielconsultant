@@ -1,12 +1,13 @@
 // Circuitos Matrix CSS puro - Ultra performance approach
+// Now covers the entire 3x3 world
 .circuits-container {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%; // Parent (dungeon-world) is 300vw x 300vh
+  height: 100%;
   overflow: hidden;
-  z-index: 1; // Detr�s del contenido principal
+  z-index: 1; // Behind main content
   pointer-events: none;
 }
 

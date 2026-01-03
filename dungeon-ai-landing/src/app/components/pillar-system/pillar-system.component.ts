@@ -17,9 +17,11 @@ import { PillarComponent } from '../pillar/pillar.component';
 import {
   PILLARS,
   PillarConfig,
-  PILLAR_INTERACTION
+  PILLAR_INTERACTION,
+  getPillarWorldPosition
 } from '../../config/pillar.config';
 import { LightingService } from '../../services/lighting.service';
+import { CameraService } from '../../services/camera.service';
 
 interface PillarState {
   config: PillarConfig;
@@ -27,6 +29,8 @@ interface PillarState {
   isInteractable: boolean;
   illumination: number;
   distance: number;
+  worldX: number;
+  worldY: number;
 }
 
 @Component({
@@ -39,6 +43,7 @@ interface PillarState {
 export class PillarSystemComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private lightingService = inject(LightingService);
+  private cameraService = inject(CameraService);
 
   @Output() pillarActivated = new EventEmitter<PillarConfig>();
 
@@ -97,40 +102,52 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   }
 
   private initializePillarStates(): void {
-    const states = PILLARS.map(config => ({
-      config,
-      isHighlighted: false,
-      isInteractable: false,
-      illumination: 0,
-      distance: Infinity
-    }));
+    const states = PILLARS.map(config => {
+      const worldPos = getPillarWorldPosition(config);
+      return {
+        config,
+        isHighlighted: false,
+        isInteractable: false,
+        illumination: 0,
+        distance: Infinity,
+        worldX: worldPos.x,
+        worldY: worldPos.y
+      };
+    });
     this.pillarStates.set(states);
   }
 
   private updatePillarStates(): void {
     const charX = this.characterX();
     const charY = this.characterY();
-    const mouseX = this.mouseX();
-    const mouseY = this.mouseY();
+
+    // For mouse hover, we need to convert screen coords to world coords
+    const cameraOffset = this.cameraService.cameraOffset();
+    const mouseScreenX = this.mouseX();
+    const mouseScreenY = this.mouseY();
+    // Convert mouse screen position to world position
+    const mouseWorldX = mouseScreenX - cameraOffset.x;
+    const mouseWorldY = mouseScreenY - cameraOffset.y;
 
     // Radio de detección del mouse (más pequeño que el personaje)
     const MOUSE_HIGHLIGHT_RADIUS = 120;
 
     const states = PILLARS.map(config => {
-      // Convert pillar position from % to px
-      const pillarX = (config.position.x / 100) * window.innerWidth;
-      const pillarY = (config.position.y / 100) * window.innerHeight;
+      // Get pillar world position (now in absolute world pixels)
+      const worldPos = getPillarWorldPosition(config);
+      const pillarX = worldPos.x;
+      const pillarY = worldPos.y;
 
-      // Calculate distance from character to pillar
+      // Calculate distance from character to pillar (both in world coords)
       const charDistance = Math.sqrt(
         Math.pow(charX - pillarX, 2) +
         Math.pow(charY - pillarY, 2)
       );
 
-      // Calculate distance from mouse to pillar
+      // Calculate distance from mouse to pillar (both in world coords)
       const mouseDistance = Math.sqrt(
-        Math.pow(mouseX - pillarX, 2) +
-        Math.pow(mouseY - pillarY, 2)
+        Math.pow(mouseWorldX - pillarX, 2) +
+        Math.pow(mouseWorldY - pillarY, 2)
       );
 
       // Illumination from character
@@ -156,7 +173,9 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
         isHighlighted,
         isInteractable,
         illumination,
-        distance: charDistance // Keep character distance for Enter key activation
+        distance: charDistance, // Keep character distance for Enter key activation
+        worldX: pillarX,
+        worldY: pillarY
       };
     });
 

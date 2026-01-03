@@ -1,0 +1,100 @@
+<div class="minimap-container">
+  <div class="minimap-header">
+    <span class="minimap-title">// MAP</span>
+  </div>
+
+  <svg class="minimap-svg"
+       [attr.viewBox]="'0 0 ' + MINIMAP_SIZE + ' ' + MINIMAP_SIZE"
+       [attr.width]="MINIMAP_SIZE"
+       [attr.height]="MINIMAP_SIZE">
+    <defs>
+      <filter id="minimapGlow">
+        <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <!-- Background -->
+    <rect x="0" y="0" [attr.width]="MINIMAP_SIZE" [attr.height]="MINIMAP_SIZE" fill="#0a0a0a"/>
+
+    <!-- Grid cells (3x3 areas) -->
+    <g class="area-cells">
+      <rect *ngFor="let area of areas()"
+            [attr.x]="area.col * CELL_SIZE"
+            [attr.y]="area.row * CELL_SIZE"
+            [attr.width]="CELL_SIZE"
+            [attr.height]="CELL_SIZE"
+            [attr.fill]="area.visited ? area.color : '#1a1a1a'"
+            [attr.fill-opacity]="area.visited ? 0.15 : 0.5"
+            stroke="#00ff44"
+            stroke-width="0.5"
+            stroke-opacity="0.3"/>
+    </g>
+
+    <!-- Grid lines -->
+    <g class="grid-lines" stroke="#00ff44" stroke-width="0.5" stroke-opacity="0.4">
+      <line [attr.x1]="CELL_SIZE" y1="0" [attr.x2]="CELL_SIZE" [attr.y2]="MINIMAP_SIZE"/>
+      <line [attr.x1]="CELL_SIZE * 2" y1="0" [attr.x2]="CELL_SIZE * 2" [attr.y2]="MINIMAP_SIZE"/>
+      <line x1="0" [attr.y1]="CELL_SIZE" [attr.x2]="MINIMAP_SIZE" [attr.y2]="CELL_SIZE"/>
+      <line x1="0" [attr.y1]="CELL_SIZE * 2" [attr.x2]="MINIMAP_SIZE" [attr.y2]="CELL_SIZE * 2"/>
+    </g>
+
+    <!-- Viewport indicator (current visible area) -->
+    <rect class="viewport-indicator"
+          [attr.x]="viewportX() - viewportWidth / 2"
+          [attr.y]="viewportY() - viewportHeight / 2"
+          [attr.width]="viewportWidth"
+          [attr.height]="viewportHeight"
+          fill="none"
+          stroke="#00ff44"
+          stroke-width="1"
+          stroke-opacity="0.6"/>
+
+    <!-- Pillar markers -->
+    <g class="pillar-markers">
+      <circle *ngFor="let p of pillars()"
+              [attr.cx]="p.x"
+              [attr.cy]="p.y"
+              r="3"
+              [attr.fill]="p.color"
+              fill-opacity="0.8"
+              filter="url(#minimapGlow)"/>
+    </g>
+
+    <!-- Player position -->
+    <g class="player-marker" filter="url(#minimapGlow)">
+      <!-- Outer glow ring -->
+      <circle [attr.cx]="playerX()"
+              [attr.cy]="playerY()"
+              r="6"
+              fill="none"
+              stroke="#00ff44"
+              stroke-width="1"
+              stroke-opacity="0.5">
+        <animate attributeName="r" values="6;8;6" dur="1.5s" repeatCount="indefinite"/>
+        <animate attributeName="stroke-opacity" values="0.5;0.2;0.5" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      <!-- Player dot -->
+      <circle [attr.cx]="playerX()"
+              [attr.cy]="playerY()"
+              r="4"
+              fill="#00ff44"/>
+    </g>
+
+    <!-- Border frame -->
+    <rect x="0" y="0"
+          [attr.width]="MINIMAP_SIZE"
+          [attr.height]="MINIMAP_SIZE"
+          fill="none"
+          stroke="#00ff44"
+          stroke-width="2"/>
+  </svg>
+
+  <!-- Current area label -->
+  <div class="area-label" *ngIf="currentArea()">
+    <span class="area-name">{{ currentArea()?.name }}</span>
+  </div>
+</div>

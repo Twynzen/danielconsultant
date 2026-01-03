@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LightingService } from '../../services/lighting.service';
+import { CameraService } from '../../services/camera.service';
+import { WORLD_CONFIG } from '../../config/world.config';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 
@@ -21,10 +23,19 @@ const WELCOME_MESSAGES = [
 })
 export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private lightingService = inject(LightingService);
+  private cameraService = inject(CameraService);
 
-  // Position signals - Start well above the title (centered, ~25% from top)
-  x = signal(window.innerWidth / 2 - 60);
-  y = signal(Math.max(50, window.innerHeight * 0.22)); // ~22% from top, minimum 50px
+  // World multiplier for 3x3 grid
+  private readonly WORLD_MULTIPLIER = 3;
+
+  // Position signals - WORLD COORDINATES (start at world center)
+  // Character starts at center of the 3x3 world (area 1,1)
+  x = signal(WORLD_CONFIG.getWorldCenterX() - 60);
+  y = signal(WORLD_CONFIG.getWorldCenterY() - 70);
+
+  // Screen position for rendering (character appears at fixed screen position)
+  screenX = computed(() => window.innerWidth / 2 - this.CHARACTER_WIDTH / 2);
+  screenY = computed(() => window.innerHeight / 2 - this.CHARACTER_HEIGHT / 2);
 
   // Movement state
   facing = signal<Direction>('down'); // Face down initially
@@ -210,14 +221,24 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
       const newX = this.x() + movement.x * this.SPEED * deltaTime;
       const newY = this.y() + movement.y * this.SPEED * deltaTime;
 
-      // Clamp dentro del viewport
-      const clampedX = Math.max(0, Math.min(window.innerWidth - this.CHARACTER_WIDTH, newX));
-      const clampedY = Math.max(0, Math.min(window.innerHeight - this.CHARACTER_HEIGHT, newY));
+      // Clamp dentro del MUNDO (3x viewport)
+      const worldWidth = WORLD_CONFIG.getWorldWidth();
+      const worldHeight = WORLD_CONFIG.getWorldHeight();
+
+      const clampedX = Math.max(0, Math.min(worldWidth - this.CHARACTER_WIDTH, newX));
+      const clampedY = Math.max(0, Math.min(worldHeight - this.CHARACTER_HEIGHT, newY));
 
       this.x.set(clampedX);
       this.y.set(clampedY);
 
-      // Actualizar luz del personaje
+      // Actualizar cámara para seguir al personaje
+      this.cameraService.updateCamera(
+        clampedX + this.CHARACTER_WIDTH / 2,
+        clampedY + this.CHARACTER_HEIGHT / 2,
+        deltaTime
+      );
+
+      // Actualizar luz del personaje (en coordenadas mundo)
       this.updateLightPosition();
     } else {
       this.isMoving.set(false);

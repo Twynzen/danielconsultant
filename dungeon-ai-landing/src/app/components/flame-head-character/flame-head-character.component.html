@@ -1,8 +1,8 @@
-<!-- Dialog Box - Positioned to the right of character, optimized for space -->
+<!-- Dialog Box - Positioned to the right of character (fixed to screen) -->
 <div class="dialog-box"
      *ngIf="showDialog()"
-     [style.left.px]="x() + 140"
-     [style.top.px]="y() + 20">
+     [style.left.px]="screenX() + 140"
+     [style.top.px]="screenY() + 20">
   <div class="dialog-content">
     <div class="dialog-header">
       <span class="dialog-indicator"></span>
@@ -19,10 +19,11 @@
   <div class="dialog-arrow-left"></div>
 </div>
 
+<!-- Character SVG - Fixed to center of screen (camera moves world, not character) -->
 <svg
   [class]="characterClasses()"
-  [style.left.px]="x()"
-  [style.top.px]="y()"
+  [style.left.px]="screenX()"
+  [style.top.px]="screenY()"
   [style.transform]="characterTransform()"
   width="120"
   height="140"

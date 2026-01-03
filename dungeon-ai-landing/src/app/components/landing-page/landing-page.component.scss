@@ -1,9 +1,11 @@
 /**
- * Dungeon Container Styles
+ * Dungeon Viewport/World Styles
  * AI Habitat with Matrix aesthetic
+ * Expanded 3x3 world with camera system
  */
 
-.dungeon-container {
+// Viewport - Fixed window that clips the world
+.dungeon-viewport {
   position: fixed;
   inset: 0;
   width: 100vw;
@@ -13,14 +15,30 @@
   font-family: 'Courier New', monospace;
 }
 
+// World - Large container that moves with camera
+.dungeon-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300vw;   // 3x viewport width
+  height: 300vh;  // 3x viewport height
+
+  // GPU-accelerated transform for smooth camera movement
+  transform: translate3d(var(--camera-x, 0), var(--camera-y, 0), 0);
+  will-change: transform;
+
+  // Prevent any layout shift during transform
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 /**
  * Floor Title - Engraved in the dungeon floor
- * Subtle, "carved in stone" effect
+ * Now positioned in world coordinates (center of 3x3 world)
  */
 .floor-title {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  // Position set via [style] bindings in template (worldCenterX, worldCenterY)
   transform: translate(-50%, -50%);
   z-index: 1;
   text-align: center;
@@ -53,27 +71,44 @@
 }
 
 /**
- * Z-index hierarchy:
- * 1  - Floor title (background)
+ * Z-index hierarchy (updated for camera system):
+ *
+ * WORLD LAYER (moves with camera):
+ * 1  - Floor title
  * 2  - Circuits background
  * 5  - Pillar system
  * 10 - Individual pillars
- * 20 - Character
+ * 15 - Torch system
+ *
+ * SCREEN LAYER (fixed to viewport):
+ * 50 - Character (stays centered on screen)
+ * 60 - Minimap
  * 100+ - Modals
  */
 
-// Ensure proper layering
+// World layer elements (inside .dungeon-world)
 :host ::ng-deep {
-  app-circuits-background {
-    z-index: 2;
+  .dungeon-world {
+    app-circuits-background {
+      z-index: 2;
+    }
+
+    app-torch-system {
+      z-index: 15;
+    }
+
+    app-pillar-system {
+      z-index: 5;
+    }
   }
 
-  app-pillar-system {
-    z-index: 5;
-  }
-
+  // Screen layer elements (fixed to viewport)
   app-flame-head-character {
-    z-index: 20;
+    z-index: 50;
+  }
+
+  app-minimap {
+    z-index: 60;
   }
 
   app-modal-service {

@@ -15,6 +15,8 @@ export class PillarComponent {
   @Input() isHighlighted = false;
   @Input() isInteractable = false;
   @Input() illumination = 0; // 0-1 based on light proximity
+  @Input() worldX = 0; // World position X in pixels
+  @Input() worldY = 0; // World position Y in pixels
 
   constructor(private sanitizer: DomSanitizer) {}
 

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LightingService, LightSource } from '../../services/lighting.service';
 import { Subscription, interval } from 'rxjs';
+import { WORLD_CONFIG } from '../../config/world.config';
 
 // Mismas interfaces pero adaptadas para CSS approach
 interface FixedCircuit {
@@ -28,13 +29,6 @@ interface MatrixChar {
   delay: number;
 }
 
-interface ExclusionZone {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  element: string; // Para debug
-}
 
 @Component({
   selector: 'app-circuits-background',
@@ -47,10 +41,10 @@ export class CircuitsBackgroundComponent implements OnInit, OnDestroy {
   // Circuit system
   fixedCircuits: FixedCircuit[] = [];
   dynamicConnections: DynamicConnection[] = [];
-  
-  // Window dimensions for SVG viewBox
-  windowWidth = window.innerWidth;
-  windowHeight = window.innerHeight;
+
+  // World dimensions for SVG viewBox (3x viewport)
+  worldWidth = WORLD_CONFIG.getWorldWidth();
+  worldHeight = WORLD_CONFIG.getWorldHeight();
   
   // Subscriptions
   private lightingSubscription!: Subscription;
@@ -89,45 +83,42 @@ export class CircuitsBackgroundComponent implements OnInit, OnDestroy {
 
   @HostListener('window:resize')
   onResize() {
-    this.windowWidth = window.innerWidth;
-    this.windowHeight = window.innerHeight;
+    this.worldWidth = WORLD_CONFIG.getWorldWidth();
+    this.worldHeight = WORLD_CONFIG.getWorldHeight();
   }
 
   private generateFixedCircuits(): void {
     // Patrones de circuitos Matrix binarios
     const patterns = ['-', '|', '+', '0', '1', '0', '0', '1', '1'];
-    
-    // PASO 1: Detectar UI elements automáticamente
-    const exclusionZones = this.detectUIExclusionZones();
-    
-    // Generate fixed circuits in a balanced grid pattern
-    const rows = 10; // Menos rows para mejor performance CSS
-    const cols = 16; // Menos cols para mejor performance CSS
-    const cellWidth = this.windowWidth / cols;
-    const cellHeight = this.windowHeight / rows;
-    
+
+    // Generate fixed circuits across entire 3x3 world
+    // Use world dimensions for proper coverage
+    const worldW = this.worldWidth;
+    const worldH = this.worldHeight;
+
+    // Grid size for 3x3 world (more circuits needed)
+    const rows = 30; // 10 * 3 for 3x world
+    const cols = 48; // 16 * 3 for 3x world
+    const cellWidth = worldW / cols;
+    const cellHeight = worldH / rows;
+
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         // Skip some cells to avoid oversaturation
-        if (Math.random() < 0.4) continue; // Más circuitos visibles
-        
+        if (Math.random() < 0.5) continue; // Balance performance vs coverage
+
         const circuitX = j * cellWidth + (cellWidth / 2) + (Math.random() - 0.5) * 30;
         const circuitY = i * cellHeight + (cellHeight / 2) + (Math.random() - 0.5) * 30;
-        
-        // PASO 2: Verificar si colisiona con exclusion zone
-        if (this.collidesWithExclusionZones(circuitX, circuitY, exclusionZones)) {
-          continue; // Skip este circuito si está en zona prohibida
-        }
-        
+
         const circuit: FixedCircuit = {
           x: circuitX,
           y: circuitY,
           pattern: patterns[Math.floor(Math.random() * patterns.length)],
-          baseOpacity: 0.3 + Math.random() * 0.2, // Más visible base
+          baseOpacity: 0.3 + Math.random() * 0.2,
           litOpacity: 0.9 + Math.random() * 0.1,
           isLit: false
         };
-        
+
         this.fixedCircuits.push(circuit);
       }
     }
@@ -237,60 +228,5 @@ export class CircuitsBackgroundComponent implements OnInit, OnDestroy {
     }
     
     return this.matrixCharsCache.get(circuitIndex) || [];
-  }
-
-  // 🚫 EXCLUSION ZONES SYSTEM - Detectar UI elements automáticamente
-  private detectUIExclusionZones(): ExclusionZone[] {
-    const exclusionZones: ExclusionZone[] = [];
-    const margin = 40; // Margin más grande para mejor separación
-    
-    try {
-      // Detectar elementos UI automáticamente por clases
-      const uiSelectors = [
-        '.service-card',           // Cards de servicios
-        '.service-item',           // Items individuales de servicios
-        '.services-grid',          // Grid container completo
-        '.consultation-btn',       // Botón de consulta  
-        '.consultation-button',    // Botón alternativo
-        '.hero-section',          // Sección hero
-        '.cursor-inventory',      // Inventario cursors
-        '.cat-container',         // Container del gato
-        '.services-header'        // Header de servicios
-      ];
-      
-      uiSelectors.forEach(selector => {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach(element => {
-          const rect = element.getBoundingClientRect();
-          
-          // Solo crear zona si el elemento es visible
-          if (rect.width > 0 && rect.height > 0) {
-            exclusionZones.push({
-              x: rect.left - margin,
-              y: rect.top - margin,
-              width: rect.width + (margin * 2),
-              height: rect.height + (margin * 2),
-              element: selector
-            });
-          }
-        });
-      });
-      
-      console.log(`🚫 CircuitsBackground: Detected ${exclusionZones.length} exclusion zones`);
-      
-    } catch (error) {
-      console.warn('CircuitsBackground: Error detecting exclusion zones:', error);
-    }
-    
-    return exclusionZones;
-  }
-
-  private collidesWithExclusionZones(x: number, y: number, exclusionZones: ExclusionZone[]): boolean {
-    return exclusionZones.some(zone => {
-      return x >= zone.x && 
-             x <= zone.x + zone.width && 
-             y >= zone.y && 
-             y <= zone.y + zone.height;
-    });
   }
 }

@@ -1,20 +1,24 @@
 /**
- * Pillar Configuration - AI Habitat
+ * Pillar Configuration - AI Habitat (Expanded 3x3 World)
  *
- * Este archivo define los pilares del dungeon tech.
- * Cada pilar es un punto de interacción que el personaje puede activar.
- * La distribución es orgánica para crear un ambiente de hábitat.
+ * Each pillar is positioned in a specific area of the 3x3 grid world.
+ * The position is defined by:
+ * - area: { row, col } - which of the 9 areas (0-2 for each)
+ * - localPosition: { x, y } - percentage within that area (0-100)
  */
+
+import { areaToWorldPosition } from './world.config';
 
 export interface PillarConfig {
   id: string;
   label: string;
-  icon: string;          // Identificador del icono SVG
+  icon: string;          // Identifier for SVG icon
   type: 'external' | 'modal';
   destination: string;
   color: string;
-  position: { x: number; y: number }; // Porcentaje del viewport
-  description?: string;  // Para tooltip o accesibilidad
+  area: { row: number; col: number };     // Area in 3x3 grid
+  localPosition: { x: number; y: number }; // Position within area (0-100%)
+  description?: string;
 }
 
 /**
@@ -88,10 +92,23 @@ export const PILLAR_ICONS: Record<string, string> = {
 };
 
 /**
- * 8 Pilares distribuidos orgánicamente en el dungeon
- * Posiciones como % del viewport para responsividad
+ * 8 Pillars distributed across the 3x3 world grid
+ * Each pillar in its own area for exploration
+ *
+ * World Layout:
+ * ┌─────────────┬─────────────┬─────────────┐
+ * │  NUVARIS    │ INTEGRATIONS│ RAG SYSTEMS │
+ * │   (0,0)     │    (0,1)    │    (0,2)    │
+ * ├─────────────┼─────────────┼─────────────┤
+ * │ AUTOMATION  │ [TITLE]     │   AGENTS    │
+ * │   (1,0)     │   (1,1)     │    (1,2)    │
+ * ├─────────────┼─────────────┼─────────────┤
+ * │  FINOPS AI  │ LOCAL LLMS  │  CALENDLY   │
+ * │   (2,0)     │    (2,1)    │    (2,2)    │
+ * └─────────────┴─────────────┴─────────────┘
  */
 export const PILLARS: PillarConfig[] = [
+  // Row 0 (top)
   {
     id: 'nuvaris',
     label: 'NUVARIS',
@@ -99,7 +116,8 @@ export const PILLARS: PillarConfig[] = [
     type: 'external',
     destination: 'https://nuvaris.com',
     color: '#00ff88',
-    position: { x: 12, y: 18 },
+    area: { row: 0, col: 0 },
+    localPosition: { x: 50, y: 50 },
     description: 'Visita Nuvaris - Plataforma de IA'
   },
   {
@@ -108,8 +126,9 @@ export const PILLARS: PillarConfig[] = [
     icon: 'plug',
     type: 'modal',
     destination: 'custom-integrations',
-    color: '#ffff00',
-    position: { x: 88, y: 22 },
+    color: '#ff6600',
+    area: { row: 0, col: 1 },
+    localPosition: { x: 50, y: 50 },
     description: 'Integraciones personalizadas con IA'
   },
   {
@@ -118,9 +137,23 @@ export const PILLARS: PillarConfig[] = [
     icon: 'database',
     type: 'modal',
     destination: 'rag-systems',
-    color: '#00ffcc',
-    position: { x: 18, y: 48 },
+    color: '#00ccff',
+    area: { row: 0, col: 2 },
+    localPosition: { x: 50, y: 50 },
     description: 'Sistemas de Retrieval Augmented Generation'
+  },
+
+  // Row 1 (middle) - Note: Center (1,1) is reserved for title
+  {
+    id: 'process-automation',
+    label: 'AUTOMATION',
+    icon: 'gear',
+    type: 'modal',
+    destination: 'process-automation',
+    color: '#ff00ff',
+    area: { row: 1, col: 0 },
+    localPosition: { x: 50, y: 50 },
+    description: 'Automatización de Procesos con IA'
   },
   {
     id: 'agent-orchestration',
@@ -129,8 +162,22 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'agent-orchestration',
     color: '#ff6600',
-    position: { x: 82, y: 45 },
+    area: { row: 1, col: 2 },
+    localPosition: { x: 50, y: 50 },
     description: 'Orquestación de Agentes de IA'
+  },
+
+  // Row 2 (bottom)
+  {
+    id: 'finops-ai',
+    label: 'FINOPS AI',
+    icon: 'chart',
+    type: 'modal',
+    destination: 'finops-ai',
+    color: '#88ff00',
+    area: { row: 2, col: 0 },
+    localPosition: { x: 50, y: 50 },
+    description: 'Optimización Financiera con IA'
   },
   {
     id: 'local-llms',
@@ -139,28 +186,9 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'local-llms',
     color: '#00ccff',
-    position: { x: 28, y: 72 },
+    area: { row: 2, col: 1 },
+    localPosition: { x: 50, y: 50 },
     description: 'Modelos de Lenguaje Locales'
-  },
-  {
-    id: 'process-automation',
-    label: 'AUTOMATION',
-    icon: 'gear',
-    type: 'modal',
-    destination: 'process-automation',
-    color: '#ff00ff',
-    position: { x: 72, y: 70 },
-    description: 'Automatización de Procesos con IA'
-  },
-  {
-    id: 'finops-ai',
-    label: 'FINOPS AI',
-    icon: 'chart',
-    type: 'modal',
-    destination: 'finops-ai',
-    color: '#88ff00',
-    position: { x: 15, y: 88 },
-    description: 'Optimización Financiera con IA'
   },
   {
     id: 'calendly',
@@ -169,7 +197,8 @@ export const PILLARS: PillarConfig[] = [
     type: 'external',
     destination: 'https://calendly.com/darmcastiblanco/30min',
     color: '#ff6b00',
-    position: { x: 85, y: 85 },
+    area: { row: 2, col: 2 },
+    localPosition: { x: 50, y: 50 },
     description: 'Agenda una sesión de consultoría'
   }
 ];
@@ -178,8 +207,15 @@ export const PILLARS: PillarConfig[] = [
  * Constantes de proximidad para interacción
  */
 export const PILLAR_INTERACTION = {
-  HIGHLIGHT_RADIUS: 150,  // px - distancia para mostrar label
-  INTERACT_RADIUS: 80,    // px - distancia para activar con Enter
+  HIGHLIGHT_RADIUS: 180,  // px - distancia para mostrar label (larger for expanded world)
+  INTERACT_RADIUS: 100,   // px - distancia para activar con Enter
   PILLAR_WIDTH: 60,       // px
   PILLAR_HEIGHT: 120      // px
 };
+
+/**
+ * Helper: Get world position for a pillar
+ */
+export function getPillarWorldPosition(pillar: PillarConfig): { x: number; y: number } {
+  return areaToWorldPosition(pillar.area, pillar.localPosition.x, pillar.localPosition.y);
+}

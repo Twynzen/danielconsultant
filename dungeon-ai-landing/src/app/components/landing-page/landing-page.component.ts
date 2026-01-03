@@ -5,8 +5,11 @@ import { TorchSystemComponent } from '../torch-system/torch-system.component';
 import { ModalServiceComponent } from '../modal-service/modal-service.component';
 import { FlameHeadCharacterComponent } from '../flame-head-character/flame-head-character.component';
 import { PillarSystemComponent } from '../pillar-system/pillar-system.component';
+import { MinimapComponent } from '../minimap/minimap.component';
 import { PillarConfig } from '../../config/pillar.config';
 import { LightingService } from '../../services/lighting.service';
+import { CameraService } from '../../services/camera.service';
+import { WORLD_CONFIG } from '../../config/world.config';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -19,7 +22,8 @@ import { takeUntil } from 'rxjs/operators';
     TorchSystemComponent,
     ModalServiceComponent,
     FlameHeadCharacterComponent,
-    PillarSystemComponent
+    PillarSystemComponent,
+    MinimapComponent
   ],
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
@@ -27,10 +31,23 @@ import { takeUntil } from 'rxjs/operators';
 export class LandingPageComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private lightingService = inject(LightingService);
+  private cameraService = inject(CameraService);
 
   // Modal state
   isModalOpen = false;
   selectedServiceId: string | null = null;
+
+  // Camera offset for CSS transform (exposed for template)
+  cameraOffset = this.cameraService.cameraOffset;
+
+  // World center position for title (in world coordinates)
+  get worldCenterX(): number {
+    return WORLD_CONFIG.getWorldCenterX();
+  }
+
+  get worldCenterY(): number {
+    return WORLD_CONFIG.getWorldCenterY();
+  }
 
   // Title illumination - Dynamic based on character proximity
   titleIllumination = signal(0.08); // Base opacity (subtle "carved" look)
@@ -87,12 +104,12 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
   /**
    * Calculate title illumination based on character proximity
-   * Title is at 50%, 50% of viewport
+   * Title is at center of the world (1.5x viewport in each direction)
    */
   private calculateTitleIllumination(charX: number, charY: number): void {
-    // Title center position
-    const titleX = window.innerWidth / 2;
-    const titleY = window.innerHeight / 2;
+    // Title center position (world coordinates - center of 3x3 world)
+    const titleX = this.worldCenterX;
+    const titleY = this.worldCenterY;
 
     // Calculate distance from character to title
     const distance = Math.sqrt(
@@ -100,9 +117,10 @@ export class LandingPageComponent implements OnInit, OnDestroy {
       Math.pow(charY - titleY, 2)
     );
 
-    // Illumination radius - start fading at 300px, full at 100px
-    const maxRadius = 350;
-    const minRadius = 80;
+    // Illumination radius - start fading at 400px, full at 100px
+    // Larger radius since the world is bigger now
+    const maxRadius = 450;
+    const minRadius = 100;
 
     let illumination: number;
     if (distance <= minRadius) {
