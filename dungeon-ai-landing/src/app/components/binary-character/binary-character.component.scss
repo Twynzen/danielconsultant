@@ -1,0 +1,266 @@
+/**
+ * Binary Character v3.0 - CLARITY & SEPARATION
+ * Focus: Clear humanoid silhouette with visible limb separation
+ */
+
+$green: #00ff44;
+$white: #ffffff;
+$glow: rgba(0, 255, 68, 0.5);
+
+.binary-character {
+  position: relative;
+  width: 180px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+// Glow effects
+.glow {
+  position: absolute;
+  inset: -30px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 255, 68, 0.12) 0%,
+    transparent 70%
+  );
+  filter: blur(15px);
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.glow-inner {
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 255, 68, 0.08) 0%,
+    transparent 60%
+  );
+  filter: blur(8px);
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+// Character container
+.character-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+}
+
+// Grid styling
+.grid {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.body-grid {
+  // Body stays put
+}
+
+.legs-grid {
+  margin-top: -1px; // Slight overlap
+}
+
+.row {
+  display: flex;
+  height: 12px;
+  white-space: pre;
+}
+
+// ============================================
+// DIGIT STYLES
+// ============================================
+
+.digit {
+  display: inline-block;
+  width: 10px;
+  text-align: center;
+  color: $green;
+
+  // Empty spaces - invisible but maintain structure
+  &.empty {
+    color: transparent;
+  }
+
+  // Core body - BRIGHTEST
+  &.type-core {
+    text-shadow:
+      0 0 6px $green,
+      0 0 12px $green;
+  }
+
+  // Limbs - medium
+  &.type-limb {
+    text-shadow: 0 0 4px $green;
+  }
+
+  // Edges - dimmest
+  &.type-edge {
+    text-shadow: 0 0 2px $green;
+  }
+
+  // Eyes - WHITE and BRIGHT
+  &.eye {
+    color: $white !important;
+    opacity: 1 !important;
+    text-shadow:
+      0 0 8px $white,
+      0 0 15px $green,
+      0 0 25px $green;
+    animation: eye-pulse 1.5s ease-in-out infinite;
+
+    &.blink {
+      opacity: 0.1 !important;
+      text-shadow: none;
+    }
+  }
+
+  // Smile
+  &.smile {
+    text-shadow:
+      0 0 5px $green,
+      0 0 10px $green;
+  }
+
+  // Glitch effect
+  &.glitch {
+    animation: glitch 0.1s steps(3) infinite !important;
+    color: lighten($green, 20%);
+    text-shadow:
+      2px 0 rgba(255, 0, 0, 0.4),
+      -2px 0 rgba(0, 255, 255, 0.4);
+  }
+}
+
+// ============================================
+// ANIMATIONS
+// ============================================
+
+@keyframes eye-pulse {
+  0%, 100% {
+    text-shadow:
+      0 0 8px $white,
+      0 0 15px $green;
+  }
+  50% {
+    text-shadow:
+      0 0 12px $white,
+      0 0 20px $green,
+      0 0 30px $green;
+  }
+}
+
+@keyframes glitch {
+  0% { transform: translateX(0); }
+  33% { transform: translateX(2px); }
+  66% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+// ============================================
+// STATE MODIFIERS
+// ============================================
+
+// Moving - add energy
+.moving {
+  .grid {
+    animation: shake 0.15s ease-in-out infinite;
+  }
+
+  .glow {
+    animation: glow-fast 0.6s ease-in-out infinite;
+  }
+
+  .legs-grid {
+    animation: walk-bounce 0.15s ease-in-out infinite;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(0.5px); }
+}
+
+@keyframes glow-fast {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes walk-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
+
+// Jumping - stretch
+.jumping {
+  .character-container {
+    animation: jump-stretch 0.35s ease-out;
+  }
+
+  .glow {
+    transform: scaleY(1.15) scaleX(0.9);
+  }
+}
+
+@keyframes jump-stretch {
+  0% { transform: scaleY(0.88) scaleX(1.1); }
+  30% { transform: scaleY(1.08) scaleX(0.95); }
+  100% { transform: scaleY(1) scaleX(1); }
+}
+
+// Landing - squash
+.landing {
+  .character-container {
+    animation: land-squash 0.25s ease-out;
+  }
+}
+
+@keyframes land-squash {
+  0% { transform: scaleY(0.78) scaleX(1.2); }
+  50% { transform: scaleY(1.05) scaleX(0.96); }
+  100% { transform: scaleY(1) scaleX(1); }
+}
+
+// Idle - subtle sway
+.binary-character:not(.moving):not(.jumping) {
+  .body-grid {
+    animation: idle-breathe 3s ease-in-out infinite;
+  }
+}
+
+@keyframes idle-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .binary-character {
+    width: 150px;
+    height: 180px;
+  }
+
+  .grid {
+    font-size: 9px;
+  }
+
+  .row {
+    height: 10px;
+  }
+
+  .digit {
+    width: 8px;
+  }
+}

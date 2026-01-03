@@ -5,6 +5,7 @@ import { CameraService } from '../../services/camera.service';
 import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
+import { BinaryCharacterComponent } from '../binary-character/binary-character.component';
 
 type Direction = 'left' | 'right';
 
@@ -19,21 +20,21 @@ const WELCOME_MESSAGES = [
 @Component({
   selector: 'app-flame-head-character',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BinaryCharacterComponent],
   templateUrl: './flame-head-character.component.html',
   styleUrls: ['./flame-head-character.component.scss']
 })
 export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private lightingService = inject(LightingService);
   private cameraService = inject(CameraService);
-  private physicsService = inject(PhysicsService);
+  physicsService = inject(PhysicsService); // Public for template access
   private inputService = inject(InputService);
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
 
-  // Character dimensions
-  private readonly CHARACTER_WIDTH = 120;
-  private readonly CHARACTER_HEIGHT = 140;
+  // Character dimensions (v3.0 - clarity & separation)
+  private readonly CHARACTER_WIDTH = 180;
+  private readonly CHARACTER_HEIGHT = 220;
 
   // Screen position - X is centered, Y varies with jump
   screenX = computed(() => window.innerWidth / 2 - this.CHARACTER_WIDTH / 2);

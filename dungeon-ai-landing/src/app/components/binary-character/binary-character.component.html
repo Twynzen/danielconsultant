@@ -1,0 +1,36 @@
+<!-- Binary AI Character v3.0 - CLARITY & SEPARATION -->
+<div class="binary-character"
+     [class.moving]="isMoving"
+     [class.jumping]="isJumping"
+     [class.landing]="isLanding()"
+     [style.transform]="characterTransform">
+
+  <!-- Glow backdrop -->
+  <div class="glow"></div>
+
+  <!-- Character container -->
+  <div class="character-container">
+
+    <!-- Body (head, torso, arms) -->
+    <div class="grid body-grid">
+      <div class="row" *ngFor="let row of bodyGrid; let ri = index">
+        <span *ngFor="let digit of row; let ci = index"
+              [class]="getDigitClasses(digit, 'body', ri, ci)"
+              [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'body', ri, ci) }}</span>
+      </div>
+    </div>
+
+    <!-- Legs (animated separately) -->
+    <div class="grid legs-grid">
+      <div class="row" *ngFor="let row of legsGrid; let ri = index">
+        <span *ngFor="let digit of row; let ci = index"
+              [class]="getDigitClasses(digit, 'legs', ri, ci)"
+              [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'legs', ri, ci) }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Inner glow -->
+  <div class="glow-inner"></div>
+</div>

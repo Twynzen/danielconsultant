@@ -7,6 +7,15 @@
   transition: transform 0.1s ease-out;
 }
 
+// Container for the binary character v3.0
+.character-container {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  width: 180px;
+  height: 220px;
+}
+
 // ===== GLOW EFFECT =====
 .glow-effect {
   animation: pulse 0.3s ease-in-out infinite alternate;
