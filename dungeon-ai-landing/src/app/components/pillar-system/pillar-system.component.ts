@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, throttleTime } from 'rxjs/operators';
 
 import { PillarComponent } from '../pillar/pillar.component';
 import {
@@ -74,9 +74,12 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
     // Initialize pillar states
     this.initializePillarStates();
 
-    // Subscribe to character light position updates
+    // Subscribe to character light position updates (throttled for performance)
     this.lightingService.getLightSources()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        throttleTime(50), // 20fps max for pillar updates
+        takeUntil(this.destroy$)
+      )
       .subscribe(lights => {
         const characterLight = lights.find(l => l.id === 'character-light');
         if (characterLight) {
@@ -86,9 +89,12 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Subscribe to mouse position for hover illumination
+    // Subscribe to mouse position for hover illumination (throttled)
     this.lightingService.getMousePosition()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        throttleTime(100), // 10fps for mouse hover
+        takeUntil(this.destroy$)
+      )
       .subscribe(pos => {
         this.mouseX.set(pos.x);
         this.mouseY.set(pos.y);

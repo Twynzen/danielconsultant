@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, throttleTime } from 'rxjs/operators';
 import { CameraService } from '../../services/camera.service';
 import { LightingService } from '../../services/lighting.service';
 import { WORLD_CONFIG, AREA_THEMES } from '../../config/world.config';
@@ -102,7 +102,10 @@ export class MinimapComponent implements OnInit, OnDestroy {
 
   private subscribeToCharacterPosition(): void {
     this.lightingService.getLightSources()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        throttleTime(150), // Minimap updates at ~7fps for smooth but efficient tracking
+        takeUntil(this.destroy$)
+      )
       .subscribe(lights => {
         const characterLight = lights.find(l => l.id === 'character-light');
         if (characterLight) {

@@ -39,54 +39,25 @@
 .circuit-pattern {
   position: absolute;
   transform: translate(-50%, -50%);
-  transition: all 0.4s ease;
-  
+
   &.lit {
-    filter: drop-shadow(0 0 10px #00ff44);
-    
     .circuit-symbol {
       color: #00ff44;
-      text-shadow: 
-        0 0 5px #00ff44,
-        0 0 10px #00ff44,
-        0 0 15px rgba(0, 255, 68, 0.6);
+      text-shadow: 0 0 8px #00ff44;
     }
   }
-  
+
   .circuit-symbol {
-    font-family: 'Share Tech Mono', 'Courier New', monospace; // Font normal para circuitos (NO Glitchy)
-    font-size: 12px; // Reducido de 20px a 12px
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
     font-weight: bold;
-    color: #0a0a0a; // OCULTO: Mismo color del fondo inicial
+    color: #1a3a1a;
     display: block;
     text-align: center;
-    transition: all 0.3s ease;
-    opacity: 0.1; // Casi invisible inicialmente
-  }
-  
-  // Animaci�n Matrix rain para circuitos iluminados
-  .matrix-rain {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 30px;
-    height: 60px;
-    overflow: hidden;
-    
-    .matrix-char {
-      position: absolute;
-      font-family: 'Share Tech Mono', 'Courier New', monospace; // Font normal para matrix rain (NO Glitchy)
-      font-size: 12px;
-      color: #00ff44;
-      opacity: 0;
-      animation: matrixFall 2s linear infinite;
-      text-shadow: 0 0 3px #00ff44;
-    }
   }
 }
 
-// SVG para conexiones din�micas (reemplaza Canvas dynamicConnections)
+// SVG para conexiones dinamicas - SIMPLIFIED
 .connections-svg {
   position: absolute;
   top: 0;
@@ -94,13 +65,10 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  
-  .connection-line {
-    animation: connectionGlow 2s ease-in-out infinite;
-  }
-  
-  .connection-pulse {
-    animation: pulseBeat 0.5s ease-in-out infinite;
+
+  line.active {
+    stroke: #00ff44;
+    opacity: 0.4;
   }
 }
 
@@ -132,61 +100,9 @@
     );
 }
 
-// Animaciones CSS puras
-@keyframes matrixFall {
-  0% {
-    top: 0;
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    top: 60px;
-    opacity: 0;
-  }
-}
-
-@keyframes connectionGlow {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes pulseBeat {
-  0%, 100% {
-    r: 2;
-    opacity: 0.8;
-  }
-  50% {
-    r: 3;
-    opacity: 1;
-  }
-}
-
 // Responsive adjustments
 @media (max-width: 768px) {
   .circuit-symbol {
-    font-size: 10px; // Reducido de 16px a 10px para móvil
-  }
-  
-  .matrix-rain {
-    .matrix-char {
-      font-size: 10px;
-    }
-  }
-}
-
-// Debug mode - hacer circuitos MUY visibles
-.debug-mode {
-  .circuit-pattern {
-    .circuit-symbol {
-      color: #00ff44 !important;
-      opacity: 1 !important;
-      font-size: 16px !important; // Reducido de 24px a 16px
-    }
+    font-size: 12px;
   }
 }
