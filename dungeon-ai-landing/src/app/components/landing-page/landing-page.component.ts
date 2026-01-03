@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
 import { ModalServiceComponent } from '../modal-service/modal-service.component';
@@ -21,15 +21,42 @@ import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
 })
-export class LandingPageComponent {
+export class LandingPageComponent implements OnInit, OnDestroy {
   private cameraService = inject(CameraService);
+  private cdr = inject(ChangeDetectorRef);
+  private ngZone = inject(NgZone);
 
   // Modal state
   isModalOpen = false;
   selectedServiceId: string | null = null;
 
-  // Camera transform for world scrolling
-  cameraTransform = this.cameraService.cameraTransform;
+  // Animation frame for change detection
+  private animationFrameId: number | null = null;
+
+  // Camera transform for world scrolling - computed signal
+  get cameraTransformValue(): string {
+    return this.cameraService.cameraTransform();
+  }
+
+  ngOnInit(): void {
+    // Start a loop to trigger change detection for camera updates
+    this.startRenderLoop();
+  }
+
+  ngOnDestroy(): void {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+  }
+
+  private startRenderLoop(): void {
+    const loop = () => {
+      // Trigger change detection
+      this.cdr.detectChanges();
+      this.animationFrameId = requestAnimationFrame(loop);
+    };
+    this.animationFrameId = requestAnimationFrame(loop);
+  }
 
   // Level dimensions
   get levelWidth(): number {

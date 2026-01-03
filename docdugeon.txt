@@ -1,0 +1,1659 @@
+# Guía Técnica de Refactorización: Portfolio Angular 17 → Juego Dungeon Interactivo
+
+## Bottom Line Up Front
+
+Esta guía proporciona instrucciones completas y código listo para copiar/pegar para transformar un portfolio Angular 17 standalone en un juego interactivo estilo dungeon. El personaje "Flame Head Voxel" navega por un espacio 2D con sistema de iluminación dinámica, interactuando con 5 puertas que llevan a diferentes destinos (rutas internas, modales y redirecciones externas). La implementación usa **signals para estado del juego**, **requestAnimationFrame** fuera de la zona Angular para rendimiento, y **CSS radial-gradients** para iluminación dinámica.
+
+---
+
+## 1. Arquitectura de componentes
+
+```
+AppComponent (bootstrap)
+├── GameContainerComponent (layout principal)
+│   ├── DungeonSceneComponent (escena del juego)
+│   │   ├── PlayerCharacterComponent (personaje SVG animado)
+│   │   ├── DoorComponent × 5 (puertas interactivas)
+│   │   └── LightingOverlayComponent (sistema de iluminación)
+│   └── UIOverlayComponent (HUD)
+│       └── InteractionPromptComponent (indicador "Press Enter")
+├── AboutModalComponent (modal Sobre Mí)
+└── ConsultingModalComponent (modal Consultoría)
+```
+
+---
+
+## 2. Estructura de archivos y carpetas
+
+```
+src/
+├── app/
+│   ├── app.component.ts
+│   ├── app.config.ts
+│   ├── app.routes.ts
+│   │
+│   ├── core/
+│   │   ├── config/
+│   │   │   └── game.config.ts          # Constantes configurables
+│   │   ├── interfaces/
+│   │   │   └── game-state.interfaces.ts
+│   │   └── services/
+│   │       ├── game-state.service.ts
+│   │       ├── game-loop.service.ts
+│   │       ├── input.service.ts
+│   │       ├── lighting.service.ts
+│   │       └── navigation.service.ts
+│   │
+│   ├── features/
+│   │   └── game/
+│   │       ├── game-container.component.ts
+│   │       ├── dungeon-scene/
+│   │       │   ├── dungeon-scene.component.ts
+│   │       │   ├── dungeon-scene.component.scss
+│   │       │   ├── player-character/
+│   │       │   │   ├── player-character.component.ts
+│   │       │   │   └── player-character.component.scss
+│   │       │   ├── door/
+│   │       │   │   ├── door.component.ts
+│   │       │   │   └── door.component.scss
+│   │       │   └── lighting-overlay/
+│   │       │       ├── lighting-overlay.component.ts
+│   │       │       └── lighting-overlay.component.scss
+│   │       └── ui-overlay/
+│   │           ├── ui-overlay.component.ts
+│   │           └── interaction-prompt.component.ts
+│   │
+│   ├── shared/
+│   │   └── modals/
+│   │       ├── about-modal.component.ts
+│   │       └── consulting-modal.component.ts
+│   │
+│   └── pages/
+│       └── multidesktopflow/
+│           └── multidesktopflow.component.ts
+│
+├── styles/
+│   ├── _variables.scss
+│   └── _animations.scss
+│
+└── main.ts
+```
+
+---
+
+## 3. Archivo de configuración (constantes modificables)
+
+```typescript
+// src/app/core/config/game.config.ts
+
+export const GAME_CONFIG = {
+  // === PLAYER ===
+  player: {
+    speed: 200,              // pixels por segundo
+    initialPosition: { x: 400, y: 300 },
+    size: { width: 64, height: 80 },
+    lightRadius: 180,        // radio de luz del personaje
+  },
+
+  // === WORLD ===
+  world: {
+    width: 800,
+    height: 600,
+    backgroundColor: '#0a0a0a',
+  },
+
+  // === DOORS (5 destinos) ===
+  doors: [
+    {
+      id: 'nuvaris',
+      label: 'NUVARIS',
+      position: { x: 100, y: 150 },
+      size: { width: 80, height: 120 },
+      type: 'external' as const,
+      destination: 'https://nuvaris.com',
+      color: '#00ff88',
+    },
+    {
+      id: 'multidesktopflow',
+      label: 'MULTIDESKTOP',
+      position: { x: 650, y: 150 },
+      size: { width: 80, height: 120 },
+      type: 'internal' as const,
+      destination: '/multidesktopflow',
+      color: '#00ccff',
+    },
+    {
+      id: 'calendly',
+      label: 'CALENDLY',
+      position: { x: 100, y: 450 },
+      size: { width: 80, height: 120 },
+      type: 'external' as const,
+      destination: 'https://calendly.com/darmcastiblanco/30min',
+      color: '#ff6b00',
+    },
+    {
+      id: 'consulting',
+      label: 'CONSULTORÍA',
+      position: { x: 650, y: 450 },
+      size: { width: 80, height: 120 },
+      type: 'modal' as const,
+      destination: 'consulting',
+      color: '#ff00ff',
+    },
+    {
+      id: 'about',
+      label: 'SOBRE MÍ',
+      position: { x: 375, y: 50 },
+      size: { width: 80, height: 120 },
+      type: 'modal' as const,
+      destination: 'about',
+      color: '#ffff00',
+    },
+  ],
+
+  // === LIGHTING ===
+  lighting: {
+    ambientDarkness: 0.92,
+    doorHighlightRadius: 50,
+    fadeTransitionDuration: 800,  // ms
+  },
+
+  // === INTERACTION ===
+  interaction: {
+    proximityRadius: 80,     // distancia para activar interacción
+  },
+
+  // === ANIMATION ===
+  animation: {
+    flameIgnitionDuration: 1500,  // ms para encender la llama inicial
+    walkCycleSpeed: 150,          // ms por frame de caminar
+  },
+} as const;
+
+// URLs externas como constantes separadas para fácil modificación
+export const EXTERNAL_URLS = {
+  nuvaris: 'https://nuvaris.com',
+  calendly: 'https://calendly.com/darmcastiblanco/30min',
+} as const;
+```
+
+---
+
+## 4. Interfaces TypeScript para estado del juego
+
+```typescript
+// src/app/core/interfaces/game-state.interfaces.ts
+
+export type FacingDirection = 'up' | 'down' | 'left' | 'right';
+export type DoorType = 'external' | 'internal' | 'modal';
+export type GamePhase = 'loading' | 'igniting' | 'playing' | 'transitioning';
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface BoundingBox extends Position, Size {}
+
+export interface Player {
+  position: Position;
+  facing: FacingDirection;
+  isMoving: boolean;
+  flameIntensity: number;  // 0 a 1, para animación de encendido
+}
+
+export interface Door {
+  id: string;
+  label: string;
+  position: Position;
+  size: Size;
+  type: DoorType;
+  destination: string;
+  color: string;
+  isHighlighted: boolean;
+  isInteractable: boolean;
+}
+
+export interface GameState {
+  phase: GamePhase;
+  player: Player;
+  doors: Door[];
+  activeDoorId: string | null;
+  lightPosition: Position;
+}
+
+export interface InputState {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+  action: boolean;  // Enter o Space
+}
+```
+
+---
+
+## 5. Servicios principales
+
+### 5.1 GameStateService (Estado del juego con Signals)
+
+```typescript
+// src/app/core/services/game-state.service.ts
+
+import { Injectable, signal, computed } from '@angular/core';
+import { 
+  GameState, Player, Door, Position, 
+  FacingDirection, GamePhase 
+} from '../interfaces/game-state.interfaces';
+import { GAME_CONFIG } from '../config/game.config';
+
+@Injectable({ providedIn: 'root' })
+export class GameStateService {
+  
+  // Estado principal como signal
+  private readonly state = signal<GameState>(this.createInitialState());
+
+  // Selectores computados (read-only)
+  readonly phase = computed(() => this.state().phase);
+  readonly player = computed(() => this.state().player);
+  readonly playerPosition = computed(() => this.state().player.position);
+  readonly playerFacing = computed(() => this.state().player.facing);
+  readonly isPlayerMoving = computed(() => this.state().player.isMoving);
+  readonly flameIntensity = computed(() => this.state().player.flameIntensity);
+  readonly doors = computed(() => this.state().doors);
+  readonly activeDoor = computed(() => {
+    const id = this.state().activeDoorId;
+    return id ? this.state().doors.find(d => d.id === id) ?? null : null;
+  });
+  readonly lightPosition = computed(() => this.state().lightPosition);
+
+  private createInitialState(): GameState {
+    return {
+      phase: 'loading',
+      player: {
+        position: { ...GAME_CONFIG.player.initialPosition },
+        facing: 'down',
+        isMoving: false,
+        flameIntensity: 0,
+      },
+      doors: GAME_CONFIG.doors.map(d => ({
+        ...d,
+        isHighlighted: false,
+        isInteractable: false,
+      })),
+      activeDoorId: null,
+      lightPosition: { ...GAME_CONFIG.player.initialPosition },
+    };
+  }
+
+  // === ACCIONES ===
+
+  setPhase(phase: GamePhase): void {
+    this.state.update(s => ({ ...s, phase }));
+  }
+
+  updatePlayerPosition(
+    x: number, 
+    y: number, 
+    facing: FacingDirection, 
+    isMoving: boolean
+  ): void {
+    // Clamping dentro de límites del mundo
+    const clampedX = Math.max(0, Math.min(
+      GAME_CONFIG.world.width - GAME_CONFIG.player.size.width, x
+    ));
+    const clampedY = Math.max(0, Math.min(
+      GAME_CONFIG.world.height - GAME_CONFIG.player.size.height, y
+    ));
+
+    this.state.update(s => ({
+      ...s,
+      player: {
+        ...s.player,
+        position: { x: clampedX, y: clampedY },
+        facing,
+        isMoving,
+      },
+      lightPosition: { 
+        x: clampedX + GAME_CONFIG.player.size.width / 2, 
+        y: clampedY + GAME_CONFIG.player.size.height / 2 
+      },
+    }));
+  }
+
+  setFlameIntensity(intensity: number): void {
+    this.state.update(s => ({
+      ...s,
+      player: { ...s.player, flameIntensity: Math.min(1, Math.max(0, intensity)) },
+    }));
+  }
+
+  updateDoorProximity(doorId: string, isHighlighted: boolean, isInteractable: boolean): void {
+    this.state.update(s => ({
+      ...s,
+      doors: s.doors.map(d => 
+        d.id === doorId 
+          ? { ...d, isHighlighted, isInteractable } 
+          : d
+      ),
+      activeDoorId: isInteractable ? doorId : 
+        (s.activeDoorId === doorId ? null : s.activeDoorId),
+    }));
+  }
+
+  resetProximities(): void {
+    this.state.update(s => ({
+      ...s,
+      doors: s.doors.map(d => ({ ...d, isHighlighted: false, isInteractable: false })),
+      activeDoorId: null,
+    }));
+  }
+
+  resetGame(): void {
+    this.state.set(this.createInitialState());
+  }
+}
+```
+
+### 5.2 GameLoopService (Game Loop con requestAnimationFrame)
+
+```typescript
+// src/app/core/services/game-loop.service.ts
+
+import { Injectable, NgZone, OnDestroy, signal } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class GameLoopService implements OnDestroy {
+  private animationFrameId: number | null = null;
+  private lastTime = 0;
+  private isRunning = signal(false);
+  
+  readonly fps = signal(0);
+  readonly running = this.isRunning.asReadonly();
+
+  constructor(private ngZone: NgZone) {}
+
+  start(updateCallback: (deltaTime: number) => void): void {
+    if (this.isRunning()) return;
+    
+    this.isRunning.set(true);
+    this.lastTime = performance.now();
+
+    // Ejecutar FUERA de Angular zone para máximo rendimiento
+    this.ngZone.runOutsideAngular(() => {
+      const loop = (currentTime: number) => {
+        if (!this.isRunning()) return;
+
+        const deltaTime = (currentTime - this.lastTime) / 1000; // convertir a segundos
+        this.lastTime = currentTime;
+
+        // Prevenir saltos grandes (ej: cuando tab está en background)
+        const cappedDelta = Math.min(deltaTime, 0.1);
+
+        updateCallback(cappedDelta);
+
+        // Actualizar FPS
+        if (deltaTime > 0) {
+          this.fps.set(Math.round(1 / deltaTime));
+        }
+
+        this.animationFrameId = requestAnimationFrame(loop);
+      };
+
+      this.animationFrameId = requestAnimationFrame(loop);
+    });
+  }
+
+  stop(): void {
+    this.isRunning.set(false);
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stop();
+  }
+}
+```
+
+### 5.3 InputService (Manejo de teclado)
+
+```typescript
+// src/app/core/services/input.service.ts
+
+import { Injectable, NgZone, OnDestroy, signal } from '@angular/core';
+import { fromEvent, Subject, takeUntil } from 'rxjs';
+import { InputState } from '../interfaces/game-state.interfaces';
+
+@Injectable({ providedIn: 'root' })
+export class InputService implements OnDestroy {
+  private readonly pressedKeys = new Set<string>();
+  private readonly destroy$ = new Subject<void>();
+
+  readonly inputState = signal<InputState>({
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+    action: false,
+  });
+
+  private readonly keyMap: Record<string, keyof InputState> = {
+    'KeyW': 'up',
+    'ArrowUp': 'up',
+    'KeyS': 'down',
+    'ArrowDown': 'down',
+    'KeyA': 'left',
+    'ArrowLeft': 'left',
+    'KeyD': 'right',
+    'ArrowRight': 'right',
+    'Space': 'action',
+    'Enter': 'action',
+  };
+
+  constructor(private ngZone: NgZone) {
+    this.initializeListeners();
+  }
+
+  private initializeListeners(): void {
+    this.ngZone.runOutsideAngular(() => {
+      fromEvent<KeyboardEvent>(document, 'keydown')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(event => this.handleKeyDown(event));
+
+      fromEvent<KeyboardEvent>(document, 'keyup')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(event => this.handleKeyUp(event));
+
+      fromEvent(window, 'blur')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => this.clearAllKeys());
+    });
+  }
+
+  private handleKeyDown(event: KeyboardEvent): void {
+    if (this.keyMap[event.code]) {
+      event.preventDefault();
+    }
+    if (event.repeat) return;
+
+    this.pressedKeys.add(event.code);
+    this.updateInputState();
+  }
+
+  private handleKeyUp(event: KeyboardEvent): void {
+    this.pressedKeys.delete(event.code);
+    this.updateInputState();
+  }
+
+  private updateInputState(): void {
+    const newState: InputState = {
+      up: this.isPressed('up'),
+      down: this.isPressed('down'),
+      left: this.isPressed('left'),
+      right: this.isPressed('right'),
+      action: this.isPressed('action'),
+    };
+
+    this.ngZone.run(() => {
+      this.inputState.set(newState);
+    });
+  }
+
+  private isPressed(action: keyof InputState): boolean {
+    return Array.from(this.pressedKeys).some(
+      code => this.keyMap[code] === action
+    );
+  }
+
+  getMovementVector(): { x: number; y: number } {
+    const state = this.inputState();
+    let x = 0, y = 0;
+
+    if (state.left) x -= 1;
+    if (state.right) x += 1;
+    if (state.up) y -= 1;
+    if (state.down) y += 1;
+
+    // Normalizar diagonal
+    if (x !== 0 && y !== 0) {
+      const length = Math.sqrt(x * x + y * y);
+      x /= length;
+      y /= length;
+    }
+
+    return { x, y };
+  }
+
+  private clearAllKeys(): void {
+    this.pressedKeys.clear();
+    this.updateInputState();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+### 5.4 LightingService (Sistema de iluminación)
+
+```typescript
+// src/app/core/services/lighting.service.ts
+
+import { Injectable, signal } from '@angular/core';
+import { Position } from '../interfaces/game-state.interfaces';
+import { GAME_CONFIG } from '../config/game.config';
+
+@Injectable({ providedIn: 'root' })
+export class LightingService {
+  readonly isFadingToBlack = signal(false);
+  readonly fadeProgress = signal(0); // 0-1
+
+  private fadeAnimationId: number | null = null;
+
+  generateLightingStyle(lightPosition: Position, lightRadius: number): string {
+    return `
+      radial-gradient(
+        circle ${lightRadius}px at ${lightPosition.x}px ${lightPosition.y}px,
+        transparent 0%,
+        transparent 40%,
+        rgba(0, 0, 0, 0.5) 60%,
+        rgba(0, 0, 0, ${GAME_CONFIG.lighting.ambientDarkness}) 100%
+      )
+    `;
+  }
+
+  generateDoorHighlightStyle(
+    doorPosition: Position, 
+    doorSize: { width: number; height: number },
+    intensity: number,
+    color: string
+  ): string {
+    const centerX = doorPosition.x + doorSize.width / 2;
+    const centerY = doorPosition.y + doorSize.height / 2;
+    const radius = GAME_CONFIG.lighting.doorHighlightRadius;
+
+    return `
+      radial-gradient(
+        circle ${radius}px at ${centerX}px ${centerY}px,
+        ${this.hexToRgba(color, 0.6 * intensity)} 0%,
+        ${this.hexToRgba(color, 0.2 * intensity)} 50%,
+        transparent 100%
+      )
+    `;
+  }
+
+  fadeToBlack(): Promise<void> {
+    return new Promise(resolve => {
+      this.isFadingToBlack.set(true);
+      const duration = GAME_CONFIG.lighting.fadeTransitionDuration;
+      const startTime = performance.now();
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        this.fadeProgress.set(progress);
+
+        if (progress < 1) {
+          this.fadeAnimationId = requestAnimationFrame(animate);
+        } else {
+          resolve();
+        }
+      };
+
+      this.fadeAnimationId = requestAnimationFrame(animate);
+    });
+  }
+
+  fadeFromBlack(): Promise<void> {
+    return new Promise(resolve => {
+      const duration = GAME_CONFIG.lighting.fadeTransitionDuration;
+      const startTime = performance.now();
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = 1 - Math.min(elapsed / duration, 1);
+        
+        this.fadeProgress.set(progress);
+
+        if (progress > 0) {
+          this.fadeAnimationId = requestAnimationFrame(animate);
+        } else {
+          this.isFadingToBlack.set(false);
+          resolve();
+        }
+      };
+
+      this.fadeAnimationId = requestAnimationFrame(animate);
+    });
+  }
+
+  private hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+}
+```
+
+### 5.5 NavigationService (Navegación y modales)
+
+```typescript
+// src/app/core/services/navigation.service.ts
+
+import { Injectable, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { Door, DoorType } from '../interfaces/game-state.interfaces';
+import { LightingService } from './lighting.service';
+
+@Injectable({ providedIn: 'root' })
+export class NavigationService {
+  private readonly router = inject(Router);
+  private readonly lighting = inject(LightingService);
+
+  readonly activeModal = signal<'about' | 'consulting' | null>(null);
+
+  async handleDoorInteraction(door: Door): Promise<void> {
+    // Fade a negro primero
+    await this.lighting.fadeToBlack();
+
+    switch (door.type) {
+      case 'external':
+        this.redirectToExternal(door.destination);
+        break;
+      case 'internal':
+        await this.navigateToInternal(door.destination);
+        break;
+      case 'modal':
+        this.openModal(door.destination as 'about' | 'consulting');
+        await this.lighting.fadeFromBlack();
+        break;
+    }
+  }
+
+  private redirectToExternal(url: string): void {
+    window.location.href = url;
+  }
+
+  private async navigateToInternal(path: string): Promise<void> {
+    await this.router.navigate([path]);
+    await this.lighting.fadeFromBlack();
+  }
+
+  openModal(modalId: 'about' | 'consulting'): void {
+    this.activeModal.set(modalId);
+  }
+
+  closeModal(): void {
+    this.activeModal.set(null);
+  }
+}
+```
+
+---
+
+## 6. Componentes principales
+
+### 6.1 App Configuration (main.ts y app.config.ts)
+
+```typescript
+// src/main.ts
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+import { appConfig } from './app/app.config';
+
+bootstrapApplication(AppComponent, appConfig)
+  .catch((err) => console.error(err));
+```
+
+```typescript
+// src/app/app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter, withViewTransitions } from '@angular/router';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes, withViewTransitions()),
+    provideAnimations(),
+  ],
+};
+```
+
+```typescript
+// src/app/app.routes.ts
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'game' },
+  {
+    path: 'game',
+    loadComponent: () => import('./features/game/game-container.component')
+      .then(m => m.GameContainerComponent),
+  },
+  {
+    path: 'multidesktopflow',
+    loadComponent: () => import('./pages/multidesktopflow/multidesktopflow.component')
+      .then(m => m.MultidesktopflowComponent),
+  },
+];
+```
+
+### 6.2 GameContainerComponent
+
+```typescript
+// src/app/features/game/game-container.component.ts
+import { Component, OnInit, OnDestroy, inject, effect } from '@angular/core';
+import { DungeonSceneComponent } from './dungeon-scene/dungeon-scene.component';
+import { UIOverlayComponent } from './ui-overlay/ui-overlay.component';
+import { AboutModalComponent } from '../../shared/modals/about-modal.component';
+import { ConsultingModalComponent } from '../../shared/modals/consulting-modal.component';
+import { GameStateService } from '../../core/services/game-state.service';
+import { GameLoopService } from '../../core/services/game-loop.service';
+import { InputService } from '../../core/services/input.service';
+import { NavigationService } from '../../core/services/navigation.service';
+import { LightingService } from '../../core/services/lighting.service';
+import { GAME_CONFIG } from '../../core/config/game.config';
+import { FacingDirection } from '../../core/interfaces/game-state.interfaces';
+
+@Component({
+  selector: 'app-game-container',
+  standalone: true,
+  imports: [
+    DungeonSceneComponent,
+    UIOverlayComponent,
+    AboutModalComponent,
+    ConsultingModalComponent,
+  ],
+  template: `
+    <div class="game-container">
+      <app-dungeon-scene />
+      <app-ui-overlay />
+      
+      @if (navigation.activeModal() === 'about') {
+        <app-about-modal (close)="navigation.closeModal()" />
+      }
+      @if (navigation.activeModal() === 'consulting') {
+        <app-consulting-modal (close)="navigation.closeModal()" />
+      }
+      
+      <!-- Fade overlay -->
+      <div 
+        class="fade-overlay" 
+        [style.opacity]="lighting.fadeProgress()"
+        [class.active]="lighting.isFadingToBlack()">
+      </div>
+    </div>
+  `,
+  styles: [`
+    .game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0a0a0a;
+    }
+    .fade-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    .fade-overlay.active {
+      pointer-events: all;
+    }
+  `],
+})
+export class GameContainerComponent implements OnInit, OnDestroy {
+  readonly gameState = inject(GameStateService);
+  readonly gameLoop = inject(GameLoopService);
+  readonly input = inject(InputService);
+  readonly navigation = inject(NavigationService);
+  readonly lighting = inject(LightingService);
+
+  private actionPressed = false;
+
+  constructor() {
+    // Effect para manejar interacción con puertas
+    effect(() => {
+      const inputState = this.input.inputState();
+      const activeDoor = this.gameState.activeDoor();
+      const phase = this.gameState.phase();
+
+      if (inputState.action && !this.actionPressed && activeDoor && phase === 'playing') {
+        this.actionPressed = true;
+        this.navigation.handleDoorInteraction(activeDoor);
+      }
+      if (!inputState.action) {
+        this.actionPressed = false;
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.startGame();
+  }
+
+  private async startGame(): Promise<void> {
+    this.gameState.setPhase('igniting');
+    
+    // Animación de encendido de llama
+    await this.igniteFlame();
+    
+    this.gameState.setPhase('playing');
+    
+    // Iniciar game loop
+    this.gameLoop.start((deltaTime) => this.update(deltaTime));
+  }
+
+  private async igniteFlame(): Promise<void> {
+    const duration = GAME_CONFIG.animation.flameIgnitionDuration;
+    const startTime = performance.now();
+
+    return new Promise(resolve => {
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        this.gameState.setFlameIntensity(progress);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          resolve();
+        }
+      };
+      requestAnimationFrame(animate);
+    });
+  }
+
+  private update(deltaTime: number): void {
+    if (this.gameState.phase() !== 'playing') return;
+
+    // Actualizar posición del jugador
+    this.updatePlayerMovement(deltaTime);
+    
+    // Actualizar proximidades de puertas
+    this.updateDoorProximities();
+  }
+
+  private updatePlayerMovement(deltaTime: number): void {
+    const movement = this.input.getMovementVector();
+    const player = this.gameState.player();
+    const speed = GAME_CONFIG.player.speed;
+
+    const newX = player.position.x + movement.x * speed * deltaTime;
+    const newY = player.position.y + movement.y * speed * deltaTime;
+
+    const facing = this.determineFacing(movement.x, movement.y, player.facing);
+    const isMoving = movement.x !== 0 || movement.y !== 0;
+
+    this.gameState.updatePlayerPosition(newX, newY, facing, isMoving);
+  }
+
+  private determineFacing(dx: number, dy: number, current: FacingDirection): FacingDirection {
+    if (dx === 0 && dy === 0) return current;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? 'right' : 'left';
+    }
+    return dy > 0 ? 'down' : 'up';
+  }
+
+  private updateDoorProximities(): void {
+    const playerCenter = {
+      x: this.gameState.playerPosition().x + GAME_CONFIG.player.size.width / 2,
+      y: this.gameState.playerPosition().y + GAME_CONFIG.player.size.height / 2,
+    };
+
+    const doors = this.gameState.doors();
+    
+    doors.forEach(door => {
+      const doorCenter = {
+        x: door.position.x + door.size.width / 2,
+        y: door.position.y + door.size.height / 2,
+      };
+
+      const distance = Math.sqrt(
+        Math.pow(playerCenter.x - doorCenter.x, 2) +
+        Math.pow(playerCenter.y - doorCenter.y, 2)
+      );
+
+      const highlightRadius = GAME_CONFIG.interaction.proximityRadius * 1.5;
+      const interactRadius = GAME_CONFIG.interaction.proximityRadius;
+
+      const isHighlighted = distance < highlightRadius;
+      const isInteractable = distance < interactRadius;
+
+      this.gameState.updateDoorProximity(door.id, isHighlighted, isInteractable);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.gameLoop.stop();
+  }
+}
+```
+
+### 6.3 PlayerCharacterComponent (Personaje SVG)
+
+```typescript
+// src/app/features/game/dungeon-scene/player-character/player-character.component.ts
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { GameStateService } from '../../../../core/services/game-state.service';
+
+@Component({
+  selector: 'app-player-character',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div 
+      class="player-container"
+      [style.left.px]="position().x"
+      [style.top.px]="position().y"
+      [class.walking]="isMoving()"
+      [attr.data-facing]="facing()">
+      
+      <svg 
+        viewBox="0 0 64 80" 
+        class="character-svg"
+        [class.facing-side]="isFacingSide()"
+        [class.facing-front]="!isFacingSide()">
+        
+        <defs>
+          <!-- Gradiente de llama verde (Matrix style) -->
+          <linearGradient id="flameGradient" x1="50%" y1="100%" x2="50%" y2="0%">
+            <stop offset="0%" stop-color="#00ff00"/>
+            <stop offset="50%" stop-color="#00cc00"/>
+            <stop offset="100%" stop-color="#88ff88"/>
+          </linearGradient>
+          
+          <!-- Filtro de glow -->
+          <filter id="flameGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          
+          <!-- Pattern de píxeles para visor -->
+          <pattern id="visorPattern" patternUnits="userSpaceOnUse" width="4" height="4">
+            <rect width="2" height="2" fill="#00ff00"/>
+            <rect x="2" y="2" width="2" height="2" fill="#00ff00"/>
+          </pattern>
+        </defs>
+        
+        <!-- Llama (cabeza) -->
+        <g 
+          class="flame-head" 
+          filter="url(#flameGlow)"
+          [style.opacity]="flameIntensity()"
+          [style.transform]="'scale(' + (0.3 + flameIntensity() * 0.7) + ')'">
+          <path 
+            class="flame-main"
+            d="M32 5 Q20 20 25 35 Q28 45 32 40 Q36 45 39 35 Q44 20 32 5"
+            fill="url(#flameGradient)"/>
+          <path 
+            class="flame-inner"
+            d="M32 15 Q26 25 29 35 Q31 38 32 36 Q33 38 35 35 Q38 25 32 15"
+            fill="#ccffcc" 
+            opacity="0.7"/>
+        </g>
+        
+        <!-- Cuerpo voxel -->
+        <rect class="body" x="22" y="38" width="20" height="24" fill="#1a1a1a" rx="2"/>
+        
+        <!-- Visor -->
+        <rect class="visor" x="24" y="42" width="16" height="8" fill="url(#visorPattern)" rx="1"/>
+        
+        <!-- Brazos -->
+        <g class="arms">
+          <rect class="arm-left" x="14" y="42" width="8" height="16" fill="#1a1a1a" rx="2"/>
+          <rect class="arm-right" x="42" y="42" width="8" height="16" fill="#1a1a1a" rx="2"/>
+        </g>
+        
+        <!-- Piernas -->
+        <g class="legs">
+          <rect class="leg-left" x="24" y="62" width="7" height="16" fill="#0d0d0d" rx="1"/>
+          <rect class="leg-right" x="33" y="62" width="7" height="16" fill="#0d0d0d" rx="1"/>
+        </g>
+      </svg>
+    </div>
+  `,
+  styleUrl: './player-character.component.scss',
+})
+export class PlayerCharacterComponent {
+  private readonly gameState = inject(GameStateService);
+
+  readonly position = this.gameState.playerPosition;
+  readonly facing = this.gameState.playerFacing;
+  readonly isMoving = this.gameState.isPlayerMoving;
+  readonly flameIntensity = this.gameState.flameIntensity;
+
+  readonly isFacingSide = computed(() => 
+    this.facing() === 'left' || this.facing() === 'right'
+  );
+}
+```
+
+```scss
+// src/app/features/game/dungeon-scene/player-character/player-character.component.scss
+
+.player-container {
+  position: absolute;
+  width: 64px;
+  height: 80px;
+  will-change: transform;
+  transition: left 0.05s linear, top 0.05s linear;
+
+  &[data-facing="left"] .character-svg {
+    transform: scaleX(-1);
+  }
+}
+
+.character-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: center center;
+}
+
+// Animación de llama
+.flame-head {
+  transform-origin: 32px 40px;
+  
+  .flame-main {
+    animation: flameWobble 0.3s ease-in-out infinite alternate;
+  }
+  
+  .flame-inner {
+    animation: flameFlicker 0.2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes flameWobble {
+  0% { transform: scaleX(1) scaleY(1); }
+  100% { transform: scaleX(0.92) scaleY(1.08); }
+}
+
+@keyframes flameFlicker {
+  0% { opacity: 0.5; }
+  100% { opacity: 0.9; }
+}
+
+// Animación de visor (pulso)
+.visor {
+  animation: visorPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes visorPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+// Animaciones de caminar
+.walking {
+  .leg-left {
+    animation: legSwing 0.15s ease-in-out infinite;
+    transform-origin: center top;
+  }
+  
+  .leg-right {
+    animation: legSwing 0.15s ease-in-out infinite reverse;
+    transform-origin: center top;
+  }
+  
+  .arm-left {
+    animation: armSwing 0.15s ease-in-out infinite reverse;
+    transform-origin: center top;
+  }
+  
+  .arm-right {
+    animation: armSwing 0.15s ease-in-out infinite;
+    transform-origin: center top;
+  }
+  
+  // Bounce del cuerpo al caminar
+  .body, .visor, .flame-head {
+    animation: bodyBounce 0.15s ease-in-out infinite;
+  }
+}
+
+@keyframes legSwing {
+  0%, 100% { transform: rotate(-20deg); }
+  50% { transform: rotate(20deg); }
+}
+
+@keyframes armSwing {
+  0%, 100% { transform: rotate(10deg); }
+  50% { transform: rotate(-10deg); }
+}
+
+@keyframes bodyBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+// Vista frontal
+.facing-front {
+  .leg-left, .leg-right {
+    // Animación alternativa para vista frontal
+  }
+}
+```
+
+### 6.4 DoorComponent
+
+```typescript
+// src/app/features/game/dungeon-scene/door/door.component.ts
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Door } from '../../../../core/interfaces/game-state.interfaces';
+
+@Component({
+  selector: 'app-door',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div 
+      class="door"
+      [style.left.px]="door.position.x"
+      [style.top.px]="door.position.y"
+      [style.width.px]="door.size.width"
+      [style.height.px]="door.size.height"
+      [style.--door-color]="door.color"
+      [class.highlighted]="door.isHighlighted"
+      [class.interactable]="door.isInteractable">
+      
+      <div class="door-frame">
+        <div class="door-panel">
+          <span class="door-label">{{ door.label }}</span>
+        </div>
+      </div>
+      
+      @if (door.isInteractable) {
+        <div class="interaction-prompt">
+          <span>ENTER</span>
+        </div>
+      }
+    </div>
+  `,
+  styleUrl: './door.component.scss',
+})
+export class DoorComponent {
+  @Input({ required: true }) door!: Door;
+}
+```
+
+```scss
+// src/app/features/game/dungeon-scene/door/door.component.scss
+
+.door {
+  position: absolute;
+  --door-color: #ffffff;
+  
+  .door-frame {
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--door-color);
+    border-radius: 8px 8px 0 0;
+    background: rgba(0, 0, 0, 0.8);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .door-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 10px;
+  }
+  
+  .door-label {
+    color: var(--door-color);
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    font-weight: bold;
+    text-align: center;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+
+  // Estado destacado (cerca)
+  &.highlighted {
+    .door-frame {
+      box-shadow: 
+        0 0 20px color-mix(in srgb, var(--door-color) 50%, transparent),
+        inset 0 0 10px color-mix(in srgb, var(--door-color) 20%, transparent);
+    }
+    
+    .door-label {
+      opacity: 1;
+    }
+  }
+
+  // Estado interactuable (muy cerca)
+  &.interactable {
+    .door-frame {
+      box-shadow: 
+        0 0 30px color-mix(in srgb, var(--door-color) 70%, transparent),
+        0 0 60px color-mix(in srgb, var(--door-color) 40%, transparent),
+        inset 0 0 15px color-mix(in srgb, var(--door-color) 30%, transparent);
+      animation: doorPulse 1s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes doorPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 30px color-mix(in srgb, var(--door-color) 70%, transparent),
+      0 0 60px color-mix(in srgb, var(--door-color) 40%, transparent);
+  }
+  50% {
+    box-shadow: 
+      0 0 40px color-mix(in srgb, var(--door-color) 90%, transparent),
+      0 0 80px color-mix(in srgb, var(--door-color) 60%, transparent);
+  }
+}
+
+.interaction-prompt {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid var(--door-color);
+  border-radius: 4px;
+  padding: 4px 12px;
+  animation: promptBounce 0.5s ease-in-out infinite;
+  
+  span {
+    color: var(--door-color);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: bold;
+  }
+}
+
+@keyframes promptBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-5px); }
+}
+```
+
+### 6.5 LightingOverlayComponent
+
+```typescript
+// src/app/features/game/dungeon-scene/lighting-overlay/lighting-overlay.component.ts
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { GameStateService } from '../../../../core/services/game-state.service';
+import { LightingService } from '../../../../core/services/lighting.service';
+import { GAME_CONFIG } from '../../../../core/config/game.config';
+
+@Component({
+  selector: 'app-lighting-overlay',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="lighting-overlay" [style.background]="lightingGradient()"></div>
+  `,
+  styles: [`
+    .lighting-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      transition: background 0.1s linear;
+    }
+  `],
+})
+export class LightingOverlayComponent {
+  private readonly gameState = inject(GameStateService);
+  private readonly lighting = inject(LightingService);
+
+  readonly lightingGradient = computed(() => {
+    const lightPos = this.gameState.lightPosition();
+    const flameIntensity = this.gameState.flameIntensity();
+    const lightRadius = GAME_CONFIG.player.lightRadius * flameIntensity;
+    
+    // Luz principal del jugador
+    const playerLight = this.lighting.generateLightingStyle(lightPos, lightRadius);
+    
+    // Luces de puertas destacadas
+    const doorLights = this.gameState.doors()
+      .filter(d => d.isHighlighted)
+      .map(d => this.lighting.generateDoorHighlightStyle(
+        d.position, 
+        d.size, 
+        d.isInteractable ? 1 : 0.5,
+        d.color
+      ));
+    
+    // Combinar todas las capas
+    return [playerLight, ...doorLights].join(', ');
+  });
+}
+```
+
+### 6.6 DungeonSceneComponent
+
+```typescript
+// src/app/features/game/dungeon-scene/dungeon-scene.component.ts
+import { Component, inject } from '@angular/core';
+import { PlayerCharacterComponent } from './player-character/player-character.component';
+import { DoorComponent } from './door/door.component';
+import { LightingOverlayComponent } from './lighting-overlay/lighting-overlay.component';
+import { GameStateService } from '../../../core/services/game-state.service';
+import { GAME_CONFIG } from '../../../core/config/game.config';
+
+@Component({
+  selector: 'app-dungeon-scene',
+  standalone: true,
+  imports: [PlayerCharacterComponent, DoorComponent, LightingOverlayComponent],
+  template: `
+    <div 
+      class="dungeon-scene"
+      [style.width.px]="worldWidth"
+      [style.height.px]="worldHeight">
+      
+      <!-- Puertas -->
+      @for (door of doors(); track door.id) {
+        <app-door [door]="door" />
+      }
+      
+      <!-- Jugador -->
+      <app-player-character />
+      
+      <!-- Overlay de iluminación -->
+      <app-lighting-overlay />
+    </div>
+  `,
+  styleUrl: './dungeon-scene.component.scss',
+})
+export class DungeonSceneComponent {
+  private readonly gameState = inject(GameStateService);
+
+  readonly worldWidth = GAME_CONFIG.world.width;
+  readonly worldHeight = GAME_CONFIG.world.height;
+  readonly doors = this.gameState.doors;
+}
+```
+
+```scss
+// src/app/features/game/dungeon-scene/dungeon-scene.component.scss
+
+.dungeon-scene {
+  position: relative;
+  margin: auto;
+  background: 
+    // Grid pattern para efecto dungeon
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(0, 255, 0, 0.03) 39px,
+      rgba(0, 255, 0, 0.03) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 39px,
+      rgba(0, 255, 0, 0.03) 39px,
+      rgba(0, 255, 0, 0.03) 40px
+    ),
+    #0a0a0a;
+  
+  // Borde del área de juego
+  border: 2px solid rgba(0, 255, 0, 0.2);
+  box-shadow: 
+    inset 0 0 100px rgba(0, 0, 0, 0.8),
+    0 0 50px rgba(0, 0, 0, 0.9);
+}
+```
+
+---
+
+## 7. Componentes de modales
+
+```typescript
+// src/app/shared/modals/about-modal.component.ts
+import { Component, Output, EventEmitter } from '@angular/core';
+
+@Component({
+  selector: 'app-about-modal',
+  standalone: true,
+  template: `
+    <div class="modal-backdrop" (click)="close.emit()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <button class="close-btn" (click)="close.emit()">×</button>
+        <h2>Sobre Mí</h2>
+        <div class="bio">
+          <!-- Contenido de bio aquí -->
+          <p>Desarrollador Full Stack especializado en Angular y tecnologías web modernas.</p>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #1a1a1a;
+      border: 2px solid #00ff00;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 500px;
+      position: relative;
+      color: #00ff00;
+      font-family: 'Courier New', monospace;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #00ff00;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    h2 {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #00ff00;
+      padding-bottom: 10px;
+    }
+  `],
+})
+export class AboutModalComponent {
+  @Output() close = new EventEmitter<void>();
+}
+```
+
+```typescript
+// src/app/shared/modals/consulting-modal.component.ts
+import { Component, Output, EventEmitter } from '@angular/core';
+
+@Component({
+  selector: 'app-consulting-modal',
+  standalone: true,
+  template: `
+    <div class="modal-backdrop" (click)="close.emit()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <button class="close-btn" (click)="close.emit()">×</button>
+        <h2>Servicios de Consultoría</h2>
+        <ul class="services">
+          <li>Arquitectura Frontend</li>
+          <li>Migración a Angular 17+</li>
+          <li>Optimización de Performance</li>
+          <li>Code Reviews</li>
+        </ul>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #1a1a1a;
+      border: 2px solid #ff00ff;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 500px;
+      position: relative;
+      color: #ff00ff;
+      font-family: 'Courier New', monospace;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #ff00ff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    h2 {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ff00ff;
+      padding-bottom: 10px;
+    }
+    .services {
+      list-style: none;
+      padding: 0;
+    }
+    .services li {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 0, 255, 0.3);
+    }
+    .services li::before {
+      content: '> ';
+      color: #ff00ff;
+    }
+  `],
+})
+export class ConsultingModalComponent {
+  @Output() close = new EventEmitter<void>();
+}
+```
+
+---
+
+## 8. Instrucciones paso a paso para Claude Code
+
+### Paso 1: Crear estructura de carpetas
+```bash
+mkdir -p src/app/core/{config,interfaces,services}
+mkdir -p src/app/features/game/dungeon-scene/{player-character,door,lighting-overlay}
+mkdir -p src/app/features/game/ui-overlay
+mkdir -p src/app/shared/modals
+mkdir -p src/app/pages/multidesktopflow
+```
+
+### Paso 2: Crear archivos de configuración
+1. Crear `src/app/core/config/game.config.ts` con las constantes
+2. Crear `src/app/core/interfaces/game-state.interfaces.ts` con las interfaces
+
+### Paso 3: Crear servicios (en orden)
+1. `game-state.service.ts` - Estado central
+2. `game-loop.service.ts` - Game loop
+3. `input.service.ts` - Manejo de teclado
+4. `lighting.service.ts` - Sistema de iluminación
+5. `navigation.service.ts` - Navegación
+
+### Paso 4: Crear componentes (de adentro hacia afuera)
+1. `player-character.component.ts` + `.scss`
+2. `door.component.ts` + `.scss`
+3. `lighting-overlay.component.ts`
+4. `dungeon-scene.component.ts` + `.scss`
+5. `ui-overlay.component.ts`
+6. `game-container.component.ts`
+7. Modales: `about-modal.component.ts`, `consulting-modal.component.ts`
+
+### Paso 5: Configurar bootstrap
+1. Actualizar `app.config.ts` con provideRouter y provideAnimations
+2. Actualizar `app.routes.ts` con rutas
+3. Actualizar `app.component.ts` para incluir router-outlet
+
+### Paso 6: Estilos globales
+Agregar a `styles.scss`:
+```scss
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+}
+```
+
+### Paso 7: Testing
+1. `ng serve`
+2. Verificar que el personaje aparece en el centro
+3. Verificar animación de encendido de llama
+4. Verificar movimiento con flechas
+5. Verificar iluminación sigue al personaje
+6. Verificar puertas se iluminan al acercarse
+7. Verificar interacción con Enter/Space
+8. Verificar fade a negro y navegación
+
+---
+
+## 9. Consideraciones de rendimiento
+
+- **Game loop fuera de NgZone**: Todo el loop de juego corre fuera de Angular para evitar change detection innecesario
+- **ChangeDetectionStrategy.OnPush**: Todos los componentes usan OnPush
+- **Signals**: Estado reactivo eficiente sin RxJS overhead
+- **CSS transforms**: Movimiento usa `left/top` con transición corta para suavidad, pero las animaciones usan `transform`
+- **will-change**: Aplicado a elementos que se mueven frecuentemente
+- **requestAnimationFrame**: Sincronizado con refresh rate del monitor
+
+---
+
+## 10. Puntos clave de implementación
+
+| Característica | Implementación |
+|---------------|----------------|
+| Estado del juego | Angular Signals en GameStateService |
+| Game Loop | requestAnimationFrame fuera de NgZone |
+| Input | Set de teclas presionadas, normalización diagonal |
+| Iluminación | CSS radial-gradient dinámico |
+| Fade transitions | Promesas async con animación de opacity |
+| Routing externo | window.location.href después de fade |
+| Modales | Componentes standalone con @Output close |
+| Personaje SVG | SVG inline con animaciones CSS |
+
+Esta guía proporciona todo el código necesario para que Claude Code implemente el juego sin ambigüedades. Cada archivo está completo y listo para copiar/pegar.

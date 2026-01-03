@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LightingService } from '../../services/lighting.service';
 import { CameraService } from '../../services/camera.service';
@@ -28,6 +28,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private cameraService = inject(CameraService);
   private physicsService = inject(PhysicsService);
   private inputService = inject(InputService);
+  private ngZone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
 
   // Character dimensions
   private readonly CHARACTER_WIDTH = 120;
@@ -37,7 +39,6 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   screenX = computed(() => window.innerWidth / 2 - this.CHARACTER_WIDTH / 2);
   screenY = computed(() => {
     const state = this.physicsService.state();
-    const groundY = SIDESCROLLER_CONFIG.getGroundY();
     // Y position relative to ground (character feet at ground level)
     const characterBottom = state.y;
     // Convert to screen Y (screen bottom = ground, character moves up when jumping)
@@ -62,6 +63,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private currentCharIndex = 0;
   private typingInterval: any = null;
   private dialogDismissed = false;
+
+  // Jump tracking - to detect "just pressed"
+  private wasJumpPressed = false;
 
   // Computed classes
   characterClasses = computed(() => {
@@ -89,7 +93,6 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   // Game loop
   private animationFrameId: number | null = null;
   private lastTime = 0;
-  private lastJumpPressed = false;
 
   ngOnInit(): void {
     this.startGameLoop();
@@ -180,6 +183,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
       this.animationFrameId = requestAnimationFrame(loop);
     };
 
+    // Start the loop
     this.animationFrameId = requestAnimationFrame(loop);
   }
 
@@ -187,15 +191,22 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     // Don't process movement while dialog is showing
     if (this.showDialog()) return;
 
-    // Get input
-    const horizontalInput = this.inputService.getHorizontalInput();
-    const jumpPressed = this.inputService.jumpJustPressed();
+    // Get input from InputService
+    const inputState = this.inputService.inputState();
+    const horizontalInput = (inputState.left ? -1 : 0) + (inputState.right ? 1 : 0);
+
+    // Detect jump "just pressed" (rising edge)
+    const jumpCurrentlyPressed = inputState.jump;
+    const jumpJustPressed = jumpCurrentlyPressed && !this.wasJumpPressed;
+    this.wasJumpPressed = jumpCurrentlyPressed;
 
     // Update physics
-    this.physicsService.update(deltaTime, horizontalInput, jumpPressed);
+    this.physicsService.update(deltaTime, horizontalInput, jumpJustPressed);
+
+    // Get updated state
+    const state = this.physicsService.state();
 
     // Update movement state
-    const state = this.physicsService.state();
     this.isMoving.set(Math.abs(state.velocityX) > 10);
 
     // Update facing direction
@@ -214,6 +225,12 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
     // Update light position
     this.updateLightPosition();
+
+    // Trigger change detection to update the view
+    // This is necessary because requestAnimationFrame runs outside Angular zone
+    this.ngZone.run(() => {
+      this.cdr.markForCheck();
+    });
   }
 
   private updateLightPosition(): void {
