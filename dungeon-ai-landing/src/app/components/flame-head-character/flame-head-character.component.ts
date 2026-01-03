@@ -70,7 +70,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   // Movement config
   private readonly SPEED = 250; // px/s
   private readonly CHARACTER_WIDTH = 120;
-  private readonly CHARACTER_HEIGHT = 180;
+  private readonly CHARACTER_HEIGHT = 140; // Reduced after removing flame
 
   ngOnInit(): void {
     this.startGameLoop();

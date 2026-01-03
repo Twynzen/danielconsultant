@@ -5,10 +5,14 @@
   <!-- Torch system for ambient illumination -->
   <app-torch-system></app-torch-system>
 
-  <!-- Floor Title - Engraved in the dungeon floor -->
+  <!-- Floor Title - Dynamically illuminated based on character proximity -->
   <div class="floor-title">
-    <span class="main-title">CONSULTOR IA</span>
-    <span class="subtitle">DANIEL CASTIBLANCO</span>
+    <span class="main-title"
+          [style.color]="titleStyle().color"
+          [style.textShadow]="titleStyle().textShadow">CONSULTOR IA</span>
+    <span class="subtitle"
+          [style.color]="subtitleStyle().color"
+          [style.textShadow]="subtitleStyle().textShadow">DANIEL CASTIBLANCO</span>
   </div>
 
   <!-- Pillar System - Interactive navigation -->
