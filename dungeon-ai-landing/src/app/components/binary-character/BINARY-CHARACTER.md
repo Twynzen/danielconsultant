@@ -1,4 +1,4 @@
-# Binary Character - Documentacion Completa v5.1
+# Binary Character - Documentacion Completa v5.2
 
 ## DESCRIPCION GENERAL
 
@@ -46,10 +46,10 @@ El personaje esta definido como **3 strings ASCII** en `character-matrix.config.
 
 ```
 ┌─────────────────────────────────┐
-│         BODY GRID               │  14 filas x 17 columnas
+│         BODY GRID               │  13 filas x 17 columnas
 │  (cabeza + torso + ojos + boca) │
 ├─────────────────────────────────┤
-│         ARMS GRID               │  14 filas x 17 columnas (overlay)
+│         ARMS GRID               │  13 filas x 17 columnas (overlay)
 │    (brazos animados)            │
 ├─────────────────────────────────┤
 │         LEGS GRID               │  5 filas x 17 columnas
@@ -57,18 +57,17 @@ El personaje esta definido como **3 strings ASCII** en `character-matrix.config.
 └─────────────────────────────────┘
 ```
 
-### Ejemplo de TORSO_FRONT
+### Ejemplo de TORSO_FRONT (v4.4)
 
 ```
-.......000.......    ← Parte superior de cabeza
-.....0000000.....
+....000000000....    ← Cabeza rectangular (top plano)
 ....00.E.E.00....    ← Ojos (E = eye)
-....000.S.000....    ← Boca (S = smile)
-......00000......
+....00..S..00....    ← Boca (S = smile)
+....000000000....    ← Cabeza rectangular (bottom plano)
 .......000.......    ← Cuello
 ......00000......
-.....0000000.....    ← Torso
-....000000000....
+......00000......    ← Torso delgado
+.....0000000.....    ← Maximo ancho (7 chars)
 ......00000......
 ......00000......
 ......00000......
@@ -536,6 +535,11 @@ binaryChar.triggerCrash();
 ---
 
 ## CHANGELOG
+
+### v5.2 (Enero 2026)
+- Design: Cabeza rectangular compacta (4 filas, sin espacio vacio)
+- Design: Torso mas delgado (max 7 chars en vez de 9)
+- Refactor: Grids reducidos de 14 a 13 filas
 
 ### v5.1 (Enero 2026)
 - Fix: Particulas ahora caen al suelo real (no flotan)
