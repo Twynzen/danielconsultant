@@ -1,6 +1,6 @@
 /**
- * Binary Character v3.0 - CLARITY & SEPARATION
- * Focus: Clear humanoid silhouette with visible limb separation
+ * Binary Character v4.0 - GIVING LIFE
+ * Features: Eye tracking, emotional states, reactive behaviors
  */
 
 $green: #00ff44;
@@ -14,7 +14,8 @@ $glow: rgba(0, 255, 68, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
+  pointer-events: auto; // Enable click detection
+  cursor: pointer;
 }
 
 // Glow effects
@@ -48,6 +49,7 @@ $glow: rgba(0, 255, 68, 0.5);
 
 // Character container
 .character-container {
+  position: relative; // v4.1: For absolute arm positioning
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,6 +67,14 @@ $glow: rgba(0, 255, 68, 0.5);
 
 .body-grid {
   // Body stays put
+}
+
+// v4.1: Arms overlay on body - positioned absolutely
+.arms-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
 }
 
 .legs-grid {
@@ -231,16 +241,194 @@ $glow: rgba(0, 255, 68, 0.5);
   100% { transform: scaleY(1) scaleX(1); }
 }
 
-// Idle - subtle sway
+// Idle - subtle sway with breathing glow
 .binary-character:not(.moving):not(.jumping) {
   .body-grid {
-    animation: idle-breathe 3s ease-in-out infinite;
+    animation:
+      idle-breathe 3s ease-in-out infinite,
+      idle-sway 4.5s ease-in-out infinite 0.5s;
+  }
+
+  .glow {
+    animation: breathing-glow 3.2s ease-in-out infinite;
   }
 }
 
 @keyframes idle-breathe {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-1px); }
+}
+
+@keyframes idle-sway {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-0.5px) rotate(-0.3deg); }
+  75% { transform: translateX(0.5px) rotate(0.3deg); }
+}
+
+@keyframes breathing-glow {
+  0%, 100% {
+    opacity: 0.6;
+    filter: blur(15px);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(18px);
+  }
+}
+
+// ============================================
+// V4.0 - EYE TRACKING
+// ============================================
+
+.eye-wrapper {
+  display: inline-block;
+  transition: transform 0.05s ease-out;
+}
+
+// ============================================
+// V4.0 - EMOTIONAL STATES
+// ============================================
+
+// CURIOUS - Ojos mas abiertos, glow aumenta
+[data-emotion="curious"] {
+  .eye {
+    transform: scale(1.15);
+    text-shadow:
+      0 0 10px $white,
+      0 0 20px $green,
+      0 0 30px $green !important;
+  }
+
+  .glow {
+    opacity: 0.9 !important;
+  }
+}
+
+// EXCITED - Bouncy, muy brillante
+[data-emotion="excited"] {
+  .character-container {
+    animation: excited-bounce 0.35s ease-out infinite;
+  }
+
+  .eye {
+    transform: scale(1.25);
+    text-shadow:
+      0 0 12px $white,
+      0 0 25px $green,
+      0 0 40px $green !important;
+  }
+
+  .glow {
+    opacity: 1 !important;
+    animation: excited-glow 0.3s ease-in-out infinite;
+  }
+
+  .digit:not(.empty) {
+    text-shadow:
+      0 0 8px $green,
+      0 0 15px $green !important;
+  }
+}
+
+@keyframes excited-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.02); }
+}
+
+@keyframes excited-glow {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+// TIRED - Lento, tenue
+[data-emotion="tired"] {
+  .body-grid {
+    animation: tired-droop 5s ease-in-out infinite !important;
+  }
+
+  .eye {
+    transform: scaleY(0.6);
+    opacity: 0.6 !important;
+    text-shadow:
+      0 0 4px $white,
+      0 0 8px $green !important;
+  }
+
+  .glow {
+    opacity: 0.4 !important;
+    animation: tired-glow 6s ease-in-out infinite;
+  }
+
+  .digit:not(.empty):not(.eye) {
+    opacity: 0.5 !important;
+  }
+}
+
+@keyframes tired-droop {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(2px) rotate(-1deg); }
+}
+
+@keyframes tired-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+// STARTLED - Flinch rapido
+[data-emotion="startled"] {
+  .character-container {
+    animation: startled-flinch 0.4s ease-out;
+  }
+
+  .eye {
+    transform: scale(1.5) !important;
+    text-shadow:
+      0 0 15px $white,
+      0 0 30px $green,
+      0 0 50px $green !important;
+  }
+
+  .glow {
+    animation: startled-flash 0.4s ease-out;
+  }
+}
+
+@keyframes startled-flinch {
+  0% { transform: scale(1) translateY(0); }
+  15% { transform: scale(0.9) translateY(-6px); }
+  30% { transform: scale(0.95) translateY(-3px); }
+  50% { transform: scale(1.05) translateY(0); }
+  70% { transform: scale(1.02) translateY(-1px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+@keyframes startled-flash {
+  0% { opacity: 0.6; }
+  20% { opacity: 1; filter: blur(25px); }
+  100% { opacity: 0.7; filter: blur(15px); }
+}
+
+// ============================================
+// V4.0 - WALK ENHANCEMENTS
+// ============================================
+
+// Head bob when walking
+.moving .body-grid {
+  animation: walk-bob 0.25s ease-in-out infinite !important;
+}
+
+@keyframes walk-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+// Lean into movement direction
+.moving[data-facing="right"] .body-grid {
+  transform: rotate(1.5deg);
+}
+
+.moving[data-facing="left"] .body-grid {
+  transform: rotate(-1.5deg);
 }
 
 // ============================================

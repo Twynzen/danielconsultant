@@ -10,6 +10,10 @@ export class InputService implements OnDestroy {
   private readonly pressedKeys = new Set<string>();
   private readonly destroy$ = new Subject<void>();
 
+  // v4.1 FIX: Pause state for dialogs - when paused, all inputs return false
+  private _isPaused = signal(false);
+  readonly isPaused = this._isPaused.asReadonly();
+
   readonly inputState = signal<InputState>({
     up: false,
     down: false,
@@ -65,6 +69,11 @@ export class InputService implements OnDestroy {
       event.preventDefault();
     }
     if (event.repeat) return;
+
+    // v4.1 FIX: Don't register inputs when paused (dialog showing)
+    if (this._isPaused()) {
+      return;
+    }
 
     // Detect jump just pressed (one-shot)
     const isJumpKey = this.keyMap[event.code] === 'jump';
@@ -135,6 +144,24 @@ export class InputService implements OnDestroy {
   private clearAllKeys(): void {
     this.pressedKeys.clear();
     this.updateInputState();
+  }
+
+  /**
+   * v4.1 FIX: Pause input processing (for dialogs)
+   * When paused, new key presses are ignored but existing keys are PRESERVED
+   * This allows movement to resume immediately when unpaused
+   */
+  pause(): void {
+    this._isPaused.set(true);
+    // NOTE: We intentionally DON'T clear keys here
+    // This preserves the movement state for when we resume
+  }
+
+  /**
+   * v4.1 FIX: Resume input processing
+   */
+  resume(): void {
+    this._isPaused.set(false);
   }
 
   ngOnDestroy(): void {

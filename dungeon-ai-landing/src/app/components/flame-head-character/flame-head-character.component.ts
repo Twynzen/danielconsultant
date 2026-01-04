@@ -36,8 +36,15 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private readonly CHARACTER_WIDTH = 180;
   private readonly CHARACTER_HEIGHT = 220;
 
-  // Screen position - X is centered, Y varies with jump
-  screenX = computed(() => window.innerWidth / 2 - this.CHARACTER_WIDTH / 2);
+  // Screen position - X based on world position and camera, Y varies with jump
+  screenX = computed(() => {
+    // v4.1 FIX: Calculate screen position based on world position and camera
+    // This fixes the "invisible character" bug when camera is clamped at edges
+    const playerWorldX = this.physicsService.state().x;
+    const cameraX = this.cameraService.cameraX();
+    // Screen position = world position - camera offset - half character width (to center)
+    return playerWorldX - cameraX - this.CHARACTER_WIDTH / 2;
+  });
   screenY = computed(() => {
     const state = this.physicsService.state();
     // Y position relative to ground (character feet at ground level)
@@ -112,6 +119,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
   private startWelcomeDialog(): void {
     this.showDialog.set(true);
+    this.inputService.pause(); // v4.1 FIX: Pause input during dialog
     this.typeCurrentMessage();
   }
 
@@ -155,6 +163,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private dismissDialog(): void {
     this.showDialog.set(false);
     this.dialogDismissed = true;
+    this.inputService.resume(); // v4.1 FIX: Resume input after dialog
     if (this.typingInterval) {
       clearInterval(this.typingInterval);
     }
@@ -162,12 +171,10 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    // Handle dialog advancement
+    // v4.1 FIX: Handle dialog advancement with ANY key
     if (this.showDialog()) {
-      if (['Space', 'Enter', 'Escape'].includes(event.code)) {
-        event.preventDefault();
-        this.advanceDialog();
-      }
+      event.preventDefault();
+      this.advanceDialog();
       return;
     }
   }
@@ -189,6 +196,10 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   }
 
   private update(deltaTime: number): void {
+    // v4.1 FIX: Always update light position, even during dialog
+    // This keeps the character light synced with physics state
+    this.updateLightPosition();
+
     // Don't process movement while dialog is showing
     if (this.showDialog()) return;
 
@@ -224,8 +235,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
       deltaTime
     );
 
-    // Update light position
-    this.updateLightPosition();
+    // Light position already updated at start of update()
 
     // Trigger change detection to update the view
     // This is necessary because requestAnimationFrame runs outside Angular zone

@@ -1,8 +1,10 @@
-<!-- Binary AI Character v3.0 - CLARITY & SEPARATION -->
+<!-- Binary AI Character v4.0 - GIVING LIFE -->
 <div class="binary-character"
      [class.moving]="isMoving"
      [class.jumping]="isJumping"
      [class.landing]="isLanding()"
+     [attr.data-emotion]="emotionClass()"
+     [attr.data-facing]="facingRight ? 'right' : 'left'"
      [style.transform]="characterTransform">
 
   <!-- Glow backdrop -->
@@ -14,9 +16,29 @@
     <!-- Body (head, torso, arms) -->
     <div class="grid body-grid">
       <div class="row" *ngFor="let row of bodyGrid; let ri = index">
+        <!-- Eye wrapper for tracking -->
+        <ng-container *ngFor="let digit of row; let ci = index">
+          <!-- Eyes get special wrapper with transform -->
+          <span *ngIf="digit.type === 'eye'"
+                class="eye-wrapper"
+                [style.transform]="getEyeTransform()">
+            <span [class]="getDigitClasses(digit, 'body', ri, ci)"
+                  [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'body', ri, ci) }}</span>
+          </span>
+          <!-- Non-eye digits render normally -->
+          <span *ngIf="digit.type !== 'eye'"
+                [class]="getDigitClasses(digit, 'body', ri, ci)"
+                [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'body', ri, ci) }}</span>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Arms (animated separately, overlaid on body) -->
+    <div class="grid arms-grid">
+      <div class="row" *ngFor="let row of armsGrid; let ri = index">
         <span *ngFor="let digit of row; let ci = index"
-              [class]="getDigitClasses(digit, 'body', ri, ci)"
-              [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'body', ri, ci) }}</span>
+              [class]="getDigitClasses(digit, 'arms', ri, ci)"
+              [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'arms', ri, ci) }}</span>
       </div>
     </div>
 
