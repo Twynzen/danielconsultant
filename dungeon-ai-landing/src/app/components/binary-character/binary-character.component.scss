@@ -88,6 +88,51 @@ $glow: rgba(0, 255, 68, 0.5);
 }
 
 // ============================================
+// V5.0 SCATTER & ASSEMBLY ANIMATION
+// ============================================
+
+.scatter-digit {
+  display: inline-block;
+  will-change: transform;
+  transform-origin: center center;
+}
+
+// Assembly state - digits converging
+.assembling {
+  .glow {
+    animation: assembly-glow 0.5s ease-out infinite alternate;
+    opacity: 1.2 !important;
+  }
+
+  .digit:not(.empty) {
+    text-shadow:
+      0 0 8px $green,
+      0 0 15px $green,
+      0 0 25px rgba(0, 255, 68, 0.5);
+  }
+}
+
+@keyframes assembly-glow {
+  0% {
+    opacity: 0.8;
+    filter: blur(15px);
+  }
+  100% {
+    opacity: 1.2;
+    filter: blur(25px);
+  }
+}
+
+// Data attribute based assembly phases
+[data-assembly="scattered"],
+[data-assembly="assembling"] {
+  .scatter-digit {
+    // Extra glow on scattered particles
+    filter: drop-shadow(0 0 4px $green);
+  }
+}
+
+// ============================================
 // DIGIT STYLES
 // ============================================
 

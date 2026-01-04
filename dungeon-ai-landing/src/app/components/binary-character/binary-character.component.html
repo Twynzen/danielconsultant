@@ -1,10 +1,12 @@
-<!-- Binary AI Character v4.0 - GIVING LIFE -->
+<!-- Binary AI Character v5.0 - MATERIALIZACIÓN DIGITAL -->
 <div class="binary-character"
      [class.moving]="isMoving"
      [class.jumping]="isJumping"
      [class.landing]="isLanding()"
+     [class.assembling]="assemblyPhase() === 'assembling' || assemblyPhase() === 'scattered'"
      [attr.data-emotion]="emotionClass()"
      [attr.data-facing]="facingRight ? 'right' : 'left'"
+     [attr.data-assembly]="assemblyPhase()"
      [style.transform]="characterTransform">
 
   <!-- Glow backdrop -->
@@ -18,17 +20,19 @@
       <div class="row" *ngFor="let row of bodyGrid; let ri = index">
         <!-- Eye wrapper for tracking -->
         <ng-container *ngFor="let digit of row; let ci = index">
-          <!-- Eyes get special wrapper with transform -->
+          <!-- Eyes get special wrapper with transform (eye tracking + scatter) -->
           <span *ngIf="digit.type === 'eye'"
-                class="eye-wrapper"
-                [style.transform]="getEyeTransform()">
+                class="eye-wrapper scatter-digit"
+                [style.transform]="getEyeTransform() + ' ' + getDigitTransform('body', ri, ci)">
             <span [class]="getDigitClasses(digit, 'body', ri, ci)"
                   [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'body', ri, ci) }}</span>
           </span>
-          <!-- Non-eye digits render normally -->
+          <!-- Non-eye digits render with scatter transform -->
           <span *ngIf="digit.type !== 'eye'"
+                class="scatter-digit"
                 [class]="getDigitClasses(digit, 'body', ri, ci)"
-                [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'body', ri, ci) }}</span>
+                [style.opacity]="getBrightness(digit)"
+                [style.transform]="getDigitTransform('body', ri, ci)">{{ getDisplayChar(digit, 'body', ri, ci) }}</span>
         </ng-container>
       </div>
     </div>
@@ -37,8 +41,10 @@
     <div class="grid arms-grid">
       <div class="row" *ngFor="let row of armsGrid; let ri = index">
         <span *ngFor="let digit of row; let ci = index"
+              class="scatter-digit"
               [class]="getDigitClasses(digit, 'arms', ri, ci)"
-              [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'arms', ri, ci) }}</span>
+              [style.opacity]="getBrightness(digit)"
+              [style.transform]="getDigitTransform('arms', ri, ci)">{{ getDisplayChar(digit, 'arms', ri, ci) }}</span>
       </div>
     </div>
 
@@ -46,8 +52,10 @@
     <div class="grid legs-grid">
       <div class="row" *ngFor="let row of legsGrid; let ri = index">
         <span *ngFor="let digit of row; let ci = index"
+              class="scatter-digit"
               [class]="getDigitClasses(digit, 'legs', ri, ci)"
-              [style.opacity]="getBrightness(digit)">{{ getDisplayChar(digit, 'legs', ri, ci) }}</span>
+              [style.opacity]="getBrightness(digit)"
+              [style.transform]="getDigitTransform('legs', ri, ci)">{{ getDisplayChar(digit, 'legs', ri, ci) }}</span>
       </div>
     </div>
 

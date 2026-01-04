@@ -48,17 +48,17 @@ export const SIDESCROLLER_CONFIG = {
 
 /**
  * Pillar positions distributed horizontally across the level
- * 8 pillars spread evenly across 6000px
+ * 8 pillars spread evenly across 6000px (player spawns at x=400)
  */
 export const SIDESCROLLER_PILLAR_POSITIONS = [
-  { x: 400, service: 'nuvaris' },
-  { x: 1100, service: 'custom-integrations' },
-  { x: 1800, service: 'rag-systems' },
-  { x: 2500, service: 'process-automation' },
+  { x: 800, service: 'nuvaris' },          // Moved from 400 to avoid spawn overlap
+  { x: 1400, service: 'custom-integrations' },
+  { x: 2000, service: 'rag-systems' },
+  { x: 2600, service: 'process-automation' },
   { x: 3200, service: 'agent-orchestration' },
-  { x: 3900, service: 'finops-ai' },
-  { x: 4600, service: 'local-llms' },
-  { x: 5300, service: 'calendly' },
+  { x: 3800, service: 'finops-ai' },
+  { x: 4400, service: 'local-llms' },
+  { x: 5000, service: 'calendly' },
 ];
 
 /**

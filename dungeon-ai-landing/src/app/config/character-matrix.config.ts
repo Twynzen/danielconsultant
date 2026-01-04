@@ -314,3 +314,33 @@ export const CHARACTER_CONFIG = {
   DIGIT_COLOR: '#00ff44',
   EYE_COLOR: '#ffffff',
 };
+
+/**
+ * v5.0 - ASSEMBLY ANIMATION CONFIG
+ * Spring physics parameters for digital materialization effect
+ */
+export const ASSEMBLY_CONFIG = {
+  // Spawn Assembly
+  SPAWN_DURATION: 2000,        // ms total para ensamblaje
+  SPAWN_STAGGER_MAX: 500,      // ms máximo delay entre partículas
+  SPAWN_STIFFNESS: 0.08,       // Fuerza del spring
+  SPAWN_DAMPING: 0.88,         // Fricción
+  SPAWN_SPREAD: 1.5,           // Multiplicador de dispersión inicial (x viewport)
+
+  // Landing Disassemble
+  LANDING_SCATTER_DURATION: 150,   // ms de dispersión
+  LANDING_REASSEMBLE_DURATION: 250, // ms de reagrupación
+  LANDING_MAX_SCATTER: 40,          // px máximo de dispersión
+  LANDING_SPRING_DAMPING: 0.72,     // Damping ratio para bounce
+
+  // Type-based mass (affects scatter distance)
+  TYPE_MASS: {
+    core: 1.0,
+    limb: 0.85,
+    edge: 0.7,
+    eye: 0.6,
+    smile: 0.8,
+    empty: 0,
+    normal: 0.75,
+  } as Record<string, number>,
+};

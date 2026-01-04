@@ -28,6 +28,7 @@
     [isMoving]="isMoving()"
     [isJumping]="isJumping()"
     [facingRight]="physicsService.facingRight()"
-    [isTalking]="isTyping()">
+    [isTalking]="isTyping()"
+    (assemblyComplete)="onAssemblyComplete()">
   </app-binary-character>
 </div>

@@ -80,8 +80,8 @@ export const PILLAR_ICONS: Record<string, string> = {
 /**
  * 8 Pillars distributed horizontally across the side-scroller level
  * Layout:
- * |--NUVARIS--|--INTEGRATIONS--|--RAG--|--AUTOMATION--|--AGENTS--|--FINOPS--|--LLMS--|--CALENDLY--|
- *    400px       1100px        1800px     2500px       3200px     3900px    4600px     5300px
+ * |--spawn--|--NUVARIS--|--INTEGRATIONS--|--RAG--|--AUTOMATION--|--AGENTS--|--FINOPS--|--LLMS--|--CALENDLY--|
+ *    400px     800px        1400px       2000px     2600px       3200px     3800px    4400px     5000px
  */
 export const PILLARS: PillarConfig[] = [
   {
@@ -91,7 +91,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'external',
     destination: 'https://nuvaris.com',
     color: '#00ff88',
-    worldX: 400,
+    worldX: 800,  // Moved right to not overlap with player spawn at 400
     description: 'Visita Nuvaris - Plataforma de IA'
   },
   {
@@ -101,7 +101,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'custom-integrations',
     color: '#ff6600',
-    worldX: 1100,
+    worldX: 1400,
     description: 'Integraciones personalizadas con IA'
   },
   {
@@ -111,7 +111,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'rag-systems',
     color: '#00ccff',
-    worldX: 1800,
+    worldX: 2000,
     description: 'Sistemas de Retrieval Augmented Generation'
   },
   {
@@ -121,7 +121,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'process-automation',
     color: '#ff00ff',
-    worldX: 2500,
+    worldX: 2600,
     description: 'Automatización de Procesos con IA'
   },
   {
@@ -141,7 +141,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'finops-ai',
     color: '#88ff00',
-    worldX: 3900,
+    worldX: 3800,
     description: 'Optimización Financiera con IA'
   },
   {
@@ -151,7 +151,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'local-llms',
     color: '#00ccff',
-    worldX: 4600,
+    worldX: 4400,
     description: 'Modelos de Lenguaje Locales'
   },
   {
@@ -161,7 +161,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'external',
     destination: 'https://calendly.com/darmcastiblanco/30min',
     color: '#ff6b00',
-    worldX: 5300,
+    worldX: 5000,
     description: 'Agenda una sesión de consultoría'
   }
 ];

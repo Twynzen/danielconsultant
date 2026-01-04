@@ -1,6 +1,8 @@
 import {
   Component,
   Input,
+  Output,
+  EventEmitter,
   OnInit,
   OnDestroy,
   ChangeDetectionStrategy,
@@ -19,7 +21,8 @@ import {
   BinaryDigit,
   DigitType,
   CHARACTER_CONFIG,
-  FacingDirection
+  FacingDirection,
+  ASSEMBLY_CONFIG
 } from '../../config/character-matrix.config';
 
 // Emotional states for the character
@@ -29,6 +32,23 @@ export enum CharacterEmotion {
   EXCITED = 'excited',
   TIRED = 'tired',
   STARTLED = 'startled'
+}
+
+// v5.0: Assembly phases
+export enum AssemblyPhase {
+  SCATTERED = 'scattered',
+  ASSEMBLING = 'assembling',
+  ASSEMBLED = 'assembled',
+  LANDING_SCATTER = 'landing',
+  REASSEMBLING = 'reassembling'
+}
+
+// v5.0: Particle state for scatter/assembly animations
+interface ParticleState {
+  scatterX: number;
+  scatterY: number;
+  currentX: number;
+  currentY: number;
 }
 
 @Component({
@@ -82,6 +102,19 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   // Landing effect
   private wasJumping = false;
   isLanding = signal(false);
+
+  // v5.0: Landing scatter animation
+  private landingPhase = signal<AssemblyPhase>(AssemblyPhase.ASSEMBLED);
+  private landingStartTime = 0;
+  private particleStates = new Map<string, ParticleState>();
+
+  // v5.0: Spawn assembly animation
+  @Input() enableSpawnAssembly = true;  // Can be disabled for testing
+  @Output() assemblyComplete = new EventEmitter<void>();
+  assemblyPhase = signal<AssemblyPhase>(AssemblyPhase.SCATTERED);
+  private spawnStartTime = 0;
+  private spawnParticleStates = new Map<string, ParticleState & { delay: number; arrived: boolean }>();
+  isAssembled = signal(false);
 
   // ========== V4.0 - GIVING LIFE ==========
 
@@ -149,6 +182,15 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initializeCharacter();
+
+    // v5.0: Start with spawn assembly if enabled
+    if (this.enableSpawnAssembly) {
+      this.initializeSpawnAssembly();
+    } else {
+      this.assemblyPhase.set(AssemblyPhase.ASSEMBLED);
+      this.isAssembled.set(true);
+    }
+
     this.startAnimationLoop();
     this.lastMouseMoveTime = performance.now();
     this.resetInactivityTimer();
@@ -190,6 +232,10 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
 
       // V4.1: Update mouth animation during dialog
       this.updateMouthAnimation(currentTime);
+
+      // V5.0: Update assembly animations
+      this.updateSpawnAssembly(currentTime);
+      this.updateLandingAnimation(currentTime);
 
       if (this.isMoving) {
         this.applyGlitch(currentTime);
@@ -399,14 +445,263 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   private checkLanding(): void {
     if (this.wasJumping && !this.isJumping) {
       this.isLanding.set(true);
-      setTimeout(() => {
-        if (!this.isDestroyed) {
-          this.isLanding.set(false);
-          this.cdr.markForCheck();
-        }
-      }, 250);
+      // v5.0: Start scatter animation
+      this.startLandingScatter();
     }
     this.wasJumping = this.isJumping;
+  }
+
+  // ========== V5.0 LANDING SCATTER ==========
+
+  private startLandingScatter(): void {
+    this.landingPhase.set(AssemblyPhase.LANDING_SCATTER);
+    this.landingStartTime = performance.now();
+
+    // Calculate scatter vectors for all digits
+    this.calculateScatterPositions();
+  }
+
+  private calculateScatterPositions(): void {
+    this.particleStates.clear();
+
+    // Process all grids (body, arms, legs)
+    const grids = [
+      { grid: this.bodyGrid, section: 'body' },
+      { grid: this.armsGrid, section: 'arms' },
+      { grid: this.legsGrid, section: 'legs' }
+    ];
+
+    for (const { grid, section } of grids) {
+      if (!grid) continue;
+      const maxRows = grid.length;
+      const maxCols = grid[0]?.length || 0;
+
+      grid.forEach((row, ri) => {
+        row.forEach((digit, ci) => {
+          if (digit.isEmpty) return;
+
+          const key = `${section}-${ri}-${ci}`;
+
+          // Normalize position (0-1)
+          const gridX = ci / maxCols;
+          const gridY = ri / maxRows;
+
+          // Vector from center
+          const deltaX = gridX - 0.5;
+          const deltaY = gridY - 0.5;
+          const angle = Math.atan2(deltaY, deltaX);
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+          // Magnitude based on type
+          const typeMass = ASSEMBLY_CONFIG.TYPE_MASS[digit.type] ?? 0.75;
+          const magnitude = ASSEMBLY_CONFIG.LANDING_MAX_SCATTER * typeMass;
+
+          // Calculate scatter position with some randomness
+          const randomFactor = 0.7 + Math.random() * 0.6; // 0.7-1.3
+          const scatterX = Math.cos(angle) * distance * magnitude * randomFactor;
+          const scatterY = Math.sin(angle) * distance * magnitude * randomFactor + (gridY * 15);
+
+          this.particleStates.set(key, {
+            scatterX,
+            scatterY,
+            currentX: 0,
+            currentY: 0
+          });
+        });
+      });
+    }
+  }
+
+  private updateLandingAnimation(currentTime: number): void {
+    const phase = this.landingPhase();
+    if (phase === AssemblyPhase.ASSEMBLED) return;
+
+    const elapsed = currentTime - this.landingStartTime;
+    const scatterDuration = ASSEMBLY_CONFIG.LANDING_SCATTER_DURATION;
+    const reassembleDuration = ASSEMBLY_CONFIG.LANDING_REASSEMBLE_DURATION;
+    const totalDuration = scatterDuration + reassembleDuration;
+
+    if (elapsed >= totalDuration) {
+      // Animation complete
+      this.landingPhase.set(AssemblyPhase.ASSEMBLED);
+      this.isLanding.set(false);
+      this.particleStates.clear();
+      return;
+    }
+
+    if (elapsed < scatterDuration) {
+      // Scatter phase - ease out
+      const t = elapsed / scatterDuration;
+      const easeOut = 1 - Math.pow(1 - t, 3); // Cubic ease out
+
+      this.particleStates.forEach((state) => {
+        state.currentX = state.scatterX * easeOut;
+        state.currentY = state.scatterY * easeOut;
+      });
+
+      if (phase !== AssemblyPhase.LANDING_SCATTER) {
+        this.landingPhase.set(AssemblyPhase.LANDING_SCATTER);
+      }
+    } else {
+      // Reassemble phase - spring physics
+      const reassembleElapsed = elapsed - scatterDuration;
+      const t = reassembleElapsed / reassembleDuration;
+
+      // Damped oscillation for bounce effect
+      const zeta = ASSEMBLY_CONFIG.LANDING_SPRING_DAMPING;
+      const omega = 6.28; // ~2π for one full oscillation
+      const decay = Math.exp(-zeta * omega * t);
+      const oscillation = Math.cos(omega * Math.sqrt(1 - zeta * zeta) * t);
+      const progress = 1 - decay * oscillation;
+
+      this.particleStates.forEach((state) => {
+        state.currentX = state.scatterX * (1 - progress);
+        state.currentY = state.scatterY * (1 - progress);
+      });
+
+      if (phase !== AssemblyPhase.REASSEMBLING) {
+        this.landingPhase.set(AssemblyPhase.REASSEMBLING);
+      }
+    }
+  }
+
+  /**
+   * v5.0: Get transform for a digit during animations (spawn or landing)
+   */
+  getDigitTransform(section: string, rowIndex: number, colIndex: number): string {
+    const key = `${section}-${rowIndex}-${colIndex}`;
+
+    // Priority: spawn assembly > landing scatter
+    const spawnState = this.spawnParticleStates.get(key);
+    if (spawnState && this.assemblyPhase() !== AssemblyPhase.ASSEMBLED) {
+      return `translate(${spawnState.currentX}px, ${spawnState.currentY}px)`;
+    }
+
+    const landingState = this.particleStates.get(key);
+    if (landingState) {
+      return `translate(${landingState.currentX}px, ${landingState.currentY}px)`;
+    }
+
+    return 'translate(0, 0)';
+  }
+
+  // ========== V5.0 SPAWN ASSEMBLY ==========
+
+  private initializeSpawnAssembly(): void {
+    this.assemblyPhase.set(AssemblyPhase.SCATTERED);
+    this.isAssembled.set(false);
+    this.spawnStartTime = performance.now();
+    this.spawnParticleStates.clear();
+
+    // Calculate random starting positions for all digits
+    const grids = [
+      { grid: this.bodyGrid, section: 'body' },
+      { grid: this.armsGrid, section: 'arms' },
+      { grid: this.legsGrid, section: 'legs' }
+    ];
+
+    const spreadX = window.innerWidth * ASSEMBLY_CONFIG.SPAWN_SPREAD;
+    const spreadY = window.innerHeight * ASSEMBLY_CONFIG.SPAWN_SPREAD;
+
+    let digitIndex = 0;
+    const totalDigits = grids.reduce((sum, { grid }) =>
+      sum + (grid?.flat().filter(d => !d.isEmpty).length || 0), 0);
+
+    for (const { grid, section } of grids) {
+      if (!grid) continue;
+
+      grid.forEach((row, ri) => {
+        row.forEach((digit, ci) => {
+          if (digit.isEmpty) return;
+
+          const key = `${section}-${ri}-${ci}`;
+
+          // Random start position (spread from center)
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 0.5 + Math.random() * 0.5; // 50-100% of spread
+          const startX = Math.cos(angle) * spreadX * distance;
+          const startY = Math.sin(angle) * spreadY * distance;
+
+          // Stagger delay - center digits arrive first (core→limb→edge)
+          const typeMass = ASSEMBLY_CONFIG.TYPE_MASS[digit.type] ?? 0.75;
+          const delayFactor = 1 - typeMass; // Core (1.0) = no delay, Edge (0.7) = more delay
+          const delay = delayFactor * ASSEMBLY_CONFIG.SPAWN_STAGGER_MAX +
+                       (digitIndex / totalDigits) * 100; // Slight order-based stagger
+
+          this.spawnParticleStates.set(key, {
+            scatterX: startX,
+            scatterY: startY,
+            currentX: startX,
+            currentY: startY,
+            delay,
+            arrived: false
+          });
+
+          digitIndex++;
+        });
+      });
+    }
+  }
+
+  private updateSpawnAssembly(currentTime: number): void {
+    const phase = this.assemblyPhase();
+    if (phase === AssemblyPhase.ASSEMBLED) return;
+
+    const elapsed = currentTime - this.spawnStartTime;
+    let allArrived = true;
+
+    this.spawnParticleStates.forEach((state, key) => {
+      // Wait for stagger delay
+      const adjustedElapsed = elapsed - state.delay;
+      if (adjustedElapsed < 0) {
+        allArrived = false;
+        return;
+      }
+
+      if (state.arrived) return;
+
+      // Spring physics
+      const dx = 0 - state.currentX; // Target is 0,0
+      const dy = 0 - state.currentY;
+
+      // Check if arrived
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+        state.currentX = 0;
+        state.currentY = 0;
+        state.arrived = true;
+        return;
+      }
+
+      allArrived = false;
+
+      // Spring force
+      const stiffness = ASSEMBLY_CONFIG.SPAWN_STIFFNESS;
+      const damping = ASSEMBLY_CONFIG.SPAWN_DAMPING;
+
+      // Simple spring with implicit velocity (stateless)
+      const progress = Math.min(1, adjustedElapsed / (ASSEMBLY_CONFIG.SPAWN_DURATION * 0.7));
+      const easeProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease out
+
+      state.currentX = state.scatterX * (1 - easeProgress);
+      state.currentY = state.scatterY * (1 - easeProgress);
+    });
+
+    // Update phase
+    if (phase === AssemblyPhase.SCATTERED && elapsed > 100) {
+      this.assemblyPhase.set(AssemblyPhase.ASSEMBLING);
+    }
+
+    // Check completion
+    if (allArrived || elapsed > ASSEMBLY_CONFIG.SPAWN_DURATION) {
+      this.completeAssembly();
+    }
+  }
+
+  private completeAssembly(): void {
+    this.assemblyPhase.set(AssemblyPhase.ASSEMBLED);
+    this.isAssembled.set(true);
+    this.spawnParticleStates.clear();
+    this.assemblyComplete.emit();
   }
 
   private applyGlitch(currentTime: number): void {

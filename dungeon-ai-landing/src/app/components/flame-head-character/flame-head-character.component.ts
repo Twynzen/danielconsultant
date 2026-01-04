@@ -105,6 +105,11 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.startGameLoop();
     this.updateLightPosition();
+    // v5.0: Dialog is now started after assembly completes (via onAssemblyComplete)
+  }
+
+  // v5.0: Called when binary character finishes assembly animation
+  onAssemblyComplete(): void {
     this.startWelcomeDialog();
   }
 
