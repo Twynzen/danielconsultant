@@ -1,70 +1,21 @@
-<!-- Circuitos Matrix CSS puro - No Canvas approach -->
-<div class="circuits-container">
-  <!-- Background gradients -->
+<!-- Circuits Background - Side-Scroller Mode -->
+<div class="circuits-container" [style.width.px]="levelWidth">
+  <!-- Background gradient -->
   <div class="wall-gradient"></div>
-  
-  <!-- Fixed circuit patterns grid -->
+
+  <!-- Circuit patterns - Only visible and lit circuits rendered -->
   <div class="circuits-grid">
-    <div 
-      *ngFor="let circuit of fixedCircuits; let i = index"
+    <div
+      *ngFor="let circuit of visibleCircuits; trackBy: trackCircuit"
       class="circuit-pattern"
       [class.lit]="circuit.isLit"
       [style.left.px]="circuit.x"
       [style.top.px]="circuit.y"
-      [style.opacity]="circuit.isLit ? circuit.litOpacity : circuit.baseOpacity"
-      [attr.data-pattern]="circuit.pattern"
-    >
+      [style.opacity]="circuit.opacity">
       <span class="circuit-symbol">{{ circuit.pattern }}</span>
-      <!-- Mini animación Matrix por circuit -->
-      <div class="matrix-rain" *ngIf="circuit.isLit">
-        <span *ngFor="let char of getMatrixChars(i)" 
-              class="matrix-char"
-              [style.animation-delay.ms]="char.delay">
-          {{ char.symbol }}
-        </span>
-      </div>
     </div>
   </div>
-  
-  <!-- Dynamic connections SVG -->
-  <svg class="connections-svg" [attr.viewBox]="'0 0 ' + windowWidth + ' ' + windowHeight">
-    <defs>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    
-    <g *ngFor="let connection of dynamicConnections">
-      <line
-        *ngIf="connection.isActive"
-        [attr.x1]="connection.startX"
-        [attr.y1]="connection.startY"
-        [attr.x2]="connection.startX + (connection.endX - connection.startX) * connection.progress"
-        [attr.y2]="connection.startY + (connection.endY - connection.startY) * connection.progress"
-        stroke="#00cc33"
-        stroke-width="1.5"
-        [attr.opacity]="0.7"
-        filter="url(#glow)"
-        class="connection-line"
-      />
-      
-      <!-- Pulse at connection end -->
-      <circle
-        *ngIf="connection.isActive && connection.progress > 0.1"
-        [attr.cx]="connection.startX + (connection.endX - connection.startX) * connection.progress"
-        [attr.cy]="connection.startY + (connection.endY - connection.startY) * connection.progress"
-        r="2"
-        fill="#00ff44"
-        [attr.opacity]="0.8"
-        class="connection-pulse"
-      />
-    </g>
-  </svg>
-  
-  <!-- Stone texture overlay (CSS pattern) -->
+
+  <!-- Stone texture overlay -->
   <div class="stone-texture"></div>
 </div>

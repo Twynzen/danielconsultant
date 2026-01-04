@@ -1,0 +1,45 @@
+<!-- Viewport - Fixed window into the side-scroller world -->
+<div class="dungeon-viewport">
+
+  <!-- ========== FIXED UI LAYER (doesn't scroll) ========== -->
+  <div class="fixed-ui">
+    <!-- Title - Fixed at top of screen -->
+    <div class="fixed-title">
+      <span class="main-title">CONSULTOR IA</span>
+      <span class="subtitle">DANIEL CASTIBLANCO</span>
+    </div>
+  </div>
+
+  <!-- ========== WORLD LAYER (scrolls horizontally) ========== -->
+  <div class="dungeon-world"
+       [style.width.px]="levelWidth"
+       [style.transform]="cameraTransformValue">
+
+    <!-- Background with circuits CSS approach -->
+    <app-circuits-background></app-circuits-background>
+
+    <!-- Ground visual -->
+    <div class="ground"
+         [style.height.px]="groundHeight">
+    </div>
+
+    <!-- Pillar System - Interactive navigation (world coordinates) -->
+    <app-pillar-system
+      (pillarActivated)="onPillarActivated($event)">
+    </app-pillar-system>
+
+  </div>
+
+  <!-- ========== SCREEN LAYER (Fixed to viewport) ========== -->
+
+  <!-- Character - Fixed X (centered), Y moves with jump -->
+  <app-flame-head-character></app-flame-head-character>
+
+  <!-- Modal Service - Opens when pillars are activated -->
+  <app-modal-service
+    [serviceId]="selectedServiceId"
+    [isOpen]="isModalOpen"
+    (closeModal)="onCloseModal()">
+  </app-modal-service>
+
+</div>

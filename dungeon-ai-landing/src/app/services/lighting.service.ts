@@ -8,7 +8,7 @@ export interface LightSource {
   y: number;
   radius: number;
   intensity: number;
-  type: 'torch' | 'cursor' | 'portable';
+  type: 'torch' | 'cursor' | 'portable' | 'character';
   permanent: boolean;
 }
 
@@ -235,6 +235,41 @@ export class LightingService {
     } else {
       this.lightSources.next([...currentLights, cursorLight]);
     }
+  }
+
+  // NUEVO: Luz del personaje Flame Head
+  updateCharacterLight(x: number, y: number): void {
+    const characterLightId = 'character-light';
+    const currentLights = this.lightSources.value;
+    const existingIndex = currentLights.findIndex(light => light.id === characterLightId);
+
+    const characterLight: LightSource = {
+      id: characterLightId,
+      x,
+      y,
+      radius: 220, // Radio grande para iluminar bien
+      intensity: 1.0, // Máxima intensidad
+      type: 'character',
+      permanent: false
+    };
+
+    if (existingIndex >= 0) {
+      const updatedLights = [...currentLights];
+      updatedLights[existingIndex] = characterLight;
+      this.lightSources.next(updatedLights);
+    } else {
+      this.lightSources.next([...currentLights, characterLight]);
+    }
+  }
+
+  // Obtener posición del personaje
+  getCharacterPosition(): { x: number; y: number } | null {
+    const lights = this.lightSources.value;
+    const characterLight = lights.find(l => l.id === 'character-light');
+    if (characterLight) {
+      return { x: characterLight.x, y: characterLight.y };
+    }
+    return null;
   }
 
   // Element registration

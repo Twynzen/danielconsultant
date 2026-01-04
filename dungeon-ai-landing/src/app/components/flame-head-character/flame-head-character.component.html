@@ -1,0 +1,38 @@
+<!-- Dialog Box - Positioned to the right of character (fixed to screen) -->
+<div class="dialog-box"
+     *ngIf="showDialog()"
+     [style.left.px]="screenX() + 140"
+     [style.top.px]="screenY() + 20">
+  <div class="dialog-content">
+    <div class="dialog-header">
+      <span class="dialog-indicator"></span>
+      <span class="dialog-title">// SISTEMA IA</span>
+    </div>
+    <div class="dialog-text">
+      <span class="typing-effect">{{ displayedText() }}</span>
+      <span class="cursor" *ngIf="isTyping()">_</span>
+    </div>
+    <div class="dialog-prompt" *ngIf="!isTyping()">
+      <span class="blink">[SPACE / ENTER]</span>
+    </div>
+  </div>
+  <div class="dialog-arrow-left"></div>
+</div>
+
+<!-- Binary AI Character - Made of 0s and 1s -->
+<div class="character-container"
+     [class]="characterClasses()"
+     [class.dragging]="isDragging()"
+     [style.left.px]="screenX()"
+     [style.top.px]="screenY()"
+     [style.cursor]="isDragging() ? 'grabbing' : 'grab'">
+  <app-binary-character
+    [isMoving]="isMoving()"
+    [isJumping]="isJumping()"
+    [facingRight]="physicsService.facingRight()"
+    [isTalking]="isTyping()"
+    [characterScreenY]="screenY()"
+    (assemblyComplete)="onAssemblyComplete()"
+    (crashComplete)="onCrashComplete()">
+  </app-binary-character>
+</div>
