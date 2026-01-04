@@ -165,7 +165,8 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   }
 
   private initializeCharacter(): void {
-    this.bodyGrid = getBodyGrid('front');
+    // v4.1: Always use 'right' pose - scaleX handles direction
+    this.bodyGrid = getBodyGrid('right');
     this.walkFrames = getLegFrames();
     this.armFrames = getArmFrames(); // v4.1: Initialize arm frames
     this.legsGrid = this.walkFrames[0];
@@ -218,21 +219,20 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   // ========== V4.1 BODY POSE ==========
 
   private updateBodyPose(): void {
-    // v4.1 CORRECT FIX:
-    // - Walking: Use BODY_RIGHT (asymmetric, eyes looking in direction)
-    //   The scaleX(-1) transform will mirror it for left-facing
-    // - Idle: Use BODY_FRONT (symmetric, centered eyes)
+    // v4.1 FINAL: Always use BODY_RIGHT for the "looking sideways" effect
+    // The scaleX transform handles left/right direction
     //
     // This creates the effect:
     // - Walk right: RIGHT + scaleX(1) = looks right ✓
     // - Walk left: RIGHT + scaleX(-1) = eyes flip to left ✓
-    // - Idle: FRONT = centered eyes ✓
+    // - Idle + mouse right: RIGHT + scaleX(1) = looks right ✓
+    // - Idle + mouse left: RIGHT + scaleX(-1) = eyes flip to left ✓
+    //
+    // The neck/head rotation effect is consistent whether walking or idle
 
-    const shouldUseWalkPose = this.isMoving;
-
-    // Only update grid when movement state changes to avoid unnecessary updates
-    if (shouldUseWalkPose !== this.wasMoving) {
-      this.bodyGrid = getBodyGrid(shouldUseWalkPose ? 'right' : 'front');
+    // Always use 'right' pose - scaleX does the direction flip
+    if (!this.bodyGrid || this.bodyGrid.length === 0) {
+      this.bodyGrid = getBodyGrid('right');
     }
   }
 
