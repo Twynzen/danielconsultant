@@ -68,6 +68,7 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   @Input() isJumping = false;
   @Input() facingRight = true;
   @Input() isTalking = false; // v4.1: For mouth animation during dialog
+  @Input() characterScreenY = 0; // v5.1: Screen Y position for crash ground calculation
 
   // Character grids
   bodyGrid: BinaryDigit[][] = [];
@@ -777,8 +778,15 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
           const velocityX = Math.cos(randomAngle) * distance * explosionForce * 0.8;
           const velocityY = -300 - Math.random() * 200; // Strong upward
 
-          // Each piece has its own ground level (slight variation for visual interest)
-          const baseGroundY = 30 + Math.random() * 20;
+          // v5.1 FIX: Calculate real ground distance for each particle based on row
+          // Each particle's absolute Y = characterScreenY + (row * ~12px line height)
+          // Ground is at window.innerHeight - 120
+          const rowHeight = 12; // Approximate height of each grid row in pixels
+          const groundYAbsolute = window.innerHeight - 120;
+          const particleAbsoluteY = this.characterScreenY + (ri * rowHeight);
+          const distanceToGround = groundYAbsolute - particleAbsoluteY;
+          // Add small variation for visual interest (±15px)
+          const baseGroundY = Math.max(10, distanceToGround + (Math.random() * 30 - 15));
 
           this.crashParticleStates.set(key, {
             x: 0,

@@ -31,6 +31,7 @@
     [isJumping]="isJumping()"
     [facingRight]="physicsService.facingRight()"
     [isTalking]="isTyping()"
+    [characterScreenY]="screenY()"
     (assemblyComplete)="onAssemblyComplete()"
     (crashComplete)="onCrashComplete()">
   </app-binary-character>

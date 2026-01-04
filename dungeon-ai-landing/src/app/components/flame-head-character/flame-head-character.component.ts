@@ -80,6 +80,10 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private wasDropped = false;  // Flag to track if character was just dropped
   private wasInAir = false;  // Track if character was falling
 
+  // v5.1: Cooldown after crash (block input for 2 seconds after reassembly)
+  isCooldown = signal(false);
+  private cooldownTimeout: ReturnType<typeof setTimeout> | null = null;
+
   // Reference to binary character for crash trigger
   @ViewChild(BinaryCharacterComponent) binaryCharacter!: BinaryCharacterComponent;
 
@@ -126,6 +130,12 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
   // v5.0: Called when crash animation completes
   onCrashComplete(): void {
+    // v5.1: Activate 2-second cooldown after reassembly
+    this.isCooldown.set(true);
+    this.cooldownTimeout = setTimeout(() => {
+      this.isCooldown.set(false);
+    }, 2000);
+
     // Show angry dialog
     this.showCrashDialog();
   }
@@ -160,6 +170,10 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     }
     if (this.typingInterval) {
       clearInterval(this.typingInterval);
+    }
+    // v5.1: Clean up cooldown timeout
+    if (this.cooldownTimeout) {
+      clearTimeout(this.cooldownTimeout);
     }
   }
 
@@ -229,6 +243,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   @HostListener('window:mousedown', ['$event'])
   onMouseDown(event: MouseEvent): void {
     if (this.showDialog()) return;
+    if (this.binaryCharacter?.isCrashing?.()) return;  // v5.1: No grab during crash
+    if (this.isCooldown()) return;  // v5.1: No grab during cooldown
 
     // Check if click is on character
     const charScreenX = this.screenX();
@@ -314,6 +330,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     // Don't process movement while dialog is showing or dragging
     if (this.showDialog()) return;
     if (this.isDragging()) return;  // v5.0: Skip physics while dragging
+    if (this.binaryCharacter?.isCrashing?.()) return;  // v5.1: Block during crash
+    if (this.isCooldown()) return;  // v5.1: Block during 2-second cooldown after crash
 
     // Get input from InputService
     const inputState = this.inputService.inputState();
