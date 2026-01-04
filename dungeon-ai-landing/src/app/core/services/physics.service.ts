@@ -157,4 +157,27 @@ export class PhysicsService {
       velocityY: y !== undefined ? current.velocityY : 0,
     });
   }
+
+  /**
+   * v5.0: Set position from drag release with initial velocity
+   * Used when player is dragged up and released
+   */
+  setPositionFromDrag(x: number, y: number): void {
+    const current = this._state();
+    this._state.set({
+      ...current,
+      x,
+      y,
+      velocityY: 0,  // Start with 0 velocity, gravity will accelerate
+      isGrounded: false,
+      isJumping: true,  // Treat as jumping so gravity applies
+    });
+  }
+
+  /**
+   * v5.0: Get ground Y position
+   */
+  getGroundY(): number {
+    return SIDESCROLLER_CONFIG.getGroundY();
+  }
 }

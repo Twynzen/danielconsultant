@@ -132,6 +132,41 @@ $glow: rgba(0, 255, 68, 0.5);
   }
 }
 
+// v5.0: Crash animation (high fall impact)
+.crashing {
+  .glow {
+    animation: crash-glow 0.3s ease-out infinite alternate;
+    opacity: 0.4 !important;
+  }
+
+  .digit:not(.empty) {
+    animation: crash-flash 0.15s ease-out infinite alternate;
+  }
+}
+
+@keyframes crash-glow {
+  0% {
+    opacity: 0.3;
+    filter: blur(20px);
+  }
+  100% {
+    opacity: 0.6;
+    filter: blur(30px);
+  }
+}
+
+@keyframes crash-flash {
+  0% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+    text-shadow:
+      0 0 10px $green,
+      0 0 20px $green;
+  }
+}
+
 // ============================================
 // DIGIT STYLES
 // ============================================

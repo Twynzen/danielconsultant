@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener, NgZone, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LightingService } from '../../services/lighting.service';
 import { CameraService } from '../../services/camera.service';
@@ -72,6 +72,17 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private typingInterval: any = null;
   private dialogDismissed = false;
 
+  // v5.0: Drag and drop state
+  isDragging = signal(false);
+  private dragOffsetX = 0;
+  private dragOffsetY = 0;
+  private releaseY = 0;  // Y position when released (for crash detection)
+  private wasDropped = false;  // Flag to track if character was just dropped
+  private wasInAir = false;  // Track if character was falling
+
+  // Reference to binary character for crash trigger
+  @ViewChild(BinaryCharacterComponent) binaryCharacter!: BinaryCharacterComponent;
+
   // Jump tracking - to detect "just pressed"
   private wasJumpPressed = false;
 
@@ -111,6 +122,36 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   // v5.0: Called when binary character finishes assembly animation
   onAssemblyComplete(): void {
     this.startWelcomeDialog();
+  }
+
+  // v5.0: Called when crash animation completes
+  onCrashComplete(): void {
+    // Show angry dialog
+    this.showCrashDialog();
+  }
+
+  private showCrashDialog(): void {
+    this.showDialog.set(true);
+    this.inputService.pause();
+    this.displayedText.set('');
+    this.isTyping.set(true);
+
+    const message = '> ¡Ey, no hagas eso! 😠';
+    let charIndex = 0;
+
+    this.typingInterval = setInterval(() => {
+      if (charIndex < message.length) {
+        this.displayedText.set(message.substring(0, charIndex + 1));
+        charIndex++;
+      } else {
+        clearInterval(this.typingInterval);
+        this.isTyping.set(false);
+        // Auto-dismiss after 2 seconds
+        setTimeout(() => {
+          this.dismissDialog();
+        }, 2000);
+      }
+    }, 50);
   }
 
   ngOnDestroy(): void {
@@ -184,6 +225,71 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     }
   }
 
+  // v5.0: Mouse drag handlers
+  @HostListener('window:mousedown', ['$event'])
+  onMouseDown(event: MouseEvent): void {
+    if (this.showDialog()) return;
+
+    // Check if click is on character
+    const charScreenX = this.screenX();
+    const charScreenY = this.screenY();
+
+    // Character bounding box (approximate)
+    const charLeft = charScreenX;
+    const charRight = charScreenX + this.CHARACTER_WIDTH;
+    const charTop = charScreenY;
+    const charBottom = charScreenY + this.CHARACTER_HEIGHT;
+
+    if (event.clientX >= charLeft && event.clientX <= charRight &&
+        event.clientY >= charTop && event.clientY <= charBottom) {
+      this.isDragging.set(true);
+      this.dragOffsetX = event.clientX - charScreenX;
+      this.dragOffsetY = event.clientY - charScreenY;
+      this.inputService.pause();
+    }
+  }
+
+  @HostListener('window:mousemove', ['$event'])
+  onMouseMove(event: MouseEvent): void {
+    if (!this.isDragging()) return;
+
+    // Calculate new position based on mouse (both X and Y)
+    const newScreenX = event.clientX - this.dragOffsetX;
+    const newScreenY = event.clientY - this.dragOffsetY;
+    const groundY = this.physicsService.getGroundY();
+
+    // Don't allow dragging below ground
+    const maxY = groundY - this.CHARACTER_HEIGHT;
+    const clampedY = Math.min(newScreenY, maxY);
+
+    // Convert screen position to world position
+    const cameraX = this.cameraService.cameraX();
+    const worldX = newScreenX + cameraX + this.CHARACTER_WIDTH / 2;
+    const worldY = clampedY + this.CHARACTER_HEIGHT;
+
+    // Clamp X to level bounds
+    const clampedWorldX = Math.max(0, Math.min(worldX, 6000));
+
+    // Update physics position directly
+    this.physicsService.setPosition(clampedWorldX, worldY);
+  }
+
+  @HostListener('window:mouseup', ['$event'])
+  onMouseUp(event: MouseEvent): void {
+    if (!this.isDragging()) return;
+
+    this.isDragging.set(false);
+    this.inputService.resume();
+
+    // Store the release Y position for crash detection on landing
+    const state = this.physicsService.state();
+    this.releaseY = state.y;
+    this.wasDropped = true;
+
+    // Release the character - physics will handle the fall
+    this.physicsService.setPositionFromDrag(state.x, state.y);
+  }
+
   private startGameLoop(): void {
     this.lastTime = performance.now();
 
@@ -205,8 +311,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     // This keeps the character light synced with physics state
     this.updateLightPosition();
 
-    // Don't process movement while dialog is showing
+    // Don't process movement while dialog is showing or dragging
     if (this.showDialog()) return;
+    if (this.isDragging()) return;  // v5.0: Skip physics while dragging
 
     // Get input from InputService
     const inputState = this.inputService.inputState();
@@ -240,6 +347,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
       deltaTime
     );
 
+    // v5.0: Detect landing after drop for crash
+    this.checkDropLanding(state);
+
     // Light position already updated at start of update()
 
     // Trigger change detection to update the view
@@ -247,6 +357,29 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     this.ngZone.run(() => {
       this.cdr.markForCheck();
     });
+  }
+
+  // v5.0: Check if character just landed after being dropped
+  private checkDropLanding(state: any): void {
+    const isCurrentlyGrounded = state.isGrounded;
+
+    // Detect transition from air to ground
+    if (this.wasDropped && this.wasInAir && isCurrentlyGrounded) {
+      // Calculate fall height
+      const groundY = this.physicsService.getGroundY();
+      const fallHeight = groundY - this.releaseY;
+
+      // Trigger crash if fell from high enough (200px threshold)
+      if (fallHeight >= 200 && this.binaryCharacter) {
+        this.binaryCharacter.triggerCrash();
+      }
+
+      // Reset drop tracking
+      this.wasDropped = false;
+    }
+
+    // Track if in air
+    this.wasInAir = !isCurrentlyGrounded;
   }
 
   private updateLightPosition(): void {

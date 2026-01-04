@@ -22,13 +22,16 @@
 <!-- Binary AI Character - Made of 0s and 1s -->
 <div class="character-container"
      [class]="characterClasses()"
+     [class.dragging]="isDragging()"
      [style.left.px]="screenX()"
-     [style.top.px]="screenY()">
+     [style.top.px]="screenY()"
+     [style.cursor]="isDragging() ? 'grabbing' : 'grab'">
   <app-binary-character
     [isMoving]="isMoving()"
     [isJumping]="isJumping()"
     [facingRight]="physicsService.facingRight()"
     [isTalking]="isTyping()"
-    (assemblyComplete)="onAssemblyComplete()">
+    (assemblyComplete)="onAssemblyComplete()"
+    (crashComplete)="onCrashComplete()">
   </app-binary-character>
 </div>

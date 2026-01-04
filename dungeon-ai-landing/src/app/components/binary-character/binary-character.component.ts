@@ -116,6 +116,20 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   private spawnParticleStates = new Map<string, ParticleState & { delay: number; arrived: boolean }>();
   isAssembled = signal(false);
 
+  // v5.0: Crash animation (high fall with physics)
+  @Output() crashComplete = new EventEmitter<void>();
+  isCrashing = signal(false);  // Public for template
+  private crashStartTime = 0;
+  private crashPhase: 'exploding' | 'falling' | 'settling' | 'reassembling' = 'exploding';
+  private crashParticleStates = new Map<string, {
+    x: number;
+    y: number;
+    velocityX: number;
+    velocityY: number;
+    settled: boolean;
+    groundY: number;  // Individual ground level for each piece
+  }>();
+
   // ========== V4.0 - GIVING LIFE ==========
 
   // Eye tracking
@@ -236,6 +250,8 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
       // V5.0: Update assembly animations
       this.updateSpawnAssembly(currentTime);
       this.updateLandingAnimation(currentTime);
+      this.updateCrashAnimation(currentTime);
+      this.updateReassembly(currentTime);
 
       if (this.isMoving) {
         this.applyGlitch(currentTime);
@@ -566,12 +582,17 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * v5.0: Get transform for a digit during animations (spawn or landing)
+   * v5.0: Get transform for a digit during animations (spawn, landing, or crash)
    */
   getDigitTransform(section: string, rowIndex: number, colIndex: number): string {
     const key = `${section}-${rowIndex}-${colIndex}`;
 
-    // Priority: spawn assembly > landing scatter
+    // Priority: crash > spawn assembly > landing scatter
+    const crashState = this.crashParticleStates.get(key);
+    if (crashState && this.isCrashing()) {
+      return `translate(${crashState.x}px, ${crashState.y}px)`;
+    }
+
     const spawnState = this.spawnParticleStates.get(key);
     if (spawnState && this.assemblyPhase() !== AssemblyPhase.ASSEMBLED) {
       return `translate(${spawnState.currentX}px, ${spawnState.currentY}px)`;
@@ -702,6 +723,184 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
     this.isAssembled.set(true);
     this.spawnParticleStates.clear();
     this.assemblyComplete.emit();
+  }
+
+  // ========== V5.0 CRASH ANIMATION WITH PHYSICS ==========
+
+  /**
+   * Public method to trigger crash animation (called from parent on landing)
+   */
+  triggerCrash(): void {
+    if (this.isCrashing()) return;
+
+    this.isCrashing.set(true);
+    this.crashStartTime = performance.now();
+    this.crashPhase = 'exploding';
+    this.crashParticleStates.clear();
+
+    // Calculate explosion velocities for each digit
+    const grids = [
+      { grid: this.bodyGrid, section: 'body' },
+      { grid: this.armsGrid, section: 'arms' },
+      { grid: this.legsGrid, section: 'legs' }
+    ];
+
+    for (const { grid, section } of grids) {
+      if (!grid) continue;
+      const maxRows = grid.length;
+      const maxCols = grid[0]?.length || 0;
+
+      grid.forEach((row, ri) => {
+        row.forEach((digit, ci) => {
+          if (digit.isEmpty) return;
+
+          const key = `${section}-${ri}-${ci}`;
+
+          // Position in grid (normalized 0-1)
+          const gridX = ci / maxCols;
+          const gridY = ri / maxRows;
+
+          // Vector from center
+          const deltaX = gridX - 0.5;
+          const deltaY = gridY - 0.5;
+          const angle = Math.atan2(deltaY, deltaX);
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+          // Explosion velocity (upward and outward)
+          const typeMass = ASSEMBLY_CONFIG.TYPE_MASS[digit.type] ?? 0.75;
+          const explosionForce = 400 + Math.random() * 200;
+
+          // Random angle variation
+          const randomAngle = angle + (Math.random() - 0.5) * 1.2;
+
+          // Initial velocities - mostly upward with horizontal spread
+          const velocityX = Math.cos(randomAngle) * distance * explosionForce * 0.8;
+          const velocityY = -300 - Math.random() * 200; // Strong upward
+
+          // Each piece has its own ground level (slight variation for visual interest)
+          const baseGroundY = 30 + Math.random() * 20;
+
+          this.crashParticleStates.set(key, {
+            x: 0,
+            y: 0,
+            velocityX,
+            velocityY,
+            settled: false,
+            groundY: baseGroundY
+          });
+        });
+      });
+    }
+  }
+
+  private updateCrashAnimation(currentTime: number): void {
+    if (!this.isCrashing()) return;
+
+    const elapsed = currentTime - this.crashStartTime;
+    const deltaTime = 1 / 60; // Assume 60fps for physics
+    const gravity = 800; // Gravity acceleration
+    const bounceDamping = 0.4; // Energy loss on bounce
+    const friction = 0.95; // Horizontal friction
+
+    // Physics simulation for each particle
+    let allSettled = true;
+    this.crashParticleStates.forEach((state) => {
+      if (state.settled) return;
+
+      allSettled = false;
+
+      // Apply gravity
+      state.velocityY += gravity * deltaTime;
+
+      // Apply friction to horizontal movement
+      state.velocityX *= friction;
+
+      // Update position
+      state.x += state.velocityX * deltaTime;
+      state.y += state.velocityY * deltaTime;
+
+      // Ground collision
+      if (state.y >= state.groundY) {
+        state.y = state.groundY;
+
+        // Bounce if moving fast enough
+        if (Math.abs(state.velocityY) > 30) {
+          state.velocityY = -state.velocityY * bounceDamping;
+          state.velocityX *= 0.8; // Lose some horizontal momentum on bounce
+        } else {
+          // Settle
+          state.velocityY = 0;
+          state.velocityX = 0;
+
+          // Check if almost stopped
+          if (Math.abs(state.velocityX) < 5) {
+            state.settled = true;
+          }
+        }
+      }
+    });
+
+    // Phases: exploding -> falling -> settling -> reassembling
+    if (this.crashPhase === 'exploding' && elapsed > 100) {
+      this.crashPhase = 'falling';
+    }
+
+    if (allSettled && this.crashPhase !== 'reassembling') {
+      // All pieces settled, wait a moment then reassemble
+      this.crashPhase = 'settling';
+
+      // After 1.5 seconds of being settled, start reassembly
+      setTimeout(() => {
+        if (this.isCrashing()) {
+          this.crashPhase = 'reassembling';
+          this.startReassembly();
+        }
+      }, 1500);
+    }
+  }
+
+  private reassemblyStartTime = 0;
+
+  private startReassembly(): void {
+    this.reassemblyStartTime = performance.now();
+  }
+
+  private updateReassembly(currentTime: number): void {
+    if (this.crashPhase !== 'reassembling') return;
+
+    const elapsed = currentTime - this.reassemblyStartTime;
+    const duration = ASSEMBLY_CONFIG.CRASH_REASSEMBLE_DURATION;
+
+    if (elapsed >= duration) {
+      // Complete
+      this.isCrashing.set(false);
+      this.crashParticleStates.clear();
+      this.crashPhase = 'exploding';
+      this.crashComplete.emit();
+      return;
+    }
+
+    // Spring animation back to origin
+    const t = elapsed / duration;
+    const zeta = 0.65;
+    const omega = 10;
+    const decay = Math.exp(-zeta * omega * t);
+    const oscillation = Math.cos(omega * Math.sqrt(1 - zeta * zeta) * t);
+    const progress = 1 - decay * oscillation;
+
+    this.crashParticleStates.forEach((state) => {
+      // Store original positions if not stored
+      if (!('originalX' in state)) {
+        (state as any).originalX = state.x;
+        (state as any).originalY = state.y;
+      }
+
+      const origX = (state as any).originalX;
+      const origY = (state as any).originalY;
+
+      state.x = origX * (1 - progress);
+      state.y = origY * (1 - progress);
+    });
   }
 
   private applyGlitch(currentTime: number): void {

@@ -343,4 +343,11 @@ export const ASSEMBLY_CONFIG = {
     empty: 0,
     normal: 0.75,
   } as Record<string, number>,
+
+  // v5.0: Crash animation (high fall)
+  CRASH_SCATTER_MAGNITUDE: 120,     // Much larger scatter than landing
+  CRASH_SCATTER_DURATION: 300,      // Longer scatter phase
+  CRASH_DISASSEMBLED_DURATION: 1500, // Stay disassembled for 1.5 seconds
+  CRASH_REASSEMBLE_DURATION: 800,   // Slower reassembly
+  CRASH_MIN_FALL_HEIGHT: 200,       // Minimum fall height to trigger crash
 };

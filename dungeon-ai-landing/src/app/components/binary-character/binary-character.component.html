@@ -4,6 +4,7 @@
      [class.jumping]="isJumping"
      [class.landing]="isLanding()"
      [class.assembling]="assemblyPhase() === 'assembling' || assemblyPhase() === 'scattered'"
+     [class.crashing]="isCrashing()"
      [attr.data-emotion]="emotionClass()"
      [attr.data-facing]="facingRight ? 'right' : 'left'"
      [attr.data-assembly]="assemblyPhase()"
