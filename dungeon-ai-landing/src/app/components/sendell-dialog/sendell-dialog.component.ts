@@ -33,7 +33,7 @@ import { FormsModule } from '@angular/forms';
 import { OnboardingService, OnboardingPhase } from '../../services/onboarding.service';
 import { PhysicsService } from '../../core/services/physics.service';
 import { CameraService } from '../../services/camera.service';
-import { DialogMessage, ONBOARDING_TIMING } from '../../config/onboarding.config';
+import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG } from '../../config/onboarding.config';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 
 @Component({
@@ -104,10 +104,21 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   });
 
   readonly isVisible = computed(() => {
-    const dialog = this.currentDialog();
     const phase = this.onboarding.phase();
+    // v5.1: Show during loading, welcome, and normal dialog phases
+    if (phase === OnboardingPhase.LOADING || phase === OnboardingPhase.WELCOME) {
+      return true;
+    }
+    const dialog = this.currentDialog();
     return dialog !== null && phase !== OnboardingPhase.DARKNESS && phase !== OnboardingPhase.COMPLETE;
   });
+
+  // v5.1: Loading and welcome state
+  readonly isLoading = computed(() => this.onboarding.isLoading());
+  readonly isWelcome = computed(() => this.onboarding.isWelcome());
+  readonly loadingProgress = computed(() => this.onboarding.loadingProgress());
+  readonly loadingText = LOADING_CONFIG.TEXT;
+  readonly welcomeText = LOADING_CONFIG.WELCOME_TEXT;
 
   readonly requiresChoice = computed(() => {
     const dialog = this.currentDialog();
@@ -115,6 +126,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   });
 
   readonly showContinuePrompt = computed(() => {
+    // v5.1: Don't show during loading, show during welcome
+    if (this.isLoading()) return false;
+    if (this.isWelcome()) return true;
     return !this.isTyping() && !this.requiresChoice();
   });
 
@@ -136,10 +150,21 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   /**
    * Handle keyboard input
+   * v5.1: Also handles welcome phase advancement
    */
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
     if (!this.isVisible()) return;
+
+    // v5.1: Loading phase - no input allowed
+    if (this.isLoading()) return;
+
+    // v5.1: Welcome phase - any key advances to pre-spawn
+    if (this.isWelcome()) {
+      event.preventDefault();
+      this.onboarding.advanceFromWelcome();
+      return;
+    }
 
     // If currently typing, skip to end on any key
     if (this.isTyping()) {
@@ -157,17 +182,45 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
-    // Continue on SPACE or ENTER
-    if (event.code === 'Space' || event.code === 'Enter') {
-      event.preventDefault();
-      this.advanceDialog();
+    // v5.1: Continue on ANY key (not just SPACE/ENTER)
+    event.preventDefault();
+    this.advanceDialog();
+  }
+
+  /**
+   * v5.1: Handle click to advance dialog
+   */
+  @HostListener('document:click', ['$event'])
+  onClick(event: MouseEvent): void {
+    if (!this.isVisible()) return;
+
+    // Loading phase - no input allowed
+    if (this.isLoading()) return;
+
+    // Welcome phase - click advances to pre-spawn
+    if (this.isWelcome()) {
+      this.onboarding.advanceFromWelcome();
+      return;
     }
+
+    // If currently typing, skip to end
+    if (this.isTyping()) {
+      this.skipToEnd();
+      return;
+    }
+
+    // If choice mode, don't advance on click (let input handle it)
+    if (this.requiresChoice()) return;
+
+    // Advance dialog
+    this.advanceDialog();
   }
 
   /**
    * Start typing animation for a specific dialog
    * v1.1: Now accepts dialog parameter instead of reading from computed
    * v1.2: Added markForCheck() to ensure change detection with OnPush
+   * v5.1: Triggers talking animation on robot
    */
   private startTypingAnimation(dialog: DialogMessage): void {
     if (!dialog) return;
@@ -178,6 +231,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     this.currentCharIndex = 0;
     this.hasTriggeredWord = false;
     this.cdr.markForCheck();
+
+    // v5.1: Start robot mouth animation (2 seconds)
+    this.onboarding.startTalking();
 
     this.typingInterval = setInterval(() => {
       const text = dialog.text;

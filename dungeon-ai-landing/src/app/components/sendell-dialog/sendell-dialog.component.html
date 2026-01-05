@@ -1,5 +1,6 @@
 <!-- Sendell Dialog - Centralized Dialog System -->
 <!-- v1.0: Supports centered and character-attached modes -->
+<!-- v5.1: Added loading bar and welcome phases -->
 
 @if (isVisible()) {
   <div class="dialog-wrapper"
@@ -7,7 +8,9 @@
        [ngStyle]="getPositionStyle()">
 
     <div class="dialog-box"
-         [class.choice-mode]="requiresChoice()">
+         [class.choice-mode]="requiresChoice()"
+         [class.loading-mode]="isLoading()"
+         [class.welcome-mode]="isWelcome()">
 
       <div class="dialog-content">
         <!-- Terminal Header -->
@@ -16,13 +19,34 @@
           <span class="dialog-title">// SENDELL</span>
         </div>
 
-        <!-- Dialog Text with Typing Effect -->
-        <div class="dialog-text">
-          <span class="typing-effect">{{ displayedText() }}</span>
-          @if (isTyping()) {
-            <span class="cursor">_</span>
-          }
-        </div>
+        <!-- v5.1: Loading Bar -->
+        @if (isLoading()) {
+          <div class="loading-section">
+            <div class="loading-text">{{ loadingText }}</div>
+            <div class="loading-bar-container">
+              <div class="loading-bar" [style.width.%]="loadingProgress()"></div>
+            </div>
+            <div class="loading-percent">{{ loadingProgress() | number:'1.0-0' }}%</div>
+          </div>
+        }
+
+        <!-- v5.1: Welcome Message -->
+        @if (isWelcome()) {
+          <div class="welcome-section">
+            <div class="welcome-text">{{ welcomeText }}</div>
+            <div class="welcome-hint blink">[PULSE CUALQUIER TECLA]</div>
+          </div>
+        }
+
+        <!-- Dialog Text with Typing Effect (hidden during loading/welcome/empty) -->
+        @if (!isLoading() && !isWelcome() && (displayedText() || isTyping())) {
+          <div class="dialog-text">
+            <span class="typing-effect">{{ displayedText() }}</span>
+            @if (isTyping()) {
+              <span class="cursor">_</span>
+            }
+          </div>
+        }
 
         <!-- Choice Input (Y/N) -->
         @if (requiresChoice() && !isTyping()) {
@@ -51,7 +75,7 @@
         <!-- Continue Prompt -->
         @if (showContinuePrompt()) {
           <div class="dialog-prompt">
-            <span class="blink">[SPACE / ENTER]</span>
+            <span class="blink">[CUALQUIER TECLA]</span>
           </div>
         }
       </div>

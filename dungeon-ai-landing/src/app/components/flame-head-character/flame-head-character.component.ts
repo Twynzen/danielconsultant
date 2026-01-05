@@ -27,7 +27,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
   // v5.0: Onboarding service for first-time visitor experience
-  private onboarding = inject(OnboardingService);
+  // v5.1: Made public for template access to isSendellTalking()
+  readonly onboarding = inject(OnboardingService);
 
   // Character dimensions (v3.0 - clarity & separation)
   private readonly CHARACTER_WIDTH = 180;
@@ -63,7 +64,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   // Dialog state (v5.0: now only used for crash dialog, onboarding uses SendellDialog)
   showDialog = signal(false);  // v5.0: Start hidden
   displayedText = signal('');
-  isTyping = signal(true);
+  isTyping = signal(false);  // v5.1: Start false, only true during crash dialog
   private currentMessageIndex = 0;
   private currentCharIndex = 0;
   private typingInterval: any = null;

@@ -122,11 +122,20 @@ export const RETURN_VISITOR_DIALOG: DialogMessage = {
  */
 export const ONBOARDING_TIMING = {
   INITIAL_DARKNESS_MS: 500,
+  LOADING_DURATION_MS: 3500,        // v5.1: Loading bar duration
   GROUND_FADE_DURATION_MS: 1500,
   TITLE_FADE_DURATION_MS: 1000,
   PILLARS_FADE_DURATION_MS: 2000,
   TYPING_SPEED_MS: 35,  // Per character
   POST_ASSEMBLY_DELAY_MS: 800
+};
+
+/**
+ * v5.1: Loading screen configuration
+ */
+export const LOADING_CONFIG = {
+  TEXT: 'Inicializando sistema...',
+  WELCOME_TEXT: 'Bienvenido'
 };
 
 /**

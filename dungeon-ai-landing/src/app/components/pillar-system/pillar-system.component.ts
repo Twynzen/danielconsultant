@@ -191,12 +191,21 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   /**
    * v4.7.1: Emit illumination map for hieroglyphic wall
    * Emits for ALL pillars (modal + external) using pillar.id as key
+   * v5.1: Only emit PROXIMITY illumination (not baseIllumination) so inscriptions
+   *       only appear when robot is actually close, not when onboarding illuminates
    */
   private emitIlluminations(states: PillarState[]): void {
     const illMap = new Map<string, number>();
     states.forEach(state => {
-      // Use pillar ID as key for all types
-      illMap.set(state.config.id, state.illumination);
+      // v5.1: Calculate pure proximity (without baseIllumination)
+      // Inscriptions should only appear when robot is within HOLOGRAM_RADIUS (100px)
+      const distance = state.distance;
+      const hologramRadius = SIDESCROLLER_CONFIG.PILLAR_HOLOGRAM_RADIUS;
+      // Only emit illumination when within hologram radius
+      const proximityIllumination = distance <= hologramRadius
+        ? Math.max(0, 1 - (distance / hologramRadius))
+        : 0;
+      illMap.set(state.config.id, proximityIllumination);
     });
     this.illuminationsChanged.emit(illMap);
   }

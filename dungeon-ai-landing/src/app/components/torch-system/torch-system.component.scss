@@ -13,9 +13,20 @@
   position: absolute;
   pointer-events: all;
   // cursor: pointer; // REMOVIDO - ahora usa cursor nativo verde de styles.scss
-  transition: all 0.3s ease;
+  transition: all 0.5s ease;
   opacity: 0; // OCULTO: Completamente invisible inicialmente
-  
+
+  // v5.1: Single torch in top-right corner - always visible as silhouette
+  &.single-torch {
+    opacity: 0.3; // Silhouette always visible
+    transition: opacity 0.8s ease, filter 0.5s ease;
+
+    &.lit {
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 68, 0.8));
+    }
+  }
+
   // Solo visible cuando hay proximidad de cursor
   &.proximity-detected {
     opacity: 0.3; // Aparece sutilmente

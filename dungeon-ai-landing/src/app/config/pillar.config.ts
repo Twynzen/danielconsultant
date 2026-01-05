@@ -9,7 +9,7 @@ export interface PillarConfig {
   id: string;
   label: string;
   icon: string;
-  type: 'external' | 'modal' | 'about';  // v4.8: Added 'about' type for Daniel portrait
+  type: 'external' | 'modal' | 'about' | 'internal';  // v5.1: Added 'internal' for Angular routes
   destination: string;
   color: string;
   worldX: number;           // Horizontal position in world
@@ -81,87 +81,35 @@ export const PILLAR_ICONS: Record<string, string> = {
     <circle cx="12" cy="8" r="4"/>
     <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
     <path d="M12 14v2"/>
+  </svg>`,
+
+  // v5.1: Desktop icon for MultiDesktopFlow
+  'desktop': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="2" y="3" width="20" height="14" rx="2"/>
+    <line x1="8" y1="21" x2="16" y2="21"/>
+    <line x1="12" y1="17" x2="12" y2="21"/>
+    <path d="M6 7h4M6 10h8"/>
   </svg>`
 };
 
 /**
- * 9 Pillars distributed horizontally across the side-scroller level
- * v4.8.1: Added DANIEL pillar as first, shifted all +600px from original for breathing room
+ * 8 Pillars distributed horizontally across the side-scroller level
+ * v5.1: Reorganized - removed FinOps AI & Process Automation, added MultiDesktopFlow
  * Layout:
- * |--spawn--|--DANIEL--|--NUVARIS--|--INTEGRATIONS--|--RAG--|--AUTOMATION--|--AGENTS--|--FINOPS--|--LLMS--|--CALENDLY--|
- *    400px    1000px      1400px       2000px       2600px     3200px       3800px     4400px    5000px     5600px
+ * |--spawn--|--QUIÉN SOY--|--LOCAL LLMS--|--RAG--|--AGENTS--|--INTEGRATIONS--|--CALENDLY--|--NUVARIS--|--MULTIDESKTOPFLOW--|
+ *    400px      1000px        1600px      2200px    2800px       3400px          4000px       4600px         5200px
  */
 export const PILLARS: PillarConfig[] = [
-  // v4.8: NEW - "About Daniel" pillar with animated hologram portrait
+  // v5.1: "Quién Soy" pillar with animated hologram portrait
   {
     id: 'about-daniel',
-    label: 'DANIEL',
+    label: 'QUIÉN SOY',
     icon: 'user',
     type: 'about',
     destination: 'about',
     color: '#00ff44',  // Matrix green
-    worldX: 1000,  // v4.8.1: 600px gap from player spawn (400)
+    worldX: 1000,
     description: 'Consultor de Inteligencia Artificial'
-  },
-  {
-    id: 'nuvaris',
-    label: 'NUVARIS',
-    icon: 'globe',
-    type: 'external',
-    destination: 'https://nuvaris.com',
-    color: '#00ff88',
-    worldX: 1400,  // v4.8.1: +400px shift
-    description: 'Visita Nuvaris - Plataforma de IA'
-  },
-  {
-    id: 'custom-integrations',
-    label: 'INTEGRATIONS',
-    icon: 'plug',
-    type: 'modal',
-    destination: 'custom-integrations',
-    color: '#ff6600',
-    worldX: 2000,  // v4.8.1: +400px shift
-    description: 'Integraciones personalizadas con IA'
-  },
-  {
-    id: 'rag-systems',
-    label: 'RAG SYSTEMS',
-    icon: 'database',
-    type: 'modal',
-    destination: 'rag-systems',
-    color: '#00ccff',
-    worldX: 2600,  // v4.8.1: +400px shift
-    description: 'Sistemas de Retrieval Augmented Generation'
-  },
-  {
-    id: 'process-automation',
-    label: 'AUTOMATION',
-    icon: 'gear',
-    type: 'modal',
-    destination: 'process-automation',
-    color: '#ff00ff',
-    worldX: 3200,  // v4.8.1: +400px shift
-    description: 'Automatización de Procesos con IA'
-  },
-  {
-    id: 'agent-orchestration',
-    label: 'AGENTS',
-    icon: 'robot',
-    type: 'modal',
-    destination: 'agent-orchestration',
-    color: '#ff6600',
-    worldX: 3800,  // v4.8.1: +400px shift
-    description: 'Orquestación de Agentes de IA'
-  },
-  {
-    id: 'finops-ai',
-    label: 'FINOPS AI',
-    icon: 'chart',
-    type: 'modal',
-    destination: 'finops-ai',
-    color: '#88ff00',
-    worldX: 4400,  // v4.8.1: +400px shift
-    description: 'Optimización Financiera con IA'
   },
   {
     id: 'local-llms',
@@ -170,8 +118,38 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'local-llms',
     color: '#00ccff',
-    worldX: 5000,  // v4.8.1: +400px shift
+    worldX: 1600,
     description: 'Modelos de Lenguaje Locales'
+  },
+  {
+    id: 'rag-systems',
+    label: 'RAG SYSTEMS',
+    icon: 'database',
+    type: 'modal',
+    destination: 'rag-systems',
+    color: '#00ccff',
+    worldX: 2200,
+    description: 'Sistemas de Retrieval Augmented Generation'
+  },
+  {
+    id: 'agent-orchestration',
+    label: 'AGENTS',
+    icon: 'robot',
+    type: 'modal',
+    destination: 'agent-orchestration',
+    color: '#ff6600',
+    worldX: 2800,
+    description: 'Orquestación de Agentes de IA'
+  },
+  {
+    id: 'custom-integrations',
+    label: 'INTEGRATIONS',
+    icon: 'plug',
+    type: 'modal',
+    destination: 'custom-integrations',
+    color: '#ff6600',
+    worldX: 3400,
+    description: 'Integraciones personalizadas con IA'
   },
   {
     id: 'calendly',
@@ -180,8 +158,28 @@ export const PILLARS: PillarConfig[] = [
     type: 'external',
     destination: 'https://calendly.com/darmcastiblanco/30min',
     color: '#ff6b00',
-    worldX: 5600,  // v4.8.1: +400px shift
+    worldX: 4000,
     description: 'Agenda una sesión de consultoría'
+  },
+  {
+    id: 'nuvaris',
+    label: 'NUVARIS',
+    icon: 'globe',
+    type: 'external',
+    destination: 'https://nuvaris.com',
+    color: '#00ff88',
+    worldX: 4600,
+    description: 'Visita Nuvaris - Plataforma de IA'
+  },
+  {
+    id: 'multidesktopflow',
+    label: 'MULTIDESKTOPFLOW',
+    icon: 'desktop',
+    type: 'internal',
+    destination: '/multidesktopflow',
+    color: '#aa00ff',  // Purple for internal route
+    worldX: 5200,
+    description: 'Sistema de flujo multi-escritorio'
   }
 ];
 

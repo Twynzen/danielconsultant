@@ -19,11 +19,14 @@ import {
   FREE_MODE_DIALOGS,
   RETURN_VISITOR_DIALOG,
   ONBOARDING_TIMING,
-  ONBOARDING_STORAGE_KEY
+  ONBOARDING_STORAGE_KEY,
+  LOADING_CONFIG
 } from '../config/onboarding.config';
 
 export enum OnboardingPhase {
   DARKNESS = 'darkness',
+  LOADING = 'loading',           // v5.1: Loading bar phase
+  WELCOME = 'welcome',           // v5.1: Welcome message after loading
   PRE_SPAWN_DIALOG = 'pre-spawn',
   SPAWN_ANIMATION = 'spawn',
   PRESENTATION = 'presentation',
@@ -47,6 +50,7 @@ export interface OnboardingState {
   illumination: IlluminationLevels;
   isTyping: boolean;
   displayedText: string;
+  loadingProgress: number;  // v5.1: 0-100 loading bar progress
 }
 
 @Injectable({
@@ -65,8 +69,17 @@ export class OnboardingService {
       pillars: 0
     },
     isTyping: false,
-    displayedText: ''
+    displayedText: '',
+    loadingProgress: 0  // v5.1
   });
+
+  // v5.1: Loading animation frame ID
+  private loadingAnimationId: number | null = null;
+
+  // v5.1: Talking animation state
+  private talkingTimeoutId: any = null;
+  private _isSendellTalking = signal(false);
+  readonly isSendellTalking = computed(() => this._isSendellTalking());
 
   // Public computed signals
   readonly phase = computed(() => this.state().phase);
@@ -76,6 +89,11 @@ export class OnboardingService {
   readonly illumination = computed(() => this.state().illumination);
   readonly isTyping = computed(() => this.state().isTyping);
   readonly displayedText = computed(() => this.state().displayedText);
+  readonly loadingProgress = computed(() => this.state().loadingProgress);  // v5.1
+
+  // v5.1: Loading phase checks
+  readonly isLoading = computed(() => this.state().phase === OnboardingPhase.LOADING);
+  readonly isWelcome = computed(() => this.state().phase === OnboardingPhase.WELCOME);
 
   // Illumination convenience signals
   readonly groundOpacity = computed(() => this.state().illumination.ground);
@@ -91,13 +109,21 @@ export class OnboardingService {
   readonly isOnboardingActive = computed(() =>
     this.state().phase !== OnboardingPhase.COMPLETE
   );
-  readonly shouldShowCharacter = computed(() =>
-    this.state().phase !== OnboardingPhase.DARKNESS &&
-    this.state().phase !== OnboardingPhase.PRE_SPAWN_DIALOG
-  );
-  readonly isDialogCentered = computed(() =>
-    this.state().phase === OnboardingPhase.PRE_SPAWN_DIALOG
-  );
+  readonly shouldShowCharacter = computed(() => {
+    const phase = this.state().phase;
+    // v5.1: Don't show character during loading/welcome/pre-spawn phases
+    return phase !== OnboardingPhase.DARKNESS &&
+           phase !== OnboardingPhase.LOADING &&
+           phase !== OnboardingPhase.WELCOME &&
+           phase !== OnboardingPhase.PRE_SPAWN_DIALOG;
+  });
+  readonly isDialogCentered = computed(() => {
+    const phase = this.state().phase;
+    // v5.1: Centered for loading, welcome, and pre-spawn phases
+    return phase === OnboardingPhase.LOADING ||
+           phase === OnboardingPhase.WELCOME ||
+           phase === OnboardingPhase.PRE_SPAWN_DIALOG;
+  });
 
   // Current dialog based on phase
   readonly currentDialogs = computed((): DialogMessage[] => {
@@ -136,22 +162,67 @@ export class OnboardingService {
 
   /**
    * Start the onboarding sequence
+   * v5.1: Now goes through LOADING → WELCOME → PRE_SPAWN_DIALOG
    */
   startOnboarding(): void {
     // Start with darkness phase
     this.state.update(s => ({
       ...s,
       phase: OnboardingPhase.DARKNESS,
-      currentDialogIndex: 0
+      currentDialogIndex: 0,
+      loadingProgress: 0
     }));
 
-    // After brief darkness, show pre-spawn dialog
+    // After brief darkness, start loading bar
     setTimeout(() => {
       this.state.update(s => ({
         ...s,
-        phase: OnboardingPhase.PRE_SPAWN_DIALOG
+        phase: OnboardingPhase.LOADING
       }));
+      this.startLoadingAnimation();
     }, ONBOARDING_TIMING.INITIAL_DARKNESS_MS);
+  }
+
+  /**
+   * v5.1: Animate loading bar from 0 to 100
+   */
+  private startLoadingAnimation(): void {
+    const startTime = performance.now();
+    const duration = ONBOARDING_TIMING.LOADING_DURATION_MS;
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min((elapsed / duration) * 100, 100);
+
+      this.state.update(s => ({
+        ...s,
+        loadingProgress: progress
+      }));
+
+      if (progress < 100) {
+        this.loadingAnimationId = requestAnimationFrame(animate);
+      } else {
+        // Loading complete, show welcome
+        this.loadingAnimationId = null;
+        this.state.update(s => ({
+          ...s,
+          phase: OnboardingPhase.WELCOME
+        }));
+      }
+    };
+
+    this.loadingAnimationId = requestAnimationFrame(animate);
+  }
+
+  /**
+   * v5.1: Advance from welcome to pre-spawn dialog
+   */
+  advanceFromWelcome(): void {
+    this.state.update(s => ({
+      ...s,
+      phase: OnboardingPhase.PRE_SPAWN_DIALOG,
+      currentDialogIndex: 0
+    }));
   }
 
   /**
@@ -379,6 +450,39 @@ export class OnboardingService {
    */
   setDisplayedText(text: string): void {
     this.state.update(s => ({ ...s, displayedText: text }));
+  }
+
+  // ==================== TALKING ANIMATION (v5.1) ====================
+
+  /**
+   * v5.1: Start mouth animation - called when new dialog text appears
+   * Mouth animates for 2 seconds then stops
+   */
+  startTalking(): void {
+    // Clear any existing timeout
+    if (this.talkingTimeoutId) {
+      clearTimeout(this.talkingTimeoutId);
+    }
+
+    // Start talking
+    this._isSendellTalking.set(true);
+
+    // Stop after 2 seconds
+    this.talkingTimeoutId = setTimeout(() => {
+      this._isSendellTalking.set(false);
+      this.talkingTimeoutId = null;
+    }, 2000);
+  }
+
+  /**
+   * v5.1: Stop mouth animation immediately
+   */
+  stopTalking(): void {
+    if (this.talkingTimeoutId) {
+      clearTimeout(this.talkingTimeoutId);
+      this.talkingTimeoutId = null;
+    }
+    this._isSendellTalking.set(false);
   }
 
   // ==================== PERSISTENCE ====================

@@ -29,7 +29,7 @@ export const SIDESCROLLER_CONFIG = {
 
   // Interaction radii
   PILLAR_HIGHLIGHT_RADIUS: 200,                   // Distance to illuminate pillar
-  PILLAR_HOLOGRAM_RADIUS: 150,                    // Distance to show hologram preview
+  PILLAR_HOLOGRAM_RADIUS: 100,                    // v5.1: Reduced from 150 - hologram only when very close
   PILLAR_INTERACT_RADIUS: 100,                    // Distance to activate with Enter
 
   // Circuit system
@@ -48,19 +48,18 @@ export const SIDESCROLLER_CONFIG = {
 
 /**
  * Pillar positions distributed horizontally across the level
- * v4.8.1: 9 pillars spread evenly across 6600px (player spawns at x=400)
+ * v5.1: 8 pillars - removed FinOps AI & Process Automation, added MultiDesktopFlow
  * NOTE: Actual positions are defined in pillar.config.ts PILLARS array
  */
 export const SIDESCROLLER_PILLAR_POSITIONS = [
-  { x: 1000, service: 'about-daniel' },     // v4.8.1: First pillar, 600px from spawn
-  { x: 1400, service: 'nuvaris' },
-  { x: 2000, service: 'custom-integrations' },
-  { x: 2600, service: 'rag-systems' },
-  { x: 3200, service: 'process-automation' },
-  { x: 3800, service: 'agent-orchestration' },
-  { x: 4400, service: 'finops-ai' },
-  { x: 5000, service: 'local-llms' },
-  { x: 5600, service: 'calendly' },
+  { x: 1000, service: 'about-daniel' },
+  { x: 1600, service: 'local-llms' },
+  { x: 2200, service: 'rag-systems' },
+  { x: 2800, service: 'agent-orchestration' },
+  { x: 3400, service: 'custom-integrations' },
+  { x: 4000, service: 'calendly' },
+  { x: 4600, service: 'nuvaris' },
+  { x: 5200, service: 'multidesktopflow' },
 ];
 
 /**

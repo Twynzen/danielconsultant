@@ -1,5 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
 import { ModalServiceComponent } from '../modal-service/modal-service.component';
 // v4.7: Replaced by HieroglyphicWall
@@ -8,6 +9,7 @@ import { HieroglyphicWallComponent } from '../hieroglyphic-wall/hieroglyphic-wal
 import { FlameHeadCharacterComponent } from '../flame-head-character/flame-head-character.component';
 import { PillarSystemComponent } from '../pillar-system/pillar-system.component';
 import { SendellDialogComponent } from '../sendell-dialog/sendell-dialog.component';
+import { TorchSystemComponent } from '../torch-system/torch-system.component';
 import { PillarConfig, PILLAR_INTERACTION, PILLARS } from '../../config/pillar.config';
 import { CameraService } from '../../services/camera.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
@@ -25,7 +27,9 @@ import { OnboardingService, OnboardingPhase } from '../../services/onboarding.se
     FlameHeadCharacterComponent,
     PillarSystemComponent,
     // v5.0: Onboarding dialog system
-    SendellDialogComponent
+    SendellDialogComponent,
+    // v5.1: Single torch in top-right corner
+    TorchSystemComponent
   ],
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
@@ -34,6 +38,7 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   private cameraService = inject(CameraService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
+  private router = inject(Router);  // v5.1: For internal route navigation
 
   // v5.0: Onboarding service for first-time visitor experience
   readonly onboarding = inject(OnboardingService);
@@ -137,8 +142,15 @@ export class LandingPageComponent implements OnInit, OnDestroy {
    * v4.6.2: Called when a pillar is activated via E key
    * Stores WORLD coordinates so hologram stays anchored to pillar
    * v4.6.3: Activates cinematic zoom effect
+   * v5.1: Handles internal route navigation
    */
   onPillarActivated(event: { config: PillarConfig; worldX: number; worldY: number }): void {
+    // v5.1: Handle internal routes (navigate to Angular route)
+    if (event.config.type === 'internal') {
+      this.router.navigate([event.config.destination]);
+      return;
+    }
+
     // Store hologram config
     this.activeHologramPillar = event.config;
 

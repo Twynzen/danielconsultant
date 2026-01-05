@@ -21,6 +21,7 @@
 </div>
 
 <!-- Binary AI Character - Made of 0s and 1s -->
+<!-- v5.1: isTalking now uses onboarding.isSendellTalking() for 2-second mouth animation -->
 <div class="character-container"
      [class]="characterClasses()"
      [class.dragging]="isDragging()"
@@ -31,7 +32,7 @@
     [isMoving]="isMoving()"
     [isJumping]="isJumping()"
     [facingRight]="physicsService.facingRight()"
-    [isTalking]="isTyping()"
+    [isTalking]="isTyping() || onboarding.isSendellTalking()"
     [characterScreenY]="screenY()"
     [facing]="robotFacing()"
     (assemblyComplete)="onAssemblyComplete()"
