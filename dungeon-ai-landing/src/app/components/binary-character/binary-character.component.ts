@@ -794,9 +794,9 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
 
           // v5.1 FIX: Calculate real ground distance for each particle based on row
           // Each particle's absolute Y = characterScreenY + (row * ~12px line height)
-          // Ground is at window.innerHeight - 120
+          // Ground is at window.innerHeight - 60 (v4.8.2: halved from 120)
           const rowHeight = 12; // Approximate height of each grid row in pixels
-          const groundYAbsolute = window.innerHeight - 120;
+          const groundYAbsolute = window.innerHeight - 60;
           const particleAbsoluteY = this.characterScreenY + (ri * rowHeight);
           const distanceToGround = groundYAbsolute - particleAbsoluteY;
           // Add small variation for visual interest (±15px)

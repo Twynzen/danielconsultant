@@ -9,8 +9,8 @@ export const SIDESCROLLER_CONFIG = {
   LEVEL_HEIGHT: () => window.innerHeight,         // Screen height (no vertical scroll)
 
   // Ground configuration
-  GROUND_Y: () => window.innerHeight - 120,       // Ground surface position
-  GROUND_HEIGHT: 120,                             // Ground visual height
+  GROUND_Y: () => window.innerHeight - 60,        // Ground surface position (v4.8.2: 120→60)
+  GROUND_HEIGHT: 60,                              // Ground visual height (v4.8.2: halved)
 
   // Physics constants
   GRAVITY: 1800,                                  // px/s² - downward acceleration
@@ -42,7 +42,7 @@ export const SIDESCROLLER_CONFIG = {
   WRAP_MARGIN: 100,                               // Teleport margin at edges
 
   // Helper methods
-  getGroundY: () => window.innerHeight - 120,
+  getGroundY: () => window.innerHeight - 60,      // v4.8.2: 120→60
   getLevelHeight: () => window.innerHeight,
 };
 

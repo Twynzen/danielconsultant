@@ -144,15 +144,15 @@ export class HieroglyphicWallComponent {
    * v4.8: Added 'about' type positioning
    *
    * Layout from bottom:
-   * - Ground: 120px
+   * - Ground: 60px (v4.8.2: halved from 120)
    * - Pillar height: ~120px
    * - Glyph above pillar: ~60px
    * - Gap: variable
    * - Inscription
    */
   private getPositionBottom(pillar: PillarConfig): number {
-    // Ground is 120px from bottom, pillar visual is ~120px, glyph ~60px above
-    const groundHeight = 120;
+    // v4.8.2: Ground is 60px from bottom (halved), pillar visual is ~120px, glyph ~60px above
+    const groundHeight = 60;
     const pillarVisualHeight = 150; // Pillar + glyph
     const baseFromBottom = groundHeight + pillarVisualHeight;
 
