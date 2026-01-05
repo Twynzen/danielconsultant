@@ -66,6 +66,9 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
     worldY: number;
   }>();
 
+  // v4.7: Emit illumination levels for hieroglyphic wall
+  @Output() illuminationsChanged = new EventEmitter<Map<string, number>>();
+
   // Pillar states
   pillarStates = signal<PillarState[]>([]);
 
@@ -174,6 +177,22 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
     });
 
     this.pillarStates.set(states);
+
+    // v4.7: Emit illuminations for hieroglyphic wall
+    this.emitIlluminations(states);
+  }
+
+  /**
+   * v4.7.1: Emit illumination map for hieroglyphic wall
+   * Emits for ALL pillars (modal + external) using pillar.id as key
+   */
+  private emitIlluminations(states: PillarState[]): void {
+    const illMap = new Map<string, number>();
+    states.forEach(state => {
+      // Use pillar ID as key for all types
+      illMap.set(state.config.id, state.illumination);
+    });
+    this.illuminationsChanged.emit(illMap);
   }
 
   // v4.6: Changed from ENTER to E key (videogame style)

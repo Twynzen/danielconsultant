@@ -496,3 +496,14 @@
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.6); }
 }
+
+// ============================================
+// v4.7: GLYPH SYMBOL ABOVE PILLAR
+// ============================================
+.pillar-glyph {
+  position: absolute;
+  bottom: calc(100% + 80px);  // Above the pillar structure
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+}

@@ -1,0 +1,78 @@
+<!-- Glyph Symbol v1.0 - Animated SVG over pillars -->
+<!-- v4.7.1: Added dynamic color support -->
+<div class="glyph-container"
+     [class.dormant]="isDormant"
+     [class.awakening]="isAwakening"
+     [class.active]="isActive"
+     [style.--illumination]="illuminationStyle"
+     [style.--glyph-color]="colorStyle">
+
+  <!-- SVG Symbol based on service type -->
+  <svg class="glyph-svg" viewBox="0 0 60 60">
+    @switch (iconType) {
+      <!-- Brain - Local LLMs -->
+      @case ('brain') {
+        <path class="glyph-path" d="M30 8 Q48 14 48 30 Q48 46 30 52 Q12 46 12 30 Q12 14 30 8" />
+        <path class="glyph-path" d="M22 22 Q30 16 38 22" />
+        <path class="glyph-path" d="M22 38 Q30 44 38 38" />
+        <line class="glyph-path" x1="30" y1="8" x2="30" y2="52" />
+      }
+      <!-- Database - RAG Systems -->
+      @case ('database') {
+        <ellipse class="glyph-path" cx="30" cy="14" rx="16" ry="6" />
+        <path class="glyph-path" d="M14 14 V46 Q14 52 30 52 Q46 52 46 46 V14" />
+        <ellipse class="glyph-path" cx="30" cy="30" rx="16" ry="6" />
+        <ellipse class="glyph-path" cx="30" cy="46" rx="16" ry="6" />
+      }
+      <!-- Robot - Agent Orchestration -->
+      @case ('robot') {
+        <rect class="glyph-path" x="14" y="18" width="32" height="26" rx="4" />
+        <circle class="glyph-path" cx="22" cy="28" r="4" />
+        <circle class="glyph-path" cx="38" cy="28" r="4" />
+        <line class="glyph-path" x1="22" y1="38" x2="38" y2="38" />
+        <line class="glyph-path" x1="30" y1="6" x2="30" y2="18" />
+        <circle class="glyph-path" cx="30" cy="6" r="3" />
+        <line class="glyph-path" x1="18" y1="44" x2="18" y2="54" />
+        <line class="glyph-path" x1="42" y1="44" x2="42" y2="54" />
+      }
+      <!-- Gear - Process Automation -->
+      @case ('gear') {
+        <circle class="glyph-path" cx="30" cy="30" r="10" />
+        <circle class="glyph-path" cx="30" cy="30" r="5" />
+        <!-- Gear teeth -->
+        <line class="glyph-path gear-tooth" x1="30" y1="4" x2="30" y2="14" />
+        <line class="glyph-path gear-tooth" x1="30" y1="46" x2="30" y2="56" />
+        <line class="glyph-path gear-tooth" x1="4" y1="30" x2="14" y2="30" />
+        <line class="glyph-path gear-tooth" x1="46" y1="30" x2="56" y2="30" />
+        <line class="glyph-path gear-tooth" x1="11" y1="11" x2="18" y2="18" />
+        <line class="glyph-path gear-tooth" x1="42" y1="42" x2="49" y2="49" />
+        <line class="glyph-path gear-tooth" x1="11" y1="49" x2="18" y2="42" />
+        <line class="glyph-path gear-tooth" x1="42" y1="18" x2="49" y2="11" />
+      }
+      <!-- Chart - FinOps AI -->
+      @case ('chart') {
+        <rect class="glyph-path" x="8" y="32" width="10" height="20" />
+        <rect class="glyph-path" x="25" y="20" width="10" height="32" />
+        <rect class="glyph-path" x="42" y="8" width="10" height="44" />
+        <polyline class="glyph-path" points="8,28 18,20 30,16 52,4" />
+      }
+      <!-- Plug - Custom Integrations -->
+      @case ('plug') {
+        <rect class="glyph-path" x="18" y="4" width="8" height="16" rx="2" />
+        <rect class="glyph-path" x="34" y="4" width="8" height="16" rx="2" />
+        <path class="glyph-path" d="M14 20 h32 v12 a16 16 0 01-16 16 a16 16 0 01-16-16 v-12 z" />
+        <line class="glyph-path" x1="30" y1="48" x2="30" y2="56" />
+      }
+      <!-- Default - Circle -->
+      @default {
+        <circle class="glyph-path" cx="30" cy="30" r="22" />
+        <circle class="glyph-path" cx="30" cy="30" r="12" />
+        <line class="glyph-path" x1="30" y1="8" x2="30" y2="52" />
+        <line class="glyph-path" x1="8" y1="30" x2="52" y2="30" />
+      }
+    }
+  </svg>
+
+  <!-- Glow effect background -->
+  <div class="glyph-glow"></div>
+</div>

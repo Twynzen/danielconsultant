@@ -2,10 +2,12 @@ import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, 
 import { CommonModule } from '@angular/common';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
 import { ModalServiceComponent } from '../modal-service/modal-service.component';
-import { HologramProjectionComponent } from '../hologram-projection/hologram-projection.component';
+// v4.7: Replaced by HieroglyphicWall
+// import { HologramProjectionComponent } from '../hologram-projection/hologram-projection.component';
+import { HieroglyphicWallComponent } from '../hieroglyphic-wall/hieroglyphic-wall.component';
 import { FlameHeadCharacterComponent } from '../flame-head-character/flame-head-character.component';
 import { PillarSystemComponent } from '../pillar-system/pillar-system.component';
-import { PillarConfig, PILLAR_INTERACTION } from '../../config/pillar.config';
+import { PillarConfig, PILLAR_INTERACTION, PILLARS } from '../../config/pillar.config';
 import { CameraService } from '../../services/camera.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 
@@ -16,7 +18,8 @@ import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
     CommonModule,
     CircuitsBackgroundComponent,
     ModalServiceComponent,
-    HologramProjectionComponent,
+    // v4.7: Replaced HologramProjection with HieroglyphicWall
+    HieroglyphicWallComponent,
     FlameHeadCharacterComponent,
     PillarSystemComponent
   ],
@@ -34,8 +37,12 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   // Modal state (legacy - keeping for fallback)
   isModalOpen = false;
   selectedServiceId: string | null = null;
+  selectedServiceColor: string = '#00ff44'; // v4.7.2: Dynamic color for modal
 
-  // v4.5: Hologram state
+  // v4.7: Hieroglyphic wall illuminations (replaces hologram)
+  pillarIlluminations = new Map<string, number>();
+
+  // v4.5: Hologram state (DEPRECATED - replaced by hieroglyphic wall)
   isHologramActive = false;
   activeHologramPillar: PillarConfig | null = null;
 
@@ -62,14 +69,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   private animationFrameId: number | null = null;
 
   // Camera transform for world scrolling - computed signal
-  // v4.6.3: Includes zoom scale when hologram is active
+  // v4.6.4: No scale on world - only hologram scales (fixes robot floating issue)
   get cameraTransformValue(): string {
-    const baseTransform = this.cameraService.cameraTransform();
-    if (this.isZoomed) {
-      // Combine translate3d with scale for zoom effect
-      return `${baseTransform} scale(${this.zoomScale})`;
-    }
-    return baseTransform;
+    return this.cameraService.cameraTransform();
   }
 
   ngOnInit(): void {
@@ -146,7 +148,28 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * v4.5: Handle URL click from hologram
+   * v4.7: Handle illuminations change from pillar system
+   * Updates the hieroglyphic wall with new illumination values
+   */
+  onIlluminationsChanged(illMap: Map<string, number>): void {
+    this.pillarIlluminations = illMap;
+  }
+
+  /**
+   * v4.7.2: Handle service inscription click - opens modal with pillar color
+   */
+  onServiceClicked(serviceId: string): void {
+    this.selectedServiceId = serviceId;
+
+    // v4.7.2: Get pillar color for the service
+    const pillar = PILLARS.find(p => p.destination === serviceId);
+    this.selectedServiceColor = pillar?.color ?? '#00ff44';
+
+    this.isModalOpen = true;
+  }
+
+  /**
+   * v4.5: Handle URL click from hologram (DEPRECATED)
    */
   onHologramUrlClick(url: string): void {
     // URL is opened by the hologram component itself

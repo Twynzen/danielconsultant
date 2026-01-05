@@ -1,7 +1,8 @@
-import { Component, Input, OnInit, computed, signal } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PillarConfig, PILLAR_ICONS } from '../../config/pillar.config';
+// v4.7.2: Removed GlyphSymbolComponent - glyph now integrated in hieroglyphic inscriptions
 
 /**
  * v4.6: Particle configuration for floating binary effect

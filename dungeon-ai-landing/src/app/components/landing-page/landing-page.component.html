@@ -21,14 +21,23 @@
     <!-- Background with circuits CSS approach -->
     <app-circuits-background></app-circuits-background>
 
+    <!-- v4.7: Hieroglyphic Wall - Service inscriptions that illuminate on proximity -->
+    <!-- v4.7.2: Added serviceClicked event to open modal on inscription click -->
+    <app-hieroglyphic-wall
+      [pillarIlluminations]="pillarIlluminations"
+      (serviceClicked)="onServiceClicked($event)">
+    </app-hieroglyphic-wall>
+
     <!-- Ground visual -->
     <div class="ground"
          [style.height.px]="groundHeight">
     </div>
 
     <!-- Pillar System - Interactive navigation (world coordinates) -->
+    <!-- v4.7: Added illuminationsChanged for hieroglyphic wall -->
     <app-pillar-system
-      (pillarActivated)="onPillarActivated($event)">
+      (pillarActivated)="onPillarActivated($event)"
+      (illuminationsChanged)="onIlluminationsChanged($event)">
     </app-pillar-system>
 
   </div>
@@ -38,21 +47,24 @@
   <!-- Character - Fixed X (centered), Y moves with jump -->
   <app-flame-head-character></app-flame-head-character>
 
-  <!-- v4.6.2: Hologram Projection - Uses reactive getters for real-time pillar tracking -->
-  <app-hologram-projection
+  <!-- v4.7: DEPRECATED - Hologram replaced by HieroglyphicWall -->
+  <!-- <app-hologram-projection
     [pillarConfig]="activeHologramPillar"
     [pillarScreenX]="hologramScreenX"
     [pillarScreenY]="hologramScreenY"
     [isVisible]="isHologramActive"
+    [isZoomed]="isZoomed"
     (closeHologram)="onCloseHologram()"
     (urlClicked)="onHologramUrlClick($event)">
-  </app-hologram-projection>
+  </app-hologram-projection> -->
 
-  <!-- Legacy Modal Service - Keeping for fallback if needed -->
-  <!-- <app-modal-service
+  <!-- v4.7.2: Modal Service - Opens when clicking service inscriptions -->
+  <!-- v4.7.2: Added serviceColor for dynamic theming -->
+  <app-modal-service
     [serviceId]="selectedServiceId"
     [isOpen]="isModalOpen"
+    [serviceColor]="selectedServiceColor"
     (closeModal)="onCloseModal()">
-  </app-modal-service> -->
+  </app-modal-service>
 
 </div>

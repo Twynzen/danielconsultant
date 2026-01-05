@@ -7,10 +7,7 @@
      [class.interactable]="isInteractable"
      [attr.data-pillar-id]="config.id">
 
-  <!-- v4.6.1: Tecla E minimalista - solo la letra con glow -->
-  <div class="key-prompt" *ngIf="isInteractable">
-    <span class="key-letter">E</span>
-  </div>
+  <!-- v4.7.2: Removed glyph symbol - interferes visually with hieroglyphic inscriptions -->
 
   <!-- v4.6: Floating Binary Particles -->
   <div class="particle-field" *ngIf="isHighlighted">

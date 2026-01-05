@@ -1,6 +1,9 @@
 <!-- Modal backdrop and container -->
+<!-- v4.7.2: Added dynamic serviceColor -->
 <div *ngIf="isOpen" class="modal-backdrop" (click)="onBackdropClick($event)" style="z-index: 999999 !important;">
-  <div class="modal-container" (click)="onModalContainerClick($event)">
+  <div class="modal-container"
+       [style.--modal-color]="serviceColor"
+       (click)="onModalContainerClick($event)">
     
     <!-- Matrix rain background -->
     <div class="matrix-rain">
@@ -19,13 +22,12 @@
     <div class="modal-content" *ngIf="serviceDetail">
       
       <!-- Terminal header -->
+      <!-- v4.7.2: Simplified - only close button, removed decorative red/yellow dots -->
       <div class="terminal-header">
         <div class="terminal-dots">
-          <span class="dot red"></span>
-          <span class="dot yellow"></span>
-          <span class="dot green" (click)="onClose()" title="Cerrar"></span>
+          <span class="dot close-btn" (click)="onClose()" title="Cerrar">✕</span>
         </div>
-        <div class="terminal-title">SYSTEM_INFO.EXE</div>
+        <div class="terminal-title">SERVICE_INFO.EXE</div>
       </div>
       
       <!-- Service title with glitch effect -->
