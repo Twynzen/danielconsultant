@@ -1,5 +1,8 @@
 <!-- Viewport - Fixed window into the side-scroller world -->
-<div class="dungeon-viewport">
+<!-- v4.6.3: Added zoom binding for cinematic effect -->
+<div class="dungeon-viewport"
+     [class.zoomed]="isZoomed"
+     [style.--zoom-scale]="zoomScale">
 
   <!-- ========== FIXED UI LAYER (doesn't scroll) ========== -->
   <div class="fixed-ui">

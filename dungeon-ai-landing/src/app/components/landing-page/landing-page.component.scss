@@ -151,6 +151,54 @@
   }
 }
 
+// ========== v4.6.3: CINEMATIC ZOOM EFFECT ==========
+.dungeon-viewport {
+  // CSS variable for zoom scale (set via Angular binding)
+  --zoom-scale: 1;
+
+  // Transition for smooth zoom
+  transition: none; // No transition on viewport itself
+
+  // When zoomed, apply scale transform
+  &.zoomed {
+    // Scale from slightly above center to keep robot visible
+    .dungeon-world {
+      transform-origin: center 45%;
+      // Note: The actual transform is applied via Angular binding
+      // This adds the scale to the existing translate3d
+    }
+
+    // Fade the title slightly during zoom
+    .fixed-ui .fixed-title {
+      opacity: 0.4;
+      transform: translateX(-50%) scale(0.85);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+  }
+}
+
+// Smooth zoom transition on dungeon-world
+.dungeon-world {
+  // Add smooth transition for when zoom is applied
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center center;
+}
+
+// When zoomed, also scale fixed elements appropriately
+.dungeon-viewport.zoomed {
+  // Character stays at same size (don't scale)
+  :host ::ng-deep app-flame-head-character {
+    // Robot should scale with the world for visual consistency
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  // Hologram should be more prominent
+  :host ::ng-deep app-hologram-projection {
+    // Hologram scales with content for better readability
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
 // Mobile responsive
 @media (max-width: 768px) {
   .fixed-title {

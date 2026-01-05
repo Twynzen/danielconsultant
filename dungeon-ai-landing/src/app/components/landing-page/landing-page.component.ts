@@ -43,6 +43,11 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   hologramWorldX = 0;
   hologramWorldY = 0;
 
+  // v4.6.3: Zoom cinematográfico state
+  isZoomed = false;
+  zoomScale = 1;
+  private readonly ZOOM_LEVEL = 1.25;  // 125% zoom for better detail visibility
+
   // v4.6.2: Reactive getters - recalculate screen position in real-time
   get hologramScreenX(): number {
     return this.cameraService.worldToScreenX(this.hologramWorldX);
@@ -57,8 +62,14 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   private animationFrameId: number | null = null;
 
   // Camera transform for world scrolling - computed signal
+  // v4.6.3: Includes zoom scale when hologram is active
   get cameraTransformValue(): string {
-    return this.cameraService.cameraTransform();
+    const baseTransform = this.cameraService.cameraTransform();
+    if (this.isZoomed) {
+      // Combine translate3d with scale for zoom effect
+      return `${baseTransform} scale(${this.zoomScale})`;
+    }
+    return baseTransform;
   }
 
   ngOnInit(): void {
@@ -93,6 +104,7 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   /**
    * v4.6.2: Called when a pillar is activated via E key
    * Stores WORLD coordinates so hologram stays anchored to pillar
+   * v4.6.3: Activates cinematic zoom effect
    */
   onPillarActivated(event: { config: PillarConfig; worldX: number; worldY: number }): void {
     // Store hologram config
@@ -101,6 +113,10 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     // v4.6.2: Store WORLD coordinates (getters will convert to screen in real-time)
     this.hologramWorldX = event.worldX;
     this.hologramWorldY = event.worldY;
+
+    // v4.6.3: Activate cinematic zoom
+    this.isZoomed = true;
+    this.zoomScale = this.ZOOM_LEVEL;
 
     // Show hologram
     this.isHologramActive = true;
@@ -113,8 +129,13 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
   /**
    * v4.5: Close hologram
+   * v4.6.3: Deactivates zoom effect
    */
   onCloseHologram(): void {
+    // v4.6.3: Deactivate cinematic zoom
+    this.isZoomed = false;
+    this.zoomScale = 1;
+
     this.isHologramActive = false;
     this.activeHologramPillar = null;
 
