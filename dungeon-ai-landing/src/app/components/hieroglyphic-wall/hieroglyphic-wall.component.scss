@@ -45,6 +45,12 @@ $stone-dark: #0d0d0d;
     filter 0.8s ease-out,
     transform 0.5s ease-out;
 
+  // v5.0: Completely hidden during onboarding darkness
+  &.hidden-darkness {
+    opacity: 0 !important;
+    visibility: hidden;
+  }
+
   // v4.7.2: Clickable state (when illuminated)
   &.clickable {
     pointer-events: auto;

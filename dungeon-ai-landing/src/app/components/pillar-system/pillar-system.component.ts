@@ -8,6 +8,7 @@ import {
   Component,
   OnInit,
   OnDestroy,
+  Input,
   Output,
   EventEmitter,
   HostListener,
@@ -68,6 +69,9 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
 
   // v4.7: Emit illumination levels for hieroglyphic wall
   @Output() illuminationsChanged = new EventEmitter<Map<string, number>>();
+
+  // v5.0: Base illumination from onboarding (0-1, adds to proximity illumination)
+  @Input() baseIllumination = 0;
 
   // Pillar states
   pillarStates = signal<PillarState[]>([]);
@@ -149,9 +153,11 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
       const wrappedDist = levelWidth - directDist;
       const distance = Math.min(directDist, wrappedDist);
 
-      // Illumination based on distance
+      // Illumination based on distance + base from onboarding
       const maxDist = PILLAR_INTERACTION.HIGHLIGHT_RADIUS * 1.5;
-      const illumination = Math.max(0, 1 - (distance / maxDist));
+      const proximityIllumination = Math.max(0, 1 - (distance / maxDist));
+      // v5.0: Combine proximity with base illumination (capped at 1)
+      const illumination = Math.min(1, proximityIllumination + this.baseIllumination);
 
       // States based on distance thresholds
       const isHighlighted = distance <= PILLAR_INTERACTION.HIGHLIGHT_RADIUS;

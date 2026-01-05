@@ -1,0 +1,65 @@
+<!-- Sendell Dialog - Centralized Dialog System -->
+<!-- v1.0: Supports centered and character-attached modes -->
+
+@if (isVisible()) {
+  <div class="dialog-wrapper"
+       [class.centered]="isCentered"
+       [ngStyle]="getPositionStyle()">
+
+    <div class="dialog-box"
+         [class.choice-mode]="requiresChoice()">
+
+      <div class="dialog-content">
+        <!-- Terminal Header -->
+        <div class="dialog-header">
+          <span class="dialog-indicator"></span>
+          <span class="dialog-title">// SENDELL</span>
+        </div>
+
+        <!-- Dialog Text with Typing Effect -->
+        <div class="dialog-text">
+          <span class="typing-effect">{{ displayedText() }}</span>
+          @if (isTyping()) {
+            <span class="cursor">_</span>
+          }
+        </div>
+
+        <!-- Choice Input (Y/N) -->
+        @if (requiresChoice() && !isTyping()) {
+          <div class="dialog-input-section">
+            <div class="dialog-input">
+              <span class="input-prompt">&gt; </span>
+              <input
+                #choiceInput
+                type="text"
+                maxlength="3"
+                class="choice-input"
+                [(ngModel)]="userInput"
+                (keydown)="onChoiceKeydown($event)"
+                autocomplete="off"
+                spellcheck="false">
+              <span class="input-cursor">_</span>
+            </div>
+            <div class="input-hint">
+              <span class="hint-option">[Y] Sí, guíame</span>
+              <span class="hint-divider">|</span>
+              <span class="hint-option">[N] No, exploraré solo</span>
+            </div>
+          </div>
+        }
+
+        <!-- Continue Prompt -->
+        @if (showContinuePrompt()) {
+          <div class="dialog-prompt">
+            <span class="blink">[SPACE / ENTER]</span>
+          </div>
+        }
+      </div>
+
+      <!-- Arrow pointing to character (only when not centered) -->
+      @if (!isCentered) {
+        <div class="dialog-arrow-left"></div>
+      }
+    </div>
+  </div>
+}

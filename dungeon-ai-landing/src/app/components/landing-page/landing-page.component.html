@@ -1,13 +1,18 @@
 <!-- Viewport - Fixed window into the side-scroller world -->
 <!-- v4.6.3: Added zoom binding for cinematic effect -->
+<!-- v5.0: Added onboarding state bindings -->
 <div class="dungeon-viewport"
      [class.zoomed]="isZoomed"
+     [class.onboarding]="isOnboardingActive()"
      [style.--zoom-scale]="zoomScale">
 
   <!-- ========== FIXED UI LAYER (doesn't scroll) ========== -->
   <div class="fixed-ui">
     <!-- Title - Fixed at top of screen -->
-    <div class="fixed-title">
+    <!-- v5.0: Title visibility controlled by onboarding -->
+    <div class="fixed-title"
+         [class.visible]="titleOpacity() > 0"
+         [style.opacity]="titleOpacity()">
       <span class="main-title">CONSULTOR IA</span>
       <span class="subtitle">DANIEL CASTIBLANCO</span>
     </div>
@@ -29,13 +34,18 @@
     </app-hieroglyphic-wall>
 
     <!-- Ground visual -->
+    <!-- v5.0: Ground visibility controlled by onboarding -->
     <div class="ground"
-         [style.height.px]="groundHeight">
+         [class.visible]="groundOpacity() > 0"
+         [style.height.px]="groundHeight"
+         [style.opacity]="groundOpacity()">
     </div>
 
     <!-- Pillar System - Interactive navigation (world coordinates) -->
     <!-- v4.7: Added illuminationsChanged for hieroglyphic wall -->
+    <!-- v5.0: Base illumination from onboarding -->
     <app-pillar-system
+      [baseIllumination]="pillarsBaseIllumination()"
       (pillarActivated)="onPillarActivated($event)"
       (illuminationsChanged)="onIlluminationsChanged($event)">
     </app-pillar-system>
@@ -45,7 +55,15 @@
   <!-- ========== SCREEN LAYER (Fixed to viewport) ========== -->
 
   <!-- Character - Fixed X (centered), Y moves with jump -->
-  <app-flame-head-character></app-flame-head-character>
+  <!-- v5.0: Only show after onboarding spawn phase -->
+  @if (shouldShowCharacter()) {
+    <app-flame-head-character></app-flame-head-character>
+  }
+
+  <!-- v5.0: Sendell Dialog - Centralized dialog for onboarding -->
+  <app-sendell-dialog
+    [isCentered]="isDialogCentered()">
+  </app-sendell-dialog>
 
   <!-- v4.7: DEPRECATED - Hologram replaced by HieroglyphicWall -->
   <!-- <app-hologram-projection

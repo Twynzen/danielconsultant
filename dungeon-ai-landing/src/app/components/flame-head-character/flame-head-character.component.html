@@ -1,6 +1,7 @@
-<!-- Dialog Box - Positioned to the right of character (fixed to screen) -->
+<!-- v5.0: Dialog Box - Only shown for crash dialog (onboarding uses SendellDialog) -->
+<!-- Positioned to the right of character (fixed to screen) -->
 <div class="dialog-box"
-     *ngIf="showDialog()"
+     *ngIf="shouldShowCrashDialogUI()"
      [style.left.px]="screenX() + 140"
      [style.top.px]="screenY() + 20">
   <div class="dialog-content">

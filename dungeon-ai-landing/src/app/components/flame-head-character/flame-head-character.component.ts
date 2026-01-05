@@ -4,20 +4,13 @@ import { LightingService } from '../../services/lighting.service';
 import { CameraService } from '../../services/camera.service';
 import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
+import { OnboardingService } from '../../services/onboarding.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { BinaryCharacterComponent } from '../binary-character/binary-character.component';
 import { FacingDirection } from '../../config/character-matrix.config';
 import { PillarConfig } from '../../config/pillar.config';
 
 type Direction = 'left' | 'right';
-
-/** Welcome messages */
-const WELCOME_MESSAGES = [
-  '> Hola! Bienvenido al hábitat...',
-  '> Soy una IA que vive aquí.',
-  '> Usa A/D para caminar, ESPACIO para saltar.',
-  '> Explora los pilares y presiona ENTER para descubrir más!'
-];
 
 @Component({
   selector: 'app-flame-head-character',
@@ -33,6 +26,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private inputService = inject(InputService);
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
+  // v5.0: Onboarding service for first-time visitor experience
+  private onboarding = inject(OnboardingService);
 
   // Character dimensions (v3.0 - clarity & separation)
   private readonly CHARACTER_WIDTH = 180;
@@ -65,14 +60,19 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   isJumping = computed(() => this.physicsService.isJumping());
   isGrounded = computed(() => this.physicsService.isGrounded());
 
-  // Dialog state
-  showDialog = signal(true);
+  // Dialog state (v5.0: now only used for crash dialog, onboarding uses SendellDialog)
+  showDialog = signal(false);  // v5.0: Start hidden
   displayedText = signal('');
   isTyping = signal(true);
   private currentMessageIndex = 0;
   private currentCharIndex = 0;
   private typingInterval: any = null;
   private dialogDismissed = false;
+
+  // v5.0: Computed that only shows dialog when NOT in onboarding (for crash dialog only)
+  shouldShowCrashDialogUI = computed(() =>
+    this.showDialog() && !this.onboarding.isOnboardingActive()
+  );
 
   // v5.0: Drag and drop state
   isDragging = signal(false);
@@ -129,12 +129,15 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.startGameLoop();
     this.updateLightPosition();
-    // v5.0: Dialog is now started after assembly completes (via onAssemblyComplete)
+    // v5.0: Dialog is now handled by SendellDialog via OnboardingService
   }
 
   // v5.0: Called when binary character finishes assembly animation
+  // Now notifies OnboardingService instead of starting old welcome dialog
   onAssemblyComplete(): void {
-    this.startWelcomeDialog();
+    // Notify onboarding service that assembly is complete
+    // This will transition to PRESENTATION phase after a short delay
+    this.onboarding.onAssemblyComplete();
   }
 
   // v5.0: Called when crash animation completes
@@ -186,47 +189,12 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     }
   }
 
-  private startWelcomeDialog(): void {
-    this.showDialog.set(true);
-    this.inputService.pause(); // v4.1 FIX: Pause input during dialog
-    this.typeCurrentMessage();
-  }
+  // v5.0: Old welcome dialog methods removed - now handled by SendellDialogComponent
 
-  private typeCurrentMessage(): void {
-    if (this.currentMessageIndex >= WELCOME_MESSAGES.length) {
-      this.dismissDialog();
-      return;
-    }
-
-    const message = WELCOME_MESSAGES[this.currentMessageIndex];
-    this.currentCharIndex = 0;
-    this.displayedText.set('');
-    this.isTyping.set(true);
-
-    this.typingInterval = setInterval(() => {
-      if (this.currentCharIndex < message.length) {
-        this.displayedText.set(message.substring(0, this.currentCharIndex + 1));
-        this.currentCharIndex++;
-      } else {
-        clearInterval(this.typingInterval);
-        this.isTyping.set(false);
-      }
-    }, 35);
-  }
-
+  // v5.0: Simplified - only used for crash dialog advancement
   private advanceDialog(): void {
-    if (this.isTyping()) {
-      clearInterval(this.typingInterval);
-      this.displayedText.set(WELCOME_MESSAGES[this.currentMessageIndex]);
-      this.isTyping.set(false);
-    } else {
-      this.currentMessageIndex++;
-      if (this.currentMessageIndex < WELCOME_MESSAGES.length) {
-        this.typeCurrentMessage();
-      } else {
-        this.dismissDialog();
-      }
-    }
+    // For crash dialog, just dismiss immediately on key press
+    this.dismissDialog();
   }
 
   private dismissDialog(): void {
@@ -240,8 +208,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    // v4.1 FIX: Handle dialog advancement with ANY key
-    if (this.showDialog()) {
+    // v5.0: Only handle dialog advancement for crash dialog (not during onboarding)
+    // Onboarding dialogs are handled by SendellDialogComponent
+    if (this.showDialog() && !this.onboarding.isOnboardingActive()) {
       event.preventDefault();
       this.advanceDialog();
       return;
@@ -252,6 +221,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   @HostListener('window:mousedown', ['$event'])
   onMouseDown(event: MouseEvent): void {
     if (this.showDialog()) return;
+    if (this.onboarding.isOnboardingActive()) return;  // v5.0: No grab during onboarding
     if (this.binaryCharacter?.isCrashing?.()) return;  // v5.1: No grab during crash
     if (this.isCooldown()) return;  // v5.1: No grab during cooldown
 

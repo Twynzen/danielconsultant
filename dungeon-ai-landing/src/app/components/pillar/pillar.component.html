@@ -1,8 +1,10 @@
+<!-- v5.0: Pillar is invisible when illumination=0, gradually visible as it increases -->
 <div class="pillar"
      [style.left.px]="worldX"
      [style.top.px]="worldY"
      [style.--pillar-color]="config.color"
      [style.--illumination]="illumination"
+     [style.opacity]="illumination > 0 ? (0.4 + illumination * 0.6) : 0"
      [class.highlighted]="isHighlighted"
      [class.interactable]="isInteractable"
      [attr.data-pillar-id]="config.id">

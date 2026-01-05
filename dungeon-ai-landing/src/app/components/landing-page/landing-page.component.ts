@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
 import { ModalServiceComponent } from '../modal-service/modal-service.component';
@@ -7,9 +7,11 @@ import { ModalServiceComponent } from '../modal-service/modal-service.component'
 import { HieroglyphicWallComponent } from '../hieroglyphic-wall/hieroglyphic-wall.component';
 import { FlameHeadCharacterComponent } from '../flame-head-character/flame-head-character.component';
 import { PillarSystemComponent } from '../pillar-system/pillar-system.component';
+import { SendellDialogComponent } from '../sendell-dialog/sendell-dialog.component';
 import { PillarConfig, PILLAR_INTERACTION, PILLARS } from '../../config/pillar.config';
 import { CameraService } from '../../services/camera.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
+import { OnboardingService, OnboardingPhase } from '../../services/onboarding.service';
 
 @Component({
   selector: 'app-landing-page',
@@ -21,7 +23,9 @@ import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
     // v4.7: Replaced HologramProjection with HieroglyphicWall
     HieroglyphicWallComponent,
     FlameHeadCharacterComponent,
-    PillarSystemComponent
+    PillarSystemComponent,
+    // v5.0: Onboarding dialog system
+    SendellDialogComponent
   ],
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
@@ -30,6 +34,17 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   private cameraService = inject(CameraService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
+
+  // v5.0: Onboarding service for first-time visitor experience
+  readonly onboarding = inject(OnboardingService);
+
+  // v5.0: Computed signals for onboarding visibility
+  readonly groundOpacity = computed(() => this.onboarding.groundOpacity());
+  readonly titleOpacity = computed(() => this.onboarding.titleOpacity());
+  readonly pillarsBaseIllumination = computed(() => this.onboarding.pillarsIllumination());
+  readonly shouldShowCharacter = computed(() => this.onboarding.shouldShowCharacter());
+  readonly isDialogCentered = computed(() => this.onboarding.isDialogCentered());
+  readonly isOnboardingActive = computed(() => this.onboarding.isOnboardingActive());
 
   // Reference to character component
   @ViewChild(FlameHeadCharacterComponent) characterComponent!: FlameHeadCharacterComponent;
@@ -77,6 +92,21 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Start a loop to trigger change detection for camera updates
     this.startRenderLoop();
+
+    // v5.0: Start onboarding experience
+    this.onboarding.startOnboarding();
+  }
+
+  /**
+   * v5.0: Ctrl+Shift+R to reset onboarding (for testing)
+   */
+  @HostListener('document:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if (event.ctrlKey && event.shiftKey && event.code === 'KeyR') {
+      event.preventDefault();
+      this.onboarding.resetOnboarding();
+      location.reload();
+    }
   }
 
   ngOnDestroy(): void {

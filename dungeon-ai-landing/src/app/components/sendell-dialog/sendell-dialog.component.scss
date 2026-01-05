@@ -1,0 +1,304 @@
+/**
+ * SendellDialogComponent Styles
+ * v1.0: Matrix-style terminal dialog with typing effect
+ */
+
+// Matrix colors
+$matrix-green: #00ff44;
+$matrix-green-dim: rgba(0, 255, 68, 0.7);
+$matrix-green-glow: rgba(0, 255, 68, 0.4);
+$matrix-bg: rgba(0, 0, 0, 0.95);
+$matrix-border: rgba(0, 255, 68, 0.5);
+
+.dialog-wrapper {
+  z-index: 1000;
+  pointer-events: auto;
+
+  &.centered {
+    // Centered mode has larger dialog
+    .dialog-box {
+      min-width: 400px;
+      max-width: 500px;
+    }
+
+    .dialog-text {
+      font-size: 18px;
+      line-height: 1.6;
+    }
+  }
+}
+
+.dialog-box {
+  background: $matrix-bg;
+  border: 2px solid $matrix-border;
+  border-radius: 8px;
+  padding: 0;
+  min-width: 320px;
+  max-width: 420px;
+  box-shadow:
+    0 0 30px $matrix-green-glow,
+    inset 0 0 20px rgba(0, 255, 68, 0.05);
+  animation: dialogAppear 0.3s ease-out;
+
+  &.choice-mode {
+    min-width: 380px;
+  }
+}
+
+@keyframes dialogAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dialog-content {
+  padding: 16px 20px;
+}
+
+// Terminal Header
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 255, 68, 0.2);
+}
+
+.dialog-indicator {
+  width: 8px;
+  height: 8px;
+  background: $matrix-green;
+  border-radius: 50%;
+  box-shadow: 0 0 8px $matrix-green;
+  animation: indicatorPulse 2s ease-in-out infinite;
+}
+
+@keyframes indicatorPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.dialog-title {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: $matrix-green-dim;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+// Dialog Text
+.dialog-text {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  color: $matrix-green;
+  min-height: 48px;
+  text-shadow: 0 0 10px $matrix-green-glow;
+}
+
+.typing-effect {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.cursor {
+  color: $matrix-green;
+  animation: cursorBlink 0.8s step-end infinite;
+  font-weight: bold;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+// Continue Prompt
+.dialog-prompt {
+  margin-top: 16px;
+  text-align: center;
+
+  .blink {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: $matrix-green-dim;
+    animation: promptBlink 1.2s ease-in-out infinite;
+    letter-spacing: 0.05em;
+  }
+}
+
+@keyframes promptBlink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+// Choice Input Section
+.dialog-input-section {
+  margin-top: 16px;
+}
+
+.dialog-input {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(0, 255, 68, 0.05);
+  border: 1px solid rgba(0, 255, 68, 0.3);
+  border-radius: 4px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: $matrix-green;
+    box-shadow: 0 0 10px $matrix-green-glow;
+  }
+}
+
+.input-prompt {
+  color: $matrix-green;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+.choice-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: $matrix-green;
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  caret-color: transparent;
+  width: 40px;
+  max-width: 60px;
+  letter-spacing: 0.1em;
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: rgba(0, 255, 68, 0.3);
+  }
+}
+
+.input-cursor {
+  color: $matrix-green;
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  animation: cursorBlink 0.8s step-end infinite;
+}
+
+.input-hint {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: rgba(0, 255, 68, 0.5);
+}
+
+.hint-option {
+  padding: 3px 8px;
+  background: rgba(0, 255, 68, 0.08);
+  border-radius: 3px;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover {
+    background: rgba(0, 255, 68, 0.15);
+    color: $matrix-green-dim;
+  }
+}
+
+.hint-divider {
+  opacity: 0.3;
+}
+
+// Arrow pointing to character
+.dialog-arrow-left {
+  position: absolute;
+  left: -10px;
+  top: 24px;
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-right: 10px solid $matrix-border;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: -8px;
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 8px solid $matrix-bg;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .dialog-wrapper.centered {
+    .dialog-box {
+      min-width: 300px;
+      max-width: 90vw;
+      margin: 0 16px;
+    }
+
+    .dialog-text {
+      font-size: 16px;
+    }
+  }
+
+  .dialog-box {
+    min-width: 280px;
+    max-width: 85vw;
+  }
+
+  .dialog-text {
+    font-size: 14px;
+  }
+
+  .choice-input {
+    font-size: 16px;
+  }
+
+  .input-hint {
+    flex-direction: column;
+    gap: 4px;
+
+    .hint-divider {
+      display: none;
+    }
+  }
+}
+
+// Scan line effect overlay (optional enhancement)
+.dialog-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 255, 68, 0.02) 2px,
+    rgba(0, 255, 68, 0.02) 4px
+  );
+  pointer-events: none;
+  border-radius: 8px;
+}

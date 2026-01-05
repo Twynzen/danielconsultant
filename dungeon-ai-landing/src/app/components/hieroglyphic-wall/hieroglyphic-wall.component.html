@@ -6,22 +6,26 @@
   @for (inscription of inscriptions; track trackById($index, inscription)) {
 
     <!-- v4.8: ABOUT TYPE - Animated portrait hologram -->
+    <!-- v5.0: Invisible when illumination=0 (onboarding darkness) -->
     @if (inscription.type === 'about') {
       <app-hologram-portrait
-        [isVisible]="isActive(inscription.id) || isAwakening(inscription.id)"
+        [isVisible]="(isActive(inscription.id) || isAwakening(inscription.id)) && getIllumination(inscription.id) > 0"
         [color]="inscription.color"
         [illumination]="getIllumination(inscription.id)"
         [style.left.px]="inscription.x"
-        [style.bottom.px]="inscription.bottom">
+        [style.bottom.px]="inscription.bottom"
+        [style.opacity]="getIllumination(inscription.id) > 0 ? 1 : 0">
       </app-hologram-portrait>
     } @else {
     <!-- v4.7.2: Use bottom positioning + click handlers -->
+    <!-- v5.0: Invisible when illumination=0 (onboarding darkness) -->
     <div class="inscription"
          [class.awakening]="isAwakening(inscription.id)"
          [class.active]="isActive(inscription.id)"
          [class.dormant]="isDormant(inscription.id)"
          [class.external]="inscription.type === 'external'"
          [class.clickable]="isClickable(inscription.id)"
+         [class.hidden-darkness]="getIllumination(inscription.id) === 0"
          [style.--illumination]="getIlluminationStyle(inscription.id)"
          [style.--inscription-color]="inscription.color"
          [style.left.px]="inscription.x"

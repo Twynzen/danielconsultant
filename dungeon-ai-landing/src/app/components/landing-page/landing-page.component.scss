@@ -29,6 +29,14 @@
   text-align: left;
   user-select: none;
   pointer-events: none;
+
+  // v5.0: Initial state hidden for onboarding
+  opacity: 0;
+  transition: opacity 1s ease-out;
+
+  &.visible {
+    opacity: 1;
+  }
 }
 
 .fixed-title .main-title {
@@ -94,6 +102,14 @@
   box-shadow:
     0 -5px 20px rgba(0, 255, 68, 0.3),
     inset 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  // v5.0: Initial state hidden for onboarding
+  opacity: 0;
+  transition: opacity 1.5s ease-out;
+
+  &.visible {
+    opacity: 1;
+  }
 
   // Grid pattern on ground
   &::before {
