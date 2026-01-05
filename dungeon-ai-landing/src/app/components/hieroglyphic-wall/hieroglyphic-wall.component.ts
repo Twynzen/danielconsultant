@@ -1,8 +1,9 @@
 /**
- * HieroglyphicWallComponent v1.1
+ * HieroglyphicWallComponent v1.2
  * Background wall with service inscriptions
  * Illuminates based on proximity to pillars
  * v4.7.1: Added dynamic colors and external pillar support
+ * v4.8: Added 'about' type with animated portrait hologram
  */
 import {
   Component,
@@ -15,11 +16,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { ServicesDataService, ServiceDetail } from '../../services/services-data.service';
 import { PILLARS, PillarConfig } from '../../config/pillar.config';
+import { HologramPortraitComponent } from '../hologram-portrait/hologram-portrait.component';
 
 // Extended inscription data combining service + pillar info
 interface InscriptionData {
   id: string;
-  type: 'modal' | 'external';
+  type: 'modal' | 'external' | 'about';  // v4.8: Added 'about' type
   title: string;
   description: string;
   color: string;
@@ -38,7 +40,7 @@ interface InscriptionData {
 @Component({
   selector: 'app-hieroglyphic-wall',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HologramPortraitComponent],  // v4.8: Added HologramPortrait
   templateUrl: './hieroglyphic-wall.component.html',
   styleUrls: ['./hieroglyphic-wall.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -59,6 +61,7 @@ export class HieroglyphicWallComponent {
   /**
    * v4.7.1: Build inscription data from pillars and services
    * Uses pillar.id as key for illumination matching
+   * v4.8: Added 'about' type support for portrait hologram
    */
   private buildInscriptions(): InscriptionData[] {
     return PILLARS.map(pillar => {
@@ -70,6 +73,15 @@ export class HieroglyphicWallComponent {
         x: this.getPositionX(pillar),
         bottom: this.getPositionBottom(pillar) // v4.7.2: Use bottom positioning
       };
+
+      // v4.8: Handle 'about' type for portrait hologram
+      if (pillar.type === 'about') {
+        return {
+          ...baseData,
+          title: pillar.label,
+          description: pillar.description ?? ''
+        } as InscriptionData;
+      }
 
       if (pillar.type === 'modal') {
         // Get service details
@@ -111,9 +123,13 @@ export class HieroglyphicWallComponent {
    * v4.7.2: Get X position for inscription
    * External pillars: centered above pillar
    * Modal pillars: offset to the left
+   * v4.8: About type centered above pillar
    */
   private getPositionX(pillar: PillarConfig): number {
-    if (pillar.type === 'external') {
+    if (pillar.type === 'about') {
+      // About: Center above pillar (portrait is 280px wide)
+      return pillar.worldX - 140;
+    } else if (pillar.type === 'external') {
       // External: Center above pillar (inscription is 280px wide)
       return pillar.worldX - 140;
     } else {
@@ -125,6 +141,7 @@ export class HieroglyphicWallComponent {
   /**
    * v4.7.2: Get bottom position for inscription (distance from bottom)
    * This positions inscriptions relative to the ground where pillars stand
+   * v4.8: Added 'about' type positioning
    *
    * Layout from bottom:
    * - Ground: 120px
@@ -139,7 +156,10 @@ export class HieroglyphicWallComponent {
     const pillarVisualHeight = 150; // Pillar + glyph
     const baseFromBottom = groundHeight + pillarVisualHeight;
 
-    if (pillar.type === 'external') {
+    if (pillar.type === 'about') {
+      // About: Portrait hologram (~450px height), position above pillar
+      return baseFromBottom + 20;
+    } else if (pillar.type === 'external') {
       // External: Compact inscription (~250px height), position just above pillar
       // Small gap of 30px above the glyph
       return baseFromBottom + 30;

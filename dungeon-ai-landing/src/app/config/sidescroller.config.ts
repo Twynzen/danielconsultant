@@ -5,7 +5,7 @@
 
 export const SIDESCROLLER_CONFIG = {
   // Level dimensions
-  LEVEL_WIDTH: 6000,                              // Total level width in pixels
+  LEVEL_WIDTH: 6600,                              // v4.8.1: Extended to accommodate shifted pillars
   LEVEL_HEIGHT: () => window.innerHeight,         // Screen height (no vertical scroll)
 
   // Ground configuration
@@ -48,17 +48,19 @@ export const SIDESCROLLER_CONFIG = {
 
 /**
  * Pillar positions distributed horizontally across the level
- * 8 pillars spread evenly across 6000px (player spawns at x=400)
+ * v4.8.1: 9 pillars spread evenly across 6600px (player spawns at x=400)
+ * NOTE: Actual positions are defined in pillar.config.ts PILLARS array
  */
 export const SIDESCROLLER_PILLAR_POSITIONS = [
-  { x: 800, service: 'nuvaris' },          // Moved from 400 to avoid spawn overlap
-  { x: 1400, service: 'custom-integrations' },
-  { x: 2000, service: 'rag-systems' },
-  { x: 2600, service: 'process-automation' },
-  { x: 3200, service: 'agent-orchestration' },
-  { x: 3800, service: 'finops-ai' },
-  { x: 4400, service: 'local-llms' },
-  { x: 5000, service: 'calendly' },
+  { x: 1000, service: 'about-daniel' },     // v4.8.1: First pillar, 600px from spawn
+  { x: 1400, service: 'nuvaris' },
+  { x: 2000, service: 'custom-integrations' },
+  { x: 2600, service: 'rag-systems' },
+  { x: 3200, service: 'process-automation' },
+  { x: 3800, service: 'agent-orchestration' },
+  { x: 4400, service: 'finops-ai' },
+  { x: 5000, service: 'local-llms' },
+  { x: 5600, service: 'calendly' },
 ];
 
 /**

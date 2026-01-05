@@ -9,7 +9,7 @@ export interface PillarConfig {
   id: string;
   label: string;
   icon: string;
-  type: 'external' | 'modal';
+  type: 'external' | 'modal' | 'about';  // v4.8: Added 'about' type for Daniel portrait
   destination: string;
   color: string;
   worldX: number;           // Horizontal position in world
@@ -74,16 +74,35 @@ export const PILLAR_ICONS: Record<string, string> = {
     <line x1="8" y1="2" x2="8" y2="6"/>
     <line x1="16" y1="2" x2="16" y2="6"/>
     <circle cx="12" cy="15" r="2" fill="currentColor"/>
+  </svg>`,
+
+  // v4.8: User icon for "About Daniel" pillar
+  'user': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <circle cx="12" cy="8" r="4"/>
+    <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+    <path d="M12 14v2"/>
   </svg>`
 };
 
 /**
- * 8 Pillars distributed horizontally across the side-scroller level
+ * 9 Pillars distributed horizontally across the side-scroller level
+ * v4.8.1: Added DANIEL pillar as first, shifted all +600px from original for breathing room
  * Layout:
- * |--spawn--|--NUVARIS--|--INTEGRATIONS--|--RAG--|--AUTOMATION--|--AGENTS--|--FINOPS--|--LLMS--|--CALENDLY--|
- *    400px     800px        1400px       2000px     2600px       3200px     3800px    4400px     5000px
+ * |--spawn--|--DANIEL--|--NUVARIS--|--INTEGRATIONS--|--RAG--|--AUTOMATION--|--AGENTS--|--FINOPS--|--LLMS--|--CALENDLY--|
+ *    400px    1000px      1400px       2000px       2600px     3200px       3800px     4400px    5000px     5600px
  */
 export const PILLARS: PillarConfig[] = [
+  // v4.8: NEW - "About Daniel" pillar with animated hologram portrait
+  {
+    id: 'about-daniel',
+    label: 'DANIEL',
+    icon: 'user',
+    type: 'about',
+    destination: 'about',
+    color: '#00ff44',  // Matrix green
+    worldX: 1000,  // v4.8.1: 600px gap from player spawn (400)
+    description: 'Consultor de Inteligencia Artificial'
+  },
   {
     id: 'nuvaris',
     label: 'NUVARIS',
@@ -91,7 +110,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'external',
     destination: 'https://nuvaris.com',
     color: '#00ff88',
-    worldX: 800,  // Moved right to not overlap with player spawn at 400
+    worldX: 1400,  // v4.8.1: +400px shift
     description: 'Visita Nuvaris - Plataforma de IA'
   },
   {
@@ -101,7 +120,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'custom-integrations',
     color: '#ff6600',
-    worldX: 1400,
+    worldX: 2000,  // v4.8.1: +400px shift
     description: 'Integraciones personalizadas con IA'
   },
   {
@@ -111,7 +130,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'rag-systems',
     color: '#00ccff',
-    worldX: 2000,
+    worldX: 2600,  // v4.8.1: +400px shift
     description: 'Sistemas de Retrieval Augmented Generation'
   },
   {
@@ -121,7 +140,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'process-automation',
     color: '#ff00ff',
-    worldX: 2600,
+    worldX: 3200,  // v4.8.1: +400px shift
     description: 'Automatización de Procesos con IA'
   },
   {
@@ -131,7 +150,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'agent-orchestration',
     color: '#ff6600',
-    worldX: 3200,
+    worldX: 3800,  // v4.8.1: +400px shift
     description: 'Orquestación de Agentes de IA'
   },
   {
@@ -141,7 +160,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'finops-ai',
     color: '#88ff00',
-    worldX: 3800,
+    worldX: 4400,  // v4.8.1: +400px shift
     description: 'Optimización Financiera con IA'
   },
   {
@@ -151,7 +170,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'modal',
     destination: 'local-llms',
     color: '#00ccff',
-    worldX: 4400,
+    worldX: 5000,  // v4.8.1: +400px shift
     description: 'Modelos de Lenguaje Locales'
   },
   {
@@ -161,7 +180,7 @@ export const PILLARS: PillarConfig[] = [
     type: 'external',
     destination: 'https://calendly.com/darmcastiblanco/30min',
     color: '#ff6b00',
-    worldX: 5000,
+    worldX: 5600,  // v4.8.1: +400px shift
     description: 'Agenda una sesión de consultoría'
   }
 ];

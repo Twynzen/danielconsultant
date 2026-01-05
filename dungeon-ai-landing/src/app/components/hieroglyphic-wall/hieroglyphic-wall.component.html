@@ -1,8 +1,20 @@
-<!-- Hieroglyphic Wall v1.1 - Background inscriptions that illuminate -->
+<!-- Hieroglyphic Wall v1.2 - Background inscriptions that illuminate -->
 <!-- v4.7.1: Added dynamic colors and external pillar support -->
+<!-- v4.8: Added 'about' type with animated portrait hologram -->
 <div class="hieroglyphic-wall">
   <!-- One inscription per pillar -->
   @for (inscription of inscriptions; track trackById($index, inscription)) {
+
+    <!-- v4.8: ABOUT TYPE - Animated portrait hologram -->
+    @if (inscription.type === 'about') {
+      <app-hologram-portrait
+        [isVisible]="isActive(inscription.id) || isAwakening(inscription.id)"
+        [color]="inscription.color"
+        [illumination]="getIllumination(inscription.id)"
+        [style.left.px]="inscription.x"
+        [style.bottom.px]="inscription.bottom">
+      </app-hologram-portrait>
+    } @else {
     <!-- v4.7.2: Use bottom positioning + click handlers -->
     <div class="inscription"
          [class.awakening]="isAwakening(inscription.id)"
@@ -101,5 +113,6 @@
       }
 
     </div>
+    } <!-- End @else -->
   }
 </div>
