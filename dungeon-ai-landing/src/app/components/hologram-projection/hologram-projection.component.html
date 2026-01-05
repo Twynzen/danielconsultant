@@ -4,9 +4,11 @@
      (click)="onBackdropClick($event)">
 
   <!-- Main hologram container -->
+  <!-- v4.6.4: Added zoomed class for hologram-only scale effect -->
   <div class="hologram-container"
        [ngStyle]="getHologramStyle()"
        [class.appearing]="isAppearing()"
+       [class.zoomed]="isZoomed"
        [class.url-mode]="pillarConfig?.type === 'external'"
        [class.service-mode]="pillarConfig?.type === 'modal'">
 

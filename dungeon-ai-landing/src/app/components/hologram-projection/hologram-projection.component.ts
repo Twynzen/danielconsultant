@@ -41,6 +41,7 @@ export class HologramProjectionComponent implements OnInit, OnDestroy, OnChanges
   @Input() pillarScreenX = 0;
   @Input() pillarScreenY = 0;
   @Input() isVisible = false;
+  @Input() isZoomed = false;  // v4.6.4: For hologram-only zoom effect
 
   // Outputs
   @Output() closeHologram = new EventEmitter<void>();
