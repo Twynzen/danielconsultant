@@ -35,11 +35,21 @@
   <!-- Character - Fixed X (centered), Y moves with jump -->
   <app-flame-head-character></app-flame-head-character>
 
-  <!-- Modal Service - Opens when pillars are activated -->
-  <app-modal-service
+  <!-- v4.6.2: Hologram Projection - Uses reactive getters for real-time pillar tracking -->
+  <app-hologram-projection
+    [pillarConfig]="activeHologramPillar"
+    [pillarScreenX]="hologramScreenX"
+    [pillarScreenY]="hologramScreenY"
+    [isVisible]="isHologramActive"
+    (closeHologram)="onCloseHologram()"
+    (urlClicked)="onHologramUrlClick($event)">
+  </app-hologram-projection>
+
+  <!-- Legacy Modal Service - Keeping for fallback if needed -->
+  <!-- <app-modal-service
     [serviceId]="selectedServiceId"
     [isOpen]="isModalOpen"
     (closeModal)="onCloseModal()">
-  </app-modal-service>
+  </app-modal-service> -->
 
 </div>

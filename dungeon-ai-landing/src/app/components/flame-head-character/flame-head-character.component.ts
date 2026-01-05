@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener, NgZone, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener, NgZone, ChangeDetectorRef, ViewChild, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LightingService } from '../../services/lighting.service';
 import { CameraService } from '../../services/camera.service';
@@ -6,6 +6,8 @@ import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { BinaryCharacterComponent } from '../binary-character/binary-character.component';
+import { FacingDirection } from '../../config/character-matrix.config';
+import { PillarConfig } from '../../config/pillar.config';
 
 type Direction = 'left' | 'right';
 
@@ -83,6 +85,13 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   // v5.1: Cooldown after crash (block input for 2 seconds after reassembly)
   isCooldown = signal(false);
   private cooldownTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // v4.5: Hologram activation - robot turns back to face pillar
+  isActivatingPillar = signal(false);
+  activePillarConfig = signal<PillarConfig | null>(null);
+  robotFacing = signal<FacingDirection>('right'); // Controls TORSO_BACK when 'back'
+  @Output() hologramActivated = new EventEmitter<{ config: PillarConfig; screenX: number; screenY: number }>();
+  @Output() hologramDeactivated = new EventEmitter<void>();
 
   // Reference to binary character for crash trigger
   @ViewChild(BinaryCharacterComponent) binaryCharacter!: BinaryCharacterComponent;
@@ -406,5 +415,45 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     const centerY = state.y - this.CHARACTER_HEIGHT / 2;
 
     this.lightingService.updateCharacterLight(centerX, centerY);
+  }
+
+  // ========== V4.5 HOLOGRAM ACTIVATION ==========
+
+  /**
+   * Activate pillar - robot turns back to face the pillar
+   * Called from LandingPage when player presses ENTER near a pillar
+   */
+  activatePillar(pillar: PillarConfig, pillarScreenX: number, pillarScreenY: number): void {
+    this.isActivatingPillar.set(true);
+    this.activePillarConfig.set(pillar);
+    this.robotFacing.set('back'); // Robot turns around to face pillar
+    this.inputService.pause(); // Block movement while hologram active
+
+    // Emit event for LandingPage to show hologram
+    this.hologramActivated.emit({
+      config: pillar,
+      screenX: pillarScreenX,
+      screenY: pillarScreenY
+    });
+  }
+
+  /**
+   * Deactivate pillar - robot turns back to face front
+   * Called when ESC pressed or hologram closed
+   */
+  deactivatePillar(): void {
+    this.isActivatingPillar.set(false);
+    this.activePillarConfig.set(null);
+    this.robotFacing.set('right'); // Robot turns back to normal
+    this.inputService.resume(); // Allow movement again
+
+    this.hologramDeactivated.emit();
+  }
+
+  /**
+   * Check if hologram is currently active
+   */
+  isHologramActive(): boolean {
+    return this.isActivatingPillar();
   }
 }

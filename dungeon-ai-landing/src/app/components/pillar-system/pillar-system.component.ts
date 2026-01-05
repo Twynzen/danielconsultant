@@ -27,7 +27,7 @@ import {
   PILLAR_INTERACTION,
   getPillarWorldPosition
 } from '../../config/pillar.config';
-import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
+import { SIDESCROLLER_CONFIG, getPillarY } from '../../config/sidescroller.config';
 import { PhysicsService } from '../../core/services/physics.service';
 import { ViewportCullingService } from '../../core/services/viewport-culling.service';
 import { InputService } from '../../core/services/input.service';
@@ -59,7 +59,12 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   private cullingService = inject(ViewportCullingService);
   private inputService = inject(InputService);
 
-  @Output() pillarActivated = new EventEmitter<PillarConfig>();
+  // v4.6.2: Event with WORLD coordinates (not screen) for proper hologram anchoring
+  @Output() pillarActivated = new EventEmitter<{
+    config: PillarConfig;
+    worldX: number;
+    worldY: number;
+  }>();
 
   // Pillar states
   pillarStates = signal<PillarState[]>([]);
@@ -171,12 +176,19 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
     this.pillarStates.set(states);
   }
 
-  @HostListener('window:keydown.enter', ['$event'])
+  // v4.6: Changed from ENTER to E key (videogame style)
+  @HostListener('window:keydown.e', ['$event'])
   onActivate(event: KeyboardEvent): void {
     const active = this.activePillar();
     if (active) {
       event.preventDefault();
-      this.pillarActivated.emit(active.config);
+
+      // v4.6.2: Emit WORLD coordinates (not screen) so hologram stays anchored to pillar
+      this.pillarActivated.emit({
+        config: active.config,
+        worldX: active.config.worldX,
+        worldY: getPillarY()
+      });
     }
   }
 

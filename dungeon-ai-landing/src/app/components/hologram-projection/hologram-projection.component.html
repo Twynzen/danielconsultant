@@ -1,0 +1,110 @@
+<!-- Hologram Projection v1.0 -->
+<div class="hologram-backdrop"
+     *ngIf="isVisible"
+     (click)="onBackdropClick($event)">
+
+  <!-- Main hologram container -->
+  <div class="hologram-container"
+       [ngStyle]="getHologramStyle()"
+       [class.appearing]="isAppearing()"
+       [class.url-mode]="pillarConfig?.type === 'external'"
+       [class.service-mode]="pillarConfig?.type === 'modal'">
+
+    <!-- Scan lines overlay -->
+    <div class="scan-lines"></div>
+
+    <!-- ============================================ -->
+    <!-- URL MODE - External link with WiFi waves -->
+    <!-- ============================================ -->
+    <ng-container *ngIf="pillarConfig?.type === 'external'">
+      <!-- WiFi waves above URL -->
+      <div class="wifi-waves">
+        <span class="wave wave-1">)</span>
+        <span class="wave wave-2">)</span>
+        <span class="wave wave-3">)</span>
+        <span class="wave-spacer"></span>
+        <span class="wave wave-3">)</span>
+        <span class="wave wave-2">)</span>
+        <span class="wave wave-1">)</span>
+      </div>
+
+      <div class="url-content">
+        <!-- Link icon -->
+        <div class="url-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+
+        <!-- Clickable URL -->
+        <a class="hologram-url"
+           [href]="pillarConfig?.destination"
+           target="_blank"
+           (click)="onUrlClick()">
+          {{ getDisplayUrl() }}
+        </a>
+
+        <!-- Description if available -->
+        <p class="url-description" *ngIf="pillarConfig?.description">
+          {{ pillarConfig?.description }}
+        </p>
+
+        <!-- Hint -->
+        <span class="url-hint">[CLICK o TAB + ENTER]</span>
+      </div>
+    </ng-container>
+
+    <!-- ============================================ -->
+    <!-- SERVICE MODE - Full service details -->
+    <!-- ============================================ -->
+    <ng-container *ngIf="pillarConfig?.type === 'modal' && serviceData()">
+      <div class="service-content">
+        <!-- Title with glitch effect -->
+        <h2 class="hologram-title">
+          <span class="title-text">{{ serviceData()?.title }}</span>
+        </h2>
+
+        <!-- Separator line -->
+        <div class="hologram-separator"></div>
+
+        <!-- Description -->
+        <p class="hologram-description">
+          {{ serviceData()?.description }}
+        </p>
+
+        <!-- Features list -->
+        <div class="hologram-features" *ngIf="serviceData()?.features?.length">
+          <h3 class="features-title">CARACTERISTICAS PRINCIPALES:</h3>
+          <ul class="features-list">
+            <li *ngFor="let feature of serviceData()?.features" class="feature-item">
+              <span class="feature-bullet"></span>
+              <span class="feature-text">{{ feature.text }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Technologies -->
+        <div class="hologram-technologies" *ngIf="serviceData()?.technologies?.length">
+          <h3 class="tech-title">TECNOLOGIAS:</h3>
+          <div class="tech-tags">
+            <span *ngFor="let tech of serviceData()?.technologies" class="tech-tag">
+              {{ tech }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Close hint -->
+        <div class="close-hint">
+          <span>[ESC para cerrar]</span>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+
+  <!-- v4.6.1: Beam projection connecting hologram to pillar (outside container, fixed position) -->
+  <div class="hologram-beam-projection"
+       [ngStyle]="getBeamStyle()">
+  </div>
+</div>

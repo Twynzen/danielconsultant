@@ -197,26 +197,7 @@
   100% { transform: scaleX(0); opacity: 0; }
 }
 
-// Base section
-.pillar-base {
-  width: 60px;
-  height: 15px;
-  background: linear-gradient(
-    180deg,
-    #2a2a2a 0%,
-    #1a1a1a 100%
-  );
-  border: 2px solid rgba(0, 255, 68, calc(var(--illumination) * 0.3 + 0.05));
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  transition: border-color 0.3s ease;
-}
-
-.highlighted .pillar-base {
-  border-color: rgba(0, 255, 68, 0.4);
-}
-
-// Label
+// Label (base styles moved to v4.6 section below)
 .pillar-label {
   position: absolute;
   bottom: -35px;
@@ -252,42 +233,252 @@
   border-radius: 2px;
 }
 
-// Enter prompt
-.enter-prompt {
+// ============================================
+// v4.6.1: TECLA E MINIMALISTA - Solo la letra con glow
+// ============================================
+.key-prompt {
   position: absolute;
-  bottom: -60px;
+  top: -55px;
   left: 50%;
   transform: translateX(-50%);
-  animation: enter-bounce 0.8s ease-in-out infinite;
+  animation: key-float 1.5s ease-in-out infinite;
+  z-index: 20;
 }
 
-@keyframes enter-bounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-5px); }
-}
-
-.enter-prompt .key {
+.key-letter {
   font-family: 'Courier New', monospace;
-  font-size: 10px;
+  font-size: 24px;
   font-weight: bold;
-  color: #ffffff;
-  background: var(--pillar-color);
-  padding: 4px 10px;
-  border-radius: 3px;
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.5),
-    0 0 15px var(--pillar-color);
-  text-shadow: none;
+  color: #00ff44;
+  text-shadow:
+    0 0 10px rgba(0, 255, 68, 0.8),
+    0 0 20px rgba(0, 255, 68, 0.5),
+    0 0 30px rgba(0, 255, 68, 0.3);
+  animation: e-pulse 1s ease-in-out infinite;
 }
 
-// Interactable state - more intense
+@keyframes key-float {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-8px); }
+}
+
+@keyframes e-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    text-shadow:
+      0 0 10px rgba(0, 255, 68, 0.8),
+      0 0 20px rgba(0, 255, 68, 0.5);
+  }
+  50% {
+    opacity: 1;
+    text-shadow:
+      0 0 15px rgba(0, 255, 68, 1),
+      0 0 30px rgba(0, 255, 68, 0.7),
+      0 0 45px rgba(0, 255, 68, 0.4);
+  }
+}
+
+// ============================================
+// v4.6: FLOATING BINARY PARTICLES
+// ============================================
+.particle-field {
+  position: absolute;
+  bottom: 100%;
+  left: -20px;
+  right: -20px;
+  height: 100px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.particle {
+  position: absolute;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--pillar-color);
+  text-shadow: 0 0 5px var(--pillar-color);
+  animation: float-up 3s ease-out infinite;
+  animation-delay: var(--delay);
+  left: var(--x);
+  bottom: 0;
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-100px) scale(1);
+    opacity: 0;
+  }
+}
+
+// ============================================
+// v4.6: CIRCUIT ETCH LINES
+// ============================================
+.circuit-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.circuit-line {
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--pillar-color) 20%,
+    var(--pillar-color) 80%,
+    transparent 100%
+  );
+  opacity: calc(var(--illumination) * 0.5);
+  transition: opacity 0.3s ease;
+
+  &.left { left: 4px; }
+  &.right { right: 4px; }
+
+  // Energy flow animation
+  &::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 15px;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      rgba(255, 255, 255, 0.8),
+      transparent
+    );
+    animation: energy-flow 2s linear infinite;
+    opacity: calc(var(--illumination) * 0.8);
+  }
+}
+
+.circuit-line.right::after {
+  animation-delay: 1s;  // Offset for visual interest
+}
+
+@keyframes energy-flow {
+  0% { top: -15px; }
+  100% { top: calc(100% + 15px); }
+}
+
+// ============================================
+// v4.6: ENERGY CORE
+// ============================================
+.energy-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: var(--pillar-color);
+  border-radius: 50%;
+  box-shadow:
+    0 0 8px var(--pillar-color),
+    0 0 16px var(--pillar-color),
+    0 0 24px rgba(0, 255, 68, 0.4);
+  animation: core-pulse 1.5s ease-in-out infinite;
+  opacity: calc(var(--illumination) * 0.9);
+  z-index: 2;
+}
+
+@keyframes core-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 8px var(--pillar-color),
+      0 0 16px var(--pillar-color);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.4);
+    box-shadow:
+      0 0 12px var(--pillar-color),
+      0 0 24px var(--pillar-color),
+      0 0 36px rgba(0, 255, 68, 0.5);
+  }
+}
+
+// ============================================
+// v4.6: ENHANCED BASE
+// ============================================
+.pillar-base {
+  width: 60px;
+  height: 15px;
+  background: linear-gradient(
+    180deg,
+    #2a2a2a 0%,
+    #1a1a1a 100%
+  );
+  border: 2px solid rgba(0, 255, 68, calc(var(--illumination) * 0.3 + 0.05));
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  transition: border-color 0.3s ease;
+  position: relative;
+
+  .base-glow {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(60px + 50px * var(--illumination));
+    height: 12px;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 255, 68, calc(var(--illumination) * 0.6)) 0%,
+      transparent 70%
+    );
+    transition: width 0.3s ease;
+    pointer-events: none;
+  }
+
+  .base-ring {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 6px;
+    border: 1px solid rgba(0, 255, 68, calc(var(--illumination) * 0.4));
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(0, 255, 68, calc(var(--illumination) * 0.3));
+    opacity: calc(var(--illumination) * 0.7);
+    transition: opacity 0.3s ease;
+  }
+}
+
+.highlighted .pillar-base {
+  border-color: rgba(0, 255, 68, 0.4);
+
+  .base-ring {
+    animation: ring-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes ring-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.5; }
+  50% { transform: translateX(-50%) scale(1.15); opacity: 0.8; }
+}
+
+// ============================================
+// INTERACTABLE STATE - Enhanced
+// ============================================
 .interactable .pillar-column {
   animation: pillar-ready 1s ease-in-out infinite;
 }
 
 @keyframes pillar-ready {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.03); }
 }
 
 .interactable .pillar-top {
@@ -295,4 +486,13 @@
     0 0 20px var(--pillar-color),
     0 0 40px var(--pillar-color),
     inset 0 0 15px rgba(0, 255, 68, 0.3);
+}
+
+.interactable .energy-core {
+  animation: core-pulse-fast 0.8s ease-in-out infinite;
+}
+
+@keyframes core-pulse-fast {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.6); }
 }

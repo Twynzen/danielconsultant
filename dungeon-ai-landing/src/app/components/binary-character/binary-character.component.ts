@@ -69,6 +69,7 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   @Input() facingRight = true;
   @Input() isTalking = false; // v4.1: For mouth animation during dialog
   @Input() characterScreenY = 0; // v5.1: Screen Y position for crash ground calculation
+  @Input() facing: FacingDirection = 'right'; // v4.5: For hologram activation (can be 'back')
 
   // Character grids
   bodyGrid: BinaryDigit[][] = [];
@@ -93,6 +94,9 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   // v4.1: Track previous facing for body pose changes
   private lastFacingRight = true;
   private wasMoving = false;
+
+  // v4.5: Track facing direction changes (for hologram back pose)
+  private lastFacingDirection: FacingDirection = 'right';
 
   // Animation loop
   private animationFrameId: number | null = null;
@@ -155,7 +159,13 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   emotionClass = computed(() => this.emotion());
 
   // v4.1: When idle, face towards mouse. When moving, face movement direction
+  // v4.5: When facing='back', no flip needed
   get characterTransform(): string {
+    // When facing back (hologram activation), no flip
+    if (this.facing === 'back') {
+      return 'scaleX(1)';
+    }
+
     let shouldFaceRight = this.facingRight;
 
     // When idle (not moving), look towards the mouse
@@ -282,21 +292,25 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   // ========== V4.1 BODY POSE ==========
 
   private updateBodyPose(): void {
-    // v4.1 FINAL: Always use BODY_RIGHT for the "looking sideways" effect
-    // The scaleX transform handles left/right direction
-    //
-    // This creates the effect:
-    // - Walk right: RIGHT + scaleX(1) = looks right ✓
-    // - Walk left: RIGHT + scaleX(-1) = eyes flip to left ✓
-    // - Idle + mouse right: RIGHT + scaleX(1) = looks right ✓
-    // - Idle + mouse left: RIGHT + scaleX(-1) = eyes flip to left ✓
-    //
-    // The neck/head rotation effect is consistent whether walking or idle
+    // v4.5 FIX: Track facing changes to properly update grid
+    // Problem: Before this fix, bodyGrid never updated when going from 'back' to 'right'
+    // because the condition `if (!this.bodyGrid)` was always false after first init.
 
-    // Always use 'right' pose - scaleX does the direction flip
-    if (!this.bodyGrid || this.bodyGrid.length === 0) {
-      this.bodyGrid = getBodyGrid('right');
+    // Determine desired facing: 'back' for hologram, 'right' for everything else
+    const desiredFacing: FacingDirection = this.facing === 'back' ? 'back' : 'right';
+
+    // Update grid if:
+    // 1. Facing changed (e.g., 'right' -> 'back' or 'back' -> 'right')
+    // 2. OR bodyGrid is empty/uninitialized
+    if (desiredFacing !== this.lastFacingDirection || !this.bodyGrid?.length) {
+      this.bodyGrid = getBodyGrid(desiredFacing);
+      this.lastFacingDirection = desiredFacing;
     }
+
+    // Note: scaleX transform handles left/right visual flip for movement
+    // - Walk right: RIGHT pose + scaleX(1) = looks right ✓
+    // - Walk left: RIGHT pose + scaleX(-1) = eyes flip to left ✓
+    // - Hologram: BACK pose (no eyes visible) ✓
   }
 
   // ========== V4.1 MOUTH ANIMATION ==========

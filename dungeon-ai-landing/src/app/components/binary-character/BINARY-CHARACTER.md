@@ -75,6 +75,26 @@ El personaje esta definido como **3 strings ASCII** en `character-matrix.config.
 .......000.......    ← Base del torso
 ```
 
+### Ejemplo de TORSO_BACK (v4.5) - Hologram Activation
+
+```
+....000000000....    ← Parte trasera cabeza (sin ojos)
+....00.0.0.00....    ← Patron simple (no 'E')
+....00..0..00....    ← Patron simple (no 'S')
+....000000000....    ← Base cabeza
+.......000.......    ← Cuello (igual)
+......00000......
+......00000......    ← Torso (igual que FRONT)
+.....0000000.....
+......00000......
+......00000......
+......00000......
+......00000......
+.......000.......
+```
+
+**Nota:** TORSO_BACK no tiene caracteres 'E' (ojos) ni 'S' (boca), por lo que el robot no muestra ojos blancos cuando esta de espaldas.
+
 ---
 
 ## SISTEMA DE TIPOS (DigitType)
@@ -403,6 +423,7 @@ TYPE_MASS: {
 | facingRight | boolean | Mira a la derecha? |
 | isTalking | boolean | Esta hablando? (anima boca) |
 | characterScreenY | number | Posicion Y en pantalla (para crash) |
+| facing | FacingDirection | Direccion del torso: 'front', 'left', 'right', 'back' (v4.5) |
 
 ### Outputs
 
@@ -535,6 +556,12 @@ binaryChar.triggerCrash();
 ---
 
 ## CHANGELOG
+
+### v4.5 (Enero 2026)
+- Feature: TORSO_BACK - Vista trasera del robot (sin ojos visibles)
+- Feature: Input `facing` para controlar direccion ('front', 'left', 'right', 'back')
+- Feature: Robot gira de espaldas al activar hologramas en pilares
+- Integration: HologramProjectionComponent para reemplazar modales
 
 ### v5.2 (Enero 2026)
 - Design: Cabeza rectangular compacta (4 filas, sin espacio vacio)

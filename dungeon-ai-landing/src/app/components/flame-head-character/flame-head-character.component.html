@@ -32,6 +32,7 @@
     [facingRight]="physicsService.facingRight()"
     [isTalking]="isTyping()"
     [characterScreenY]="screenY()"
+    [facing]="robotFacing()"
     (assemblyComplete)="onAssemblyComplete()"
     (crashComplete)="onCrashComplete()">
   </app-binary-character>

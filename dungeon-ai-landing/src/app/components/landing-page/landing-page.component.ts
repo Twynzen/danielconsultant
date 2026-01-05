@@ -1,10 +1,11 @@
-import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
 import { ModalServiceComponent } from '../modal-service/modal-service.component';
+import { HologramProjectionComponent } from '../hologram-projection/hologram-projection.component';
 import { FlameHeadCharacterComponent } from '../flame-head-character/flame-head-character.component';
 import { PillarSystemComponent } from '../pillar-system/pillar-system.component';
-import { PillarConfig } from '../../config/pillar.config';
+import { PillarConfig, PILLAR_INTERACTION } from '../../config/pillar.config';
 import { CameraService } from '../../services/camera.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 
@@ -15,6 +16,7 @@ import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
     CommonModule,
     CircuitsBackgroundComponent,
     ModalServiceComponent,
+    HologramProjectionComponent,
     FlameHeadCharacterComponent,
     PillarSystemComponent
   ],
@@ -26,9 +28,30 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
 
-  // Modal state
+  // Reference to character component
+  @ViewChild(FlameHeadCharacterComponent) characterComponent!: FlameHeadCharacterComponent;
+
+  // Modal state (legacy - keeping for fallback)
   isModalOpen = false;
   selectedServiceId: string | null = null;
+
+  // v4.5: Hologram state
+  isHologramActive = false;
+  activeHologramPillar: PillarConfig | null = null;
+
+  // v4.6.2: Store WORLD coordinates (not screen) for proper pillar anchoring
+  hologramWorldX = 0;
+  hologramWorldY = 0;
+
+  // v4.6.2: Reactive getters - recalculate screen position in real-time
+  get hologramScreenX(): number {
+    return this.cameraService.worldToScreenX(this.hologramWorldX);
+  }
+
+  get hologramScreenY(): number {
+    // Y is fixed relative to viewport (ground minus pillar height)
+    return window.innerHeight - SIDESCROLLER_CONFIG.GROUND_HEIGHT - PILLAR_INTERACTION.PILLAR_HEIGHT;
+  }
 
   // Animation frame for change detection
   private animationFrameId: number | null = null;
@@ -68,17 +91,61 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Called when a pillar is activated via Enter key
+   * v4.6.2: Called when a pillar is activated via E key
+   * Stores WORLD coordinates so hologram stays anchored to pillar
    */
-  onPillarActivated(pillar: PillarConfig): void {
-    if (pillar.type === 'external') {
-      window.open(pillar.destination, '_blank', 'noopener,noreferrer');
-    } else {
-      this.selectedServiceId = pillar.destination;
-      this.isModalOpen = true;
+  onPillarActivated(event: { config: PillarConfig; worldX: number; worldY: number }): void {
+    // Store hologram config
+    this.activeHologramPillar = event.config;
+
+    // v4.6.2: Store WORLD coordinates (getters will convert to screen in real-time)
+    this.hologramWorldX = event.worldX;
+    this.hologramWorldY = event.worldY;
+
+    // Show hologram
+    this.isHologramActive = true;
+
+    // Make robot turn around to face the pillar
+    if (this.characterComponent) {
+      this.characterComponent.activatePillar(event.config, this.hologramScreenX, this.hologramScreenY);
     }
   }
 
+  /**
+   * v4.5: Close hologram
+   */
+  onCloseHologram(): void {
+    this.isHologramActive = false;
+    this.activeHologramPillar = null;
+
+    // Make robot turn back to normal
+    if (this.characterComponent) {
+      this.characterComponent.deactivatePillar();
+    }
+  }
+
+  /**
+   * v4.5: Handle URL click from hologram
+   */
+  onHologramUrlClick(url: string): void {
+    // URL is opened by the hologram component itself
+    // We can close the hologram after a brief delay
+    setTimeout(() => {
+      this.onCloseHologram();
+    }, 500);
+  }
+
+  /**
+   * v4.5: ESC key closes hologram
+   */
+  @HostListener('window:keydown.escape')
+  onEscapeKey(): void {
+    if (this.isHologramActive) {
+      this.onCloseHologram();
+    }
+  }
+
+  // Legacy modal methods (keeping for potential fallback)
   onCloseModal(): void {
     this.isModalOpen = false;
     this.selectedServiceId = null;
