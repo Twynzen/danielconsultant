@@ -105,12 +105,24 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   readonly isVisible = computed(() => {
     const phase = this.onboarding.phase();
-    // v5.1: Show during loading, welcome, and normal dialog phases
+
+    // Never show during these phases
+    if (phase === OnboardingPhase.DARKNESS ||
+        phase === OnboardingPhase.COMPLETE ||
+        phase === OnboardingPhase.SPAWN_ANIMATION) {
+      return false;
+    }
+
+    // v5.1: Always show during loading and welcome (they have their own content)
     if (phase === OnboardingPhase.LOADING || phase === OnboardingPhase.WELCOME) {
       return true;
     }
+
+    // v5.1.1: For dialog phases, only show if we have content to display
+    // This prevents empty dialog boxes during phase transitions
     const dialog = this.currentDialog();
-    return dialog !== null && phase !== OnboardingPhase.DARKNESS && phase !== OnboardingPhase.COMPLETE;
+    const hasContent = this.displayedText().length > 0;
+    return dialog !== null && hasContent;
   });
 
   // v5.1: Loading and welcome state
@@ -126,9 +138,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   });
 
   readonly showContinuePrompt = computed(() => {
-    // v5.1: Don't show during loading, show during welcome
+    // v5.1.1: Don't show during loading or welcome (welcome has its own hint)
     if (this.isLoading()) return false;
-    if (this.isWelcome()) return true;
+    if (this.isWelcome()) return false;  // Welcome section has its own hint
     return !this.isTyping() && !this.requiresChoice();
   });
 
@@ -319,16 +331,19 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   /**
    * Advance to next dialog
+   * v5.1.1: DON'T call resetTyping() here - let the effect handle it
+   * This prevents the empty dialog flash during transitions
    */
   advanceDialog(): void {
-    this.resetTyping();
+    // Don't reset here - keep current text visible until new dialog starts
     this.onboarding.advanceDialog();
     this.dialogAdvanced.emit();
-    // v1.1: Effect will automatically detect the new dialog and start typing
+    // Effect will automatically detect the new dialog, reset, and start typing
   }
 
   /**
    * Submit choice (Y/N)
+   * v5.1.1: DON'T call resetTyping() - let effect handle it
    */
   submitChoice(): void {
     const input = this.userInput.trim();
@@ -338,8 +353,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       this.onboarding.setUserChoice(input);
       this.choiceSubmitted.emit(input);
       this.userInput = '';
-      this.resetTyping();
-      // v1.1: Effect will automatically detect the new dialog and start typing
+      // Don't reset here - effect will handle the transition
     } else {
       // Invalid input - shake or flash
       this.userInput = '';
