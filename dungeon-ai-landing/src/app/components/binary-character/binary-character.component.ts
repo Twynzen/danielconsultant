@@ -134,6 +134,9 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   private lastGlitchTime = 0;
   private isDestroyed = false;
 
+  // v5.2.3: Frame counter for throttled change detection
+  private frameCounter = 0;
+
   // Landing effect
   private wasJumping = false;
   isLanding = signal(false);
@@ -335,7 +338,16 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
       this.wasMoving = this.isMoving;
       this.lastFacingRight = this.facingRight;
 
-      this.cdr.markForCheck();
+      // v5.2.3: Throttled change detection for better performance
+      // During heavy animations (energizing), update every 2 frames
+      // During light state (idle), update every 3 frames
+      this.frameCounter++;
+      const isAnimatingEnergy = this.isEnergizing() || this.assemblyPhase() === AssemblyPhase.EXITING_PILLAR;
+      const throttleRate = isAnimatingEnergy ? 2 : 3;
+
+      if (this.frameCounter % throttleRate === 0) {
+        this.cdr.markForCheck();
+      }
       this.animationFrameId = requestAnimationFrame(loop);
     };
 
@@ -652,16 +664,20 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   /**
    * v5.0: Get transform for a digit during animations (spawn, landing, crash, or energize)
    * v5.2.1: Enhanced energy animation with scale and rotation
+   * v5.2.3: OPTIMIZED - Removed rotation for better performance
    */
   getDigitTransform(section: string, rowIndex: number, colIndex: number): string {
     const key = `${section}-${rowIndex}-${colIndex}`;
 
     // Priority: energize > crash > spawn assembly > landing scatter
-    // v5.2.1: Energy animation with full transform (translate + scale + rotate)
+    // v5.2.3: Energy animation with translate + scale only (rotation removed for performance)
     const energyState = this.energyParticleStates.get(key);
     if (energyState && (this.isEnergizing() || this.assemblyPhase() === AssemblyPhase.EXITING_PILLAR)) {
-      // Full transform: translate, then scale, then rotate
-      return `translate(${energyState.currentX}px, ${energyState.currentY}px) scale(${energyState.scale}) rotate(${energyState.rotation}deg)`;
+      // v5.2.3: Simplified transform without rotation + rounded values for less repaints
+      const x = Math.round(energyState.currentX * 10) / 10;
+      const y = Math.round(energyState.currentY * 10) / 10;
+      const s = Math.round(energyState.scale * 100) / 100;
+      return `translate(${x}px, ${y}px) scale(${s})`;
     }
 
     const crashState = this.crashParticleStates.get(key);
@@ -1360,9 +1376,8 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
           state.opacity = 0.3 + state.progress * 0.7;
         }
 
-        // Rotation
-        state.rotation += state.rotationSpeed * deltaTime;
-        state.rotationSpeed *= 0.98; // Slow down
+        // v5.2.3: REMOVED rotation calculation for better performance
+        // (rotation was barely visible on small particles, but added CPU overhead)
 
       } else {
         // === PARTICLE HAS ARRIVED ===

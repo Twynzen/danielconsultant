@@ -179,6 +179,7 @@ $glow: rgba(0, 255, 68, 0.5);
 }
 
 // Energizing state - robot decomposing and flowing to pillar
+// v5.2.3 OPTIMIZED: Reduced from 4 drop-shadows to 1 for better performance
 .energizing {
   // Main glow expands and pulses dramatically
   .glow {
@@ -193,34 +194,18 @@ $glow: rgba(0, 255, 68, 0.5);
     );
   }
 
-  // Each particle gets intense trail effect
+  // v5.2.3: Single drop-shadow instead of 4 (GPU friendly)
   .scatter-digit {
-    filter:
-      drop-shadow(0 0 4px $green)
-      drop-shadow(0 0 8px $green)
-      drop-shadow(0 0 16px rgba(0, 255, 68, 0.8))
-      drop-shadow(0 0 32px rgba(0, 255, 68, 0.4));
-
-    // Motion blur simulation via multiple shadows
-    &::before {
-      content: attr(data-char);
-      position: absolute;
-      inset: 0;
-      color: $green;
-      opacity: 0.3;
-      filter: blur(3px);
-      animation: trail-ghost 0.15s ease-out infinite;
-    }
+    filter: drop-shadow(0 0 8px $green);
+    // REMOVED: ::before pseudo-element with animation (was causing lag)
   }
 
+  // v5.2.3: Use text-shadow instead of multiple drop-shadows for glow effect
   .digit:not(.empty) {
     color: lighten($green, 20%);
     text-shadow:
-      0 0 5px $white,
-      0 0 10px $green,
-      0 0 20px $green,
-      0 0 40px rgba(0, 255, 68, 0.9),
-      0 0 60px rgba(0, 255, 68, 0.5);
+      0 0 8px $green,
+      0 0 16px rgba(0, 255, 68, 0.7);
   }
 
   // Eyes glow extra bright when energizing
@@ -228,9 +213,7 @@ $glow: rgba(0, 255, 68, 0.5);
     color: $white !important;
     text-shadow:
       0 0 10px $white,
-      0 0 20px $white,
-      0 0 30px $green,
-      0 0 50px $green !important;
+      0 0 20px $green !important;
   }
 }
 
@@ -247,16 +230,7 @@ $glow: rgba(0, 255, 68, 0.5);
   }
 }
 
-@keyframes trail-ghost {
-  0% {
-    opacity: 0.4;
-    transform: translate(-2px, -2px);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-8px, -8px);
-  }
-}
+// v5.2.3: REMOVED @keyframes trail-ghost (no longer used, was causing lag)
 
 // Inside pillar state - robot completely invisible
 .inside-pillar {
@@ -270,6 +244,7 @@ $glow: rgba(0, 255, 68, 0.5);
 }
 
 // Exiting pillar state - robot recomposing with sparkle effect
+// v5.2.3 OPTIMIZED: Reduced shadows, removed ::after sparkle animation
 .exiting-pillar {
   .glow {
     animation: exit-glow-burst 0.6s ease-out infinite alternate;
@@ -277,33 +252,16 @@ $glow: rgba(0, 255, 68, 0.5);
     filter: blur(35px);
   }
 
+  // v5.2.3: Single drop-shadow for performance
   .scatter-digit {
-    filter:
-      drop-shadow(0 0 3px $green)
-      drop-shadow(0 0 8px $green)
-      drop-shadow(0 0 15px rgba(0, 255, 68, 0.6));
-
-    // Sparkle effect on recomposition
-    &::after {
-      content: '';
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      background: $white;
-      border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      animation: sparkle-pop 0.4s ease-out infinite;
-      opacity: 0;
-    }
+    filter: drop-shadow(0 0 6px $green);
+    // REMOVED: ::after sparkle animation (was adding 200 extra animated elements)
   }
 
   .digit:not(.empty) {
     text-shadow:
-      0 0 6px $green,
-      0 0 12px $green,
-      0 0 24px rgba(0, 255, 68, 0.7);
+      0 0 8px $green,
+      0 0 16px rgba(0, 255, 68, 0.6);
   }
 }
 
@@ -320,41 +278,14 @@ $glow: rgba(0, 255, 68, 0.5);
   }
 }
 
-@keyframes sparkle-pop {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.5);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
-  }
-}
+// v5.2.3: REMOVED @keyframes sparkle-pop (no longer used, was adding 200 extra elements)
 
 // Data attribute based energization phases
+// v5.2.3 OPTIMIZED: Reduced to single drop-shadow per element
 [data-assembly="energizing"] {
-  // Staggered glow intensity based on particle position
-  .body-grid .scatter-digit {
-    filter:
-      drop-shadow(0 0 6px $green)
-      drop-shadow(0 0 12px $green)
-      drop-shadow(0 0 24px rgba(0, 255, 68, 0.7));
-  }
-
-  .arms-grid .scatter-digit {
-    filter:
-      drop-shadow(0 0 4px $green)
-      drop-shadow(0 0 10px $green);
-  }
-
-  .legs-grid .scatter-digit {
-    filter:
-      drop-shadow(0 0 3px $green)
-      drop-shadow(0 0 8px $green);
+  // v5.2.3: Single shadow for all grids (no need for staggered filters)
+  .scatter-digit {
+    filter: drop-shadow(0 0 8px $green);
   }
 }
 
@@ -365,24 +296,9 @@ $glow: rgba(0, 255, 68, 0.5);
 }
 
 [data-assembly="exiting_pillar"] {
-  // Particles fade in from pillar
+  // v5.2.3: Single shadow for performance
   .scatter-digit {
-    filter:
-      drop-shadow(0 0 4px $green)
-      drop-shadow(0 0 10px rgba(0, 255, 68, 0.8));
-  }
-
-  // Core parts glow more as they form
-  .type-core {
-    filter:
-      drop-shadow(0 0 6px $green)
-      drop-shadow(0 0 15px $green) !important;
-  }
-
-  .eye {
-    filter:
-      drop-shadow(0 0 8px $white)
-      drop-shadow(0 0 20px $green) !important;
+    filter: drop-shadow(0 0 6px $green);
   }
 }
 
