@@ -7,11 +7,14 @@
 
     <!-- v4.8: ABOUT TYPE - Animated portrait hologram -->
     <!-- v5.0: Invisible when illumination=0 (onboarding darkness) -->
+    <!-- v5.2: Added low-energy and fully-energized states -->
     @if (inscription.type === 'about') {
       <app-hologram-portrait
         [isVisible]="(isActive(inscription.id) || isAwakening(inscription.id)) && getIllumination(inscription.id) > 0"
         [color]="inscription.color"
         [illumination]="getIllumination(inscription.id)"
+        [isLowEnergy]="isLowEnergy(inscription.id)"
+        [isFullyEnergized]="isFullyEnergized(inscription.id)"
         [style.left.px]="inscription.x"
         [style.bottom.px]="inscription.bottom"
         [style.opacity]="getIllumination(inscription.id) > 0 ? 1 : 0">
@@ -19,6 +22,7 @@
     } @else {
     <!-- v4.7.2: Use bottom positioning + click handlers -->
     <!-- v5.0: Invisible when illumination=0 (onboarding darkness) -->
+    <!-- v5.2: Added low-energy and fully-energized states -->
     <div class="inscription"
          [class.awakening]="isAwakening(inscription.id)"
          [class.active]="isActive(inscription.id)"
@@ -26,6 +30,8 @@
          [class.external]="inscription.type === 'external'"
          [class.clickable]="isClickable(inscription.id)"
          [class.hidden-darkness]="getIllumination(inscription.id) === 0"
+         [class.low-energy]="isLowEnergy(inscription.id)"
+         [class.fully-energized]="isFullyEnergized(inscription.id)"
          [style.--illumination]="getIlluminationStyle(inscription.id)"
          [style.--inscription-color]="inscription.color"
          [style.left.px]="inscription.x"

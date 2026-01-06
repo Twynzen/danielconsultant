@@ -282,3 +282,189 @@
     font-size: 9px;
   }
 }
+
+// ========== v5.2: Energy States for Robot Energization ==========
+
+// Low energy state: Robot nearby but NOT energizing (glitched/grayscale)
+.hologram-portrait.low-energy {
+  filter: grayscale(70%) brightness(0.6);
+  opacity: 0.5;
+
+  .frame-container {
+    animation: lowEnergyGlitch 0.3s infinite;
+    box-shadow:
+      0 0 20px color-mix(in srgb, var(--portrait-color) 15%, transparent),
+      inset 0 0 10px color-mix(in srgb, var(--portrait-color) 5%, transparent);
+  }
+
+  .portrait-frame {
+    filter: grayscale(70%) brightness(0.8) contrast(1.1);
+  }
+
+  .scan-line {
+    opacity: 0.2;
+    animation: scanMove 1s linear infinite;
+  }
+
+  .hologram-overlay {
+    opacity: 0.15;
+    animation: hologramFlicker 0.1s infinite;
+  }
+
+  .portrait-legend {
+    opacity: 0.4;
+    filter: grayscale(50%);
+
+    .legend-name {
+      animation: lowEnergyTitleGlitch 0.5s infinite;
+    }
+  }
+
+  .corner-bracket {
+    opacity: 0.3;
+  }
+}
+
+// Fully energized state: Robot inside pillar (full color/stable/glowing)
+.hologram-portrait.fully-energized {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.02);
+
+  .frame-container {
+    animation: fullyEnergizedPulse 2s ease-in-out infinite;
+    box-shadow:
+      0 0 50px color-mix(in srgb, var(--portrait-color) 70%, transparent),
+      0 0 100px color-mix(in srgb, var(--portrait-color) 40%, transparent),
+      0 0 150px color-mix(in srgb, var(--portrait-color) 20%, transparent),
+      inset 0 0 40px color-mix(in srgb, var(--portrait-color) 25%, transparent);
+    border-color: var(--portrait-color);
+    border-width: 3px;
+  }
+
+  .portrait-frame {
+    filter: brightness(1.15) contrast(1.05) saturate(1.2);
+  }
+
+  .scan-line {
+    opacity: 1;
+    animation: scanMove 2.5s linear infinite;
+  }
+
+  .hologram-overlay {
+    opacity: 0.5;
+    animation: none;
+    background: linear-gradient(
+      0deg,
+      var(--portrait-color) 0%,
+      transparent 20%
+    );
+  }
+
+  .portrait-legend {
+    opacity: 1;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 20, 0, 0.95) 0%,
+      rgba(0, 30, 0, 0.98) 100%
+    );
+    border-color: var(--portrait-color);
+
+    .legend-name {
+      animation: none;
+      text-shadow:
+        0 0 15px var(--portrait-color),
+        0 0 30px var(--portrait-color);
+    }
+
+    .legend-title,
+    .legend-subtitle {
+      text-shadow: 0 0 8px var(--portrait-color);
+    }
+  }
+
+  .corner-bracket {
+    opacity: 1;
+    border-width: 3px;
+  }
+}
+
+// Low energy glitch animation
+@keyframes lowEnergyGlitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  10% {
+    transform: translate(-1px, 0);
+  }
+  20% {
+    transform: translate(1px, 0);
+  }
+  30% {
+    transform: translate(0, 1px);
+  }
+  40% {
+    transform: translate(-1px, -1px);
+  }
+  50% {
+    transform: translate(1px, 1px);
+  }
+  60% {
+    transform: translate(0);
+  }
+  70% {
+    transform: translate(-1px, 0);
+  }
+  80% {
+    transform: translate(1px, -1px);
+  }
+  90% {
+    transform: translate(-1px, 1px);
+  }
+}
+
+// Low energy title glitch
+@keyframes lowEnergyTitleGlitch {
+  0%, 90%, 100% {
+    text-shadow: 0 0 5px var(--portrait-color);
+    transform: translateX(0);
+  }
+  92% {
+    text-shadow:
+      -2px 0 #ff0066,
+      2px 0 #00ffff;
+    transform: translateX(-2px);
+  }
+  94% {
+    text-shadow:
+      2px 0 #ff0066,
+      -2px 0 #00ffff;
+    transform: translateX(2px);
+  }
+  96% {
+    text-shadow: 0 0 10px var(--portrait-color);
+    transform: translateX(-1px);
+  }
+  98% {
+    text-shadow: 0 0 8px var(--portrait-color);
+    transform: translateX(1px);
+  }
+}
+
+// Fully energized pulse animation
+@keyframes fullyEnergizedPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 50px color-mix(in srgb, var(--portrait-color) 70%, transparent),
+      0 0 100px color-mix(in srgb, var(--portrait-color) 40%, transparent),
+      0 0 150px color-mix(in srgb, var(--portrait-color) 20%, transparent),
+      inset 0 0 40px color-mix(in srgb, var(--portrait-color) 25%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 60px color-mix(in srgb, var(--portrait-color) 80%, transparent),
+      0 0 120px color-mix(in srgb, var(--portrait-color) 50%, transparent),
+      0 0 180px color-mix(in srgb, var(--portrait-color) 30%, transparent),
+      inset 0 0 50px color-mix(in srgb, var(--portrait-color) 35%, transparent);
+  }
+}

@@ -51,6 +51,9 @@ export class HieroglyphicWallComponent {
   // Input: Map of pillar destination ID → illumination (0-1)
   @Input() pillarIlluminations: Map<string, number> = new Map();
 
+  // v5.2: Energization state - which pillar is currently energized (robot inside)
+  @Input() energizedPillarId: string | null = null;
+
   // v4.7.2: Output events for inscription clicks
   @Output() serviceClicked = new EventEmitter<string>(); // Emits service ID for modal
   @Output() externalClicked = new EventEmitter<string>(); // Emits URL for external links
@@ -193,6 +196,23 @@ export class HieroglyphicWallComponent {
 
   isDormant(inscriptionId: string): boolean {
     return this.getIllumination(inscriptionId) <= 0.1;
+  }
+
+  /**
+   * v5.2: Check if hologram is in low-energy state (glitched/grayscale)
+   * Robot is nearby but NOT energizing the pillar
+   */
+  isLowEnergy(inscriptionId: string): boolean {
+    const ill = this.getIllumination(inscriptionId);
+    // Low energy: visible (ill > 0.3) but not energized
+    return ill > 0.3 && this.energizedPillarId !== inscriptionId;
+  }
+
+  /**
+   * v5.2: Check if hologram is fully energized (robot inside this pillar)
+   */
+  isFullyEnergized(inscriptionId: string): boolean {
+    return this.energizedPillarId === inscriptionId;
   }
 
   /**

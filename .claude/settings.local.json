@@ -23,7 +23,9 @@
       "Bash(dungeon-ai-landing/src/app/shared/modals/consulting-modal.component.ts)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(cat:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

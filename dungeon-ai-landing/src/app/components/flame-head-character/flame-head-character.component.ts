@@ -94,6 +94,15 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   @Output() hologramActivated = new EventEmitter<{ config: PillarConfig; screenX: number; screenY: number }>();
   @Output() hologramDeactivated = new EventEmitter<void>();
 
+  // v5.2: Energization state - robot decomposes into pillar
+  isRobotInsidePillar = signal(false);  // Robot is currently energizing a pillar
+  private currentPillarScreenX = 0;
+  private currentPillarScreenY = 0;
+  @Output() energizationStarted = new EventEmitter<{ config: PillarConfig }>();
+  @Output() energizationFinished = new EventEmitter<{ config: PillarConfig }>();
+  @Output() pillarExitStarted = new EventEmitter<void>();
+  @Output() pillarExitFinished = new EventEmitter<void>();
+
   // Reference to binary character for crash trigger
   @ViewChild(BinaryCharacterComponent) binaryCharacter!: BinaryCharacterComponent;
 
@@ -389,36 +398,109 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   }
 
   // ========== V4.5 HOLOGRAM ACTIVATION ==========
+  // ========== V5.2 PILLAR ENERGIZATION ==========
 
   /**
-   * Activate pillar - robot turns back to face the pillar
-   * Called from LandingPage when player presses ENTER near a pillar
+   * v5.2: Activate pillar with energization animation
+   * Robot decomposes into particles and flows into the pillar
+   * Called from LandingPage when player presses E near a pillar
    */
   activatePillar(pillar: PillarConfig, pillarScreenX: number, pillarScreenY: number): void {
+    if (this.isRobotInsidePillar() || this.binaryCharacter?.isCrashing?.()) return;
+
     this.isActivatingPillar.set(true);
     this.activePillarConfig.set(pillar);
-    this.robotFacing.set('back'); // Robot turns around to face pillar
-    this.inputService.pause(); // Block movement while hologram active
+    this.inputService.pause(); // Block movement during energization
 
-    // Emit event for LandingPage to show hologram
-    this.hologramActivated.emit({
-      config: pillar,
-      screenX: pillarScreenX,
-      screenY: pillarScreenY
-    });
+    // Store pillar position for exit animation
+    this.currentPillarScreenX = pillarScreenX;
+    this.currentPillarScreenY = pillarScreenY;
+
+    // v5.2 FIX: Calculate position relative to CHARACTER CENTER, not container corner
+    // screenX/screenY return the top-left of the container, but particles are in the CENTER
+    // We need to offset by half the character dimensions to get the center point
+    const robotContainerX = this.screenX();
+    const robotContainerY = this.screenY();
+
+    // Character center is offset from container corner
+    // X: center of character width
+    // Y: upper third where eyes/head are (particles originate from whole body but converge to pillar)
+    const robotCenterX = robotContainerX + this.CHARACTER_WIDTH / 2;
+    const robotCenterY = robotContainerY + this.CHARACTER_HEIGHT * 0.4; // Upper-middle of character
+
+    // Calculate relative offset from robot center to pillar icon
+    const relativeX = pillarScreenX - robotCenterX;
+    const relativeY = pillarScreenY - robotCenterY;
+
+    this.binaryCharacter?.triggerEnergize(relativeX, relativeY);
+
+    // Emit start event
+    this.energizationStarted.emit({ config: pillar });
   }
 
   /**
-   * Deactivate pillar - robot turns back to face front
-   * Called when ESC pressed or hologram closed
+   * v5.2: Called when robot finishes entering pillar
+   * Triggered by binaryCharacter's energizationComplete event
    */
-  deactivatePillar(): void {
+  onEnergizationComplete(): void {
+    this.isRobotInsidePillar.set(true);
+    const pillar = this.activePillarConfig();
+
+    if (pillar) {
+      this.energizationFinished.emit({ config: pillar });
+
+      // Emit hologram activated for landing page to show full hologram
+      this.hologramActivated.emit({
+        config: pillar,
+        screenX: this.currentPillarScreenX,
+        screenY: this.currentPillarScreenY
+      });
+    }
+  }
+
+  /**
+   * v5.2: Exit pillar - robot recomposes from pillar
+   * Called when user presses E while inside pillar
+   */
+  exitPillar(): void {
+    if (!this.isRobotInsidePillar()) return;
+
+    // Start exit animation
+    this.binaryCharacter?.triggerExitPillar();
+    this.pillarExitStarted.emit();
+  }
+
+  /**
+   * v5.2: Called when robot finishes exiting pillar
+   * Triggered by binaryCharacter's exitPillarComplete event
+   */
+  onExitPillarComplete(): void {
+    this.isRobotInsidePillar.set(false);
     this.isActivatingPillar.set(false);
     this.activePillarConfig.set(null);
     this.robotFacing.set('right'); // Robot turns back to normal
     this.inputService.resume(); // Allow movement again
 
+    this.pillarExitFinished.emit();
     this.hologramDeactivated.emit();
+  }
+
+  /**
+   * Deactivate pillar - robot turns back to face front
+   * v5.2: Now triggers exit animation if inside pillar
+   */
+  deactivatePillar(): void {
+    if (this.isRobotInsidePillar()) {
+      // If inside pillar, trigger exit animation
+      this.exitPillar();
+    } else {
+      // If not inside (e.g., during energization), just cancel
+      this.isActivatingPillar.set(false);
+      this.activePillarConfig.set(null);
+      this.robotFacing.set('right');
+      this.inputService.resume();
+      this.hologramDeactivated.emit();
+    }
   }
 
   /**
@@ -426,5 +508,12 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
    */
   isHologramActive(): boolean {
     return this.isActivatingPillar();
+  }
+
+  /**
+   * v5.2: Check if robot is currently inside a pillar
+   */
+  isInsidePillar(): boolean {
+    return this.isRobotInsidePillar();
   }
 }

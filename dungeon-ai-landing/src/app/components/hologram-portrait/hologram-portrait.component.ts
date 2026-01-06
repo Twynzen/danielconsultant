@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
  * HologramPortraitComponent - v4.8
  * Displays animated portrait using 30 PNG frames
  * Matrix-style hologram effect with scan lines and glow
+ * v5.2: Added energy states for robot energization feature
  */
 @Component({
   selector: 'app-hologram-portrait',
@@ -17,6 +18,10 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
   @Input() isVisible = false;
   @Input() color = '#00ff44';
   @Input() illumination = 0;
+
+  // v5.2: Energy states for robot energization feature
+  @Input() isLowEnergy = false;      // Robot nearby but NOT energizing (glitched/grayscale)
+  @Input() isFullyEnergized = false; // Robot inside pillar (full color/stable)
 
   private readonly FRAME_COUNT = 30;
   private readonly FRAME_RATE = 100; // 10fps = 100ms per frame

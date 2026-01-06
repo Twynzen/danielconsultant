@@ -44,6 +44,10 @@ interface PillarState {
   worldY: number;
   screenX: number;
   isVisible: boolean;
+  // v5.2: Energization state
+  isRobotNearby: boolean;   // Robot close enough to show [E] indicator
+  isEnergized: boolean;     // Robot is inside THIS pillar
+  showExitIndicator: boolean; // Show gray [E] for exit
 }
 
 @Component({
@@ -70,8 +74,14 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   // v4.7: Emit illumination levels for hieroglyphic wall
   @Output() illuminationsChanged = new EventEmitter<Map<string, number>>();
 
+  // v5.2: Emit when user presses E to exit pillar (when already inside)
+  @Output() pillarExitRequested = new EventEmitter<void>();
+
   // v5.0: Base illumination from onboarding (0-1, adds to proximity illumination)
   @Input() baseIllumination = 0;
+
+  // v5.2: Energization state - which pillar the robot is inside (null = none)
+  @Input() energizedPillarId: string | null = null;
 
   // Pillar states
   pillarStates = signal<PillarState[]>([]);
@@ -118,7 +128,11 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
         worldX: worldPos.x,
         worldY: worldPos.y,
         screenX: 0,
-        isVisible: false
+        isVisible: false,
+        // v5.2: Energization state
+        isRobotNearby: false,
+        isEnergized: false,
+        showExitIndicator: false
       };
     });
     this.pillarStates.set(states);
@@ -168,6 +182,11 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
       const screenX = this.cullingService.getScreenX(pillarX);
       const isVisible = this.cullingService.isVisible(pillarX, PILLAR_INTERACTION.PILLAR_WIDTH);
 
+      // v5.2: Energization state
+      const isEnergized = this.energizedPillarId === config.id;
+      const isRobotNearby = isInteractable && !isEnergized && !this.energizedPillarId;
+      const showExitIndicator = isEnergized; // Show gray [E] when robot is inside THIS pillar
+
       return {
         config,
         isHighlighted,
@@ -178,7 +197,11 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
         worldX: pillarX,
         worldY: pillarY,
         screenX,
-        isVisible
+        isVisible,
+        // v5.2
+        isRobotNearby,
+        isEnergized,
+        showExitIndicator
       };
     });
 
@@ -211,8 +234,17 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   }
 
   // v4.6: Changed from ENTER to E key (videogame style)
+  // v5.2: Also handles exiting pillar when robot is inside
   @HostListener('window:keydown.e', ['$event'])
   onActivate(event: KeyboardEvent): void {
+    // v5.2: If robot is inside a pillar, E key triggers exit
+    if (this.energizedPillarId) {
+      event.preventDefault();
+      this.pillarExitRequested.emit();
+      return;
+    }
+
+    // Normal case: activate/energize the closest pillar
     const active = this.activePillar();
     if (active) {
       event.preventDefault();

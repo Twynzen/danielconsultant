@@ -1,10 +1,13 @@
 <!-- HologramPortraitComponent - v4.8 -->
 <!-- Animated Matrix portrait with 30 PNG frames -->
+<!-- v5.2: Added low-energy and fully-energized states for robot energization -->
 
 <div class="hologram-portrait"
      [class.active]="isVisible && illumination >= 0.7"
      [class.awakening]="isVisible && illumination > 0.1 && illumination < 0.7"
      [class.dormant]="!isVisible || illumination <= 0.1"
+     [class.low-energy]="isLowEnergy"
+     [class.fully-energized]="isFullyEnergized"
      [style.--portrait-color]="color"
      [style.--illumination]="illumination">
 

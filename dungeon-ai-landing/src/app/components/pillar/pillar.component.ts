@@ -28,6 +28,11 @@ export class PillarComponent implements OnInit {
   @Input() worldX = 0; // World position X in pixels
   @Input() worldY = 0; // World position Y in pixels
 
+  // v5.2: Energization state
+  @Input() isEnergized = false;     // Robot is inside this pillar (fully energized)
+  @Input() isRobotNearby = false;   // Robot is close enough to interact (shows [E])
+  @Input() showExitIndicator = false; // Show gray [E] to exit
+
   // v4.6: Floating binary particles
   particles: Particle[] = [];
 

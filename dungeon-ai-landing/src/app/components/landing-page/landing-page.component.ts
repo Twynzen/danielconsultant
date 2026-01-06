@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener, computed } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
@@ -70,6 +70,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   hologramWorldX = 0;
   hologramWorldY = 0;
 
+  // v5.2: Energization state - which pillar the robot is currently inside
+  energizedPillarId = signal<string | null>(null);
+
   // v4.6.3: Zoom cinematográfico state
   isZoomed = false;
   zoomScale = 1;
@@ -81,8 +84,11 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   }
 
   get hologramScreenY(): number {
-    // Y is fixed relative to viewport (ground minus pillar height)
-    return window.innerHeight - SIDESCROLLER_CONFIG.GROUND_HEIGHT - PILLAR_INTERACTION.PILLAR_HEIGHT;
+    // v5.2 FIX: Target the pillar ICON CENTER, not pillar top
+    // Pillar top = ground - pillar height
+    // Icon is in pillar-top (50px tall), so center is ~25px below pillar top
+    const pillarTop = window.innerHeight - SIDESCROLLER_CONFIG.GROUND_HEIGHT - PILLAR_INTERACTION.PILLAR_HEIGHT;
+    return pillarTop + 25; // Center of the pillar icon
   }
 
   // Animation frame for change detection
@@ -219,6 +225,58 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.onCloseHologram();
     }, 500);
+  }
+
+  // ========== v5.2: ENERGIZATION EVENT HANDLERS ==========
+
+  /**
+   * v5.2: Robot started energizing a pillar
+   * Called when robot begins decomposing into particles
+   */
+  onEnergizationStarted(event: { config: PillarConfig }): void {
+    // Could add visual effects here (screen shake, flash, etc.)
+  }
+
+  /**
+   * v5.2: Robot finished entering pillar
+   * Called when all particles have reached the pillar
+   */
+  onEnergizationFinished(event: { config: PillarConfig }): void {
+    this.energizedPillarId.set(event.config.id);
+
+    // Activate zoom for better hologram viewing
+    this.isZoomed = true;
+    this.zoomScale = this.ZOOM_LEVEL;
+  }
+
+  /**
+   * v5.2: Robot started exiting pillar
+   * Called when user presses E to exit
+   */
+  onPillarExitStarted(): void {
+    // Could add visual effects here
+  }
+
+  /**
+   * v5.2: Robot finished exiting pillar
+   * Called when robot is fully recomposed
+   */
+  onPillarExitFinished(): void {
+    this.energizedPillarId.set(null);
+
+    // Deactivate zoom
+    this.isZoomed = false;
+    this.zoomScale = 1;
+  }
+
+  /**
+   * v5.2: User pressed E to exit pillar
+   * Called from pillar-system when E is pressed while inside pillar
+   */
+  onPillarExitRequested(): void {
+    if (this.characterComponent) {
+      this.characterComponent.exitPillar();
+    }
   }
 
   /**

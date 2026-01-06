@@ -507,3 +507,46 @@
   transform: translateX(-50%);
   z-index: 15;
 }
+
+// ============================================
+// v5.2: INTERACTION INDICATOR [E] - Simplified
+// ============================================
+.pillar-interact-indicator {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+
+  // Active state (green) - robot can interact
+  &.active {
+    .key-hint {
+      color: #00ff44;
+      opacity: 0.9;
+    }
+    .action-hint {
+      display: none; // Hide action text, just show [e]
+    }
+  }
+
+  // Exit mode (gray) - robot is inside pillar
+  &.exit-mode {
+    .key-hint {
+      color: #666666;
+      opacity: 0.7;
+    }
+    .action-hint {
+      display: none;
+    }
+  }
+}
+
+.key-hint {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.action-hint {
+  display: none; // Hidden by default - just show simple [e]
+}

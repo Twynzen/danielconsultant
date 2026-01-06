@@ -60,4 +60,12 @@
   <div class="pillar-label" *ngIf="isHighlighted || illumination > 0.3">
     <span class="label-text">{{ config.label }}</span>
   </div>
+
+  <!-- v5.2: Interaction Indicator [e] - Simplified -->
+  <div class="pillar-interact-indicator"
+       *ngIf="isRobotNearby || showExitIndicator"
+       [class.active]="isRobotNearby && !isEnergized"
+       [class.exit-mode]="showExitIndicator">
+    <span class="key-hint">[e]</span>
+  </div>
 </div>

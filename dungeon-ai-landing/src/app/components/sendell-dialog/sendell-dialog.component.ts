@@ -79,6 +79,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   constructor() {
     // v1.1: Effect to detect dialog changes from onboarding service
+    // v5.1.2: allowSignalWrites needed because resetTyping writes to signals
     effect(() => {
       const dialog = this.onboarding.currentDialog();
       const phase = this.onboarding.phase();
@@ -95,7 +96,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
         this.resetTyping();
         this.startTypingAnimation(dialog);
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   // Computed from onboarding service or input
@@ -118,10 +119,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       return true;
     }
 
-    // v5.1.1: For dialog phases, only show if we have content to display
-    // This prevents empty dialog boxes during phase transitions
+    // v5.1.2: Show if we have a dialog AND (typing OR has text)
     const dialog = this.currentDialog();
-    const hasContent = this.displayedText().length > 0;
+    const hasContent = this.displayedText().length > 0 || this.isTyping();
     return dialog !== null && hasContent;
   });
 

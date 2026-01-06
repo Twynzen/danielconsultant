@@ -32,8 +32,10 @@
 
     <!-- v4.7: Hieroglyphic Wall - Service inscriptions that illuminate on proximity -->
     <!-- v4.7.2: Added serviceClicked event to open modal on inscription click -->
+    <!-- v5.2: Added energizedPillarId for hologram energy states -->
     <app-hieroglyphic-wall
       [pillarIlluminations]="pillarIlluminations"
+      [energizedPillarId]="energizedPillarId()"
       (serviceClicked)="onServiceClicked($event)">
     </app-hieroglyphic-wall>
 
@@ -48,10 +50,13 @@
     <!-- Pillar System - Interactive navigation (world coordinates) -->
     <!-- v4.7: Added illuminationsChanged for hieroglyphic wall -->
     <!-- v5.0: Base illumination from onboarding -->
+    <!-- v5.2: Added energizedPillarId for [E] indicator states and exit handling -->
     <app-pillar-system
       [baseIllumination]="pillarsBaseIllumination()"
+      [energizedPillarId]="energizedPillarId()"
       (pillarActivated)="onPillarActivated($event)"
-      (illuminationsChanged)="onIlluminationsChanged($event)">
+      (illuminationsChanged)="onIlluminationsChanged($event)"
+      (pillarExitRequested)="onPillarExitRequested()">
     </app-pillar-system>
 
   </div>
@@ -60,8 +65,14 @@
 
   <!-- Character - Fixed X (centered), Y moves with jump -->
   <!-- v5.0: Only show after onboarding spawn phase -->
+  <!-- v5.2: Added energization event handlers -->
   @if (shouldShowCharacter()) {
-    <app-flame-head-character></app-flame-head-character>
+    <app-flame-head-character
+      (energizationStarted)="onEnergizationStarted($event)"
+      (energizationFinished)="onEnergizationFinished($event)"
+      (pillarExitStarted)="onPillarExitStarted()"
+      (pillarExitFinished)="onPillarExitFinished()">
+    </app-flame-head-character>
   }
 
   <!-- v5.0: Sendell Dialog - Centralized dialog for onboarding -->

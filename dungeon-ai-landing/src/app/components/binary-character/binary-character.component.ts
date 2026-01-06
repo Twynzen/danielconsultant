@@ -35,12 +35,17 @@ export enum CharacterEmotion {
 }
 
 // v5.0: Assembly phases
+// v5.2: Added ENERGIZING, INSIDE_PILLAR, EXITING_PILLAR for pillar energization
 export enum AssemblyPhase {
   SCATTERED = 'scattered',
   ASSEMBLING = 'assembling',
   ASSEMBLED = 'assembled',
   LANDING_SCATTER = 'landing',
-  REASSEMBLING = 'reassembling'
+  REASSEMBLING = 'reassembling',
+  // v5.2: Robot energizes pillar animation
+  ENERGIZING = 'energizing',        // Robot decomposing and flowing to pillar
+  INSIDE_PILLAR = 'inside_pillar',  // Robot invisible, inside pillar
+  EXITING_PILLAR = 'exiting_pillar' // Robot recomposing from pillar
 }
 
 // v5.0: Particle state for scatter/assembly animations
@@ -49,6 +54,31 @@ interface ParticleState {
   scatterY: number;
   currentX: number;
   currentY: number;
+}
+
+// v5.2: Particle state for energization animation (Bézier curves)
+// v5.2.1: Enhanced with scale, opacity, rotation for spectacular effect
+interface EnergyParticleState {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+  targetX: number;
+  targetY: number;
+  progress: number;
+  delay: number;          // Staggered start (ms)
+  controlPoint1X: number; // Bézier control point 1
+  controlPoint1Y: number;
+  controlPoint2X: number; // Bézier control point 2
+  controlPoint2Y: number;
+  // v5.2.1: Enhanced visual properties
+  scale: number;          // 1.0 → 0.3 as particle approaches pillar
+  opacity: number;        // Glow intensity
+  rotation: number;       // Spin effect (degrees)
+  rotationSpeed: number;  // Degrees per second
+  startScale: number;     // Initial scale (varies by particle type)
+  endScale: number;       // Final scale at destination
+  trailLength: number;    // Number of trail segments
 }
 
 @Component({
@@ -123,6 +153,11 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
 
   // v5.0: Crash animation (high fall with physics)
   @Output() crashComplete = new EventEmitter<void>();
+
+  // v5.2: Pillar energization
+  @Input() targetPillarPosition: { x: number; y: number } | null = null;
+  @Output() energizationComplete = new EventEmitter<void>();
+  @Output() exitPillarComplete = new EventEmitter<void>();
   isCrashing = signal(false);  // Public for template
   private crashStartTime = 0;
   private crashPhase: 'exploding' | 'falling' | 'settling' | 'reassembling' = 'exploding';
@@ -134,6 +169,20 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
     settled: boolean;
     groundY: number;  // Individual ground level for each piece
   }>();
+
+  // v5.2: Energy animation state
+  isEnergizing = signal(false);
+  isInsidePillar = signal(false);
+  private energyAnimationStartTime = 0;
+  private energyParticleStates = new Map<string, EnergyParticleState>();
+  private pillarTargetX = 0;  // Target pillar X (relative to robot)
+  private pillarTargetY = 0;  // Target pillar Y (relative to robot)
+  private robotOriginalX = 0; // Robot position before energizing
+  private robotOriginalY = 0;
+  // v5.2.1: Increased durations for spectacular effect
+  private readonly ENERGY_ANIMATION_DURATION = 2500; // 2.5 seconds - dramatic decomposition
+  private readonly EXIT_ANIMATION_DURATION = 1800;   // 1.8 seconds - elegant recomposition
+  private readonly MAX_STAGGER_DELAY = 800;          // Max delay between particles (ms)
 
   // ========== V4.0 - GIVING LIFE ==========
 
@@ -263,6 +312,9 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
       this.updateLandingAnimation(currentTime);
       this.updateCrashAnimation(currentTime);
       this.updateReassembly(currentTime);
+
+      // V5.2: Update energy animation (pillar energization)
+      this.updateEnergyAnimation(currentTime);
 
       if (this.isMoving) {
         this.applyGlitch(currentTime);
@@ -597,12 +649,20 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * v5.0: Get transform for a digit during animations (spawn, landing, or crash)
+   * v5.0: Get transform for a digit during animations (spawn, landing, crash, or energize)
+   * v5.2.1: Enhanced energy animation with scale and rotation
    */
   getDigitTransform(section: string, rowIndex: number, colIndex: number): string {
     const key = `${section}-${rowIndex}-${colIndex}`;
 
-    // Priority: crash > spawn assembly > landing scatter
+    // Priority: energize > crash > spawn assembly > landing scatter
+    // v5.2.1: Energy animation with full transform (translate + scale + rotate)
+    const energyState = this.energyParticleStates.get(key);
+    if (energyState && (this.isEnergizing() || this.assemblyPhase() === AssemblyPhase.EXITING_PILLAR)) {
+      // Full transform: translate, then scale, then rotate
+      return `translate(${energyState.currentX}px, ${energyState.currentY}px) scale(${energyState.scale}) rotate(${energyState.rotation}deg)`;
+    }
+
     const crashState = this.crashParticleStates.get(key);
     if (crashState && this.isCrashing()) {
       return `translate(${crashState.x}px, ${crashState.y}px)`;
@@ -619,6 +679,20 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
     }
 
     return 'translate(0, 0)';
+  }
+
+  /**
+   * v5.2.1: Get opacity for a digit during energy animation
+   */
+  getDigitOpacity(section: string, rowIndex: number, colIndex: number, baseOpacity: number): number {
+    const key = `${section}-${rowIndex}-${colIndex}`;
+    const energyState = this.energyParticleStates.get(key);
+
+    if (energyState && (this.isEnergizing() || this.assemblyPhase() === AssemblyPhase.EXITING_PILLAR)) {
+      return energyState.opacity * baseOpacity;
+    }
+
+    return baseOpacity;
   }
 
   // ========== V5.0 SPAWN ASSEMBLY ==========
@@ -681,7 +755,8 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
 
   private updateSpawnAssembly(currentTime: number): void {
     const phase = this.assemblyPhase();
-    if (phase === AssemblyPhase.ASSEMBLED) return;
+    // v5.2 FIX: Only process during spawn phases, not during energization or other states
+    if (phase !== AssemblyPhase.SCATTERED && phase !== AssemblyPhase.ASSEMBLING) return;
 
     const elapsed = currentTime - this.spawnStartTime;
     let allArrived = true;
@@ -1018,5 +1093,330 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
       case DigitType.EDGE: return brightness.EDGE;
       default: return brightness.LIMB;
     }
+  }
+
+  // ========== V5.2 PILLAR ENERGIZATION ==========
+
+  /**
+   * v5.2: Trigger energization animation - robot decomposes and flows to pillar
+   * @param pillarScreenX - Target pillar screen X position (relative to viewport)
+   * @param pillarScreenY - Target pillar screen Y position
+   */
+  triggerEnergize(pillarScreenX: number, pillarScreenY: number): void {
+    if (this.isEnergizing() || this.isInsidePillar() || this.isCrashing()) return;
+
+    // Store target position (relative to robot)
+    this.pillarTargetX = pillarScreenX;
+    this.pillarTargetY = pillarScreenY;
+
+    // Set state
+    this.isEnergizing.set(true);
+    this.assemblyPhase.set(AssemblyPhase.ENERGIZING);
+    this.energyAnimationStartTime = performance.now();
+    this.energyParticleStates.clear();
+
+    // Initialize particle states for all digits
+    this.initializeEnergyParticles(true);  // true = flowing TO pillar
+  }
+
+  /**
+   * v5.2: Trigger exit from pillar - robot recomposes from pillar
+   */
+  triggerExitPillar(): void {
+    if (!this.isInsidePillar()) return;
+
+    this.isInsidePillar.set(false);
+    this.assemblyPhase.set(AssemblyPhase.EXITING_PILLAR);
+    this.energyAnimationStartTime = performance.now();
+    this.energyParticleStates.clear();
+
+    // Initialize particles starting from pillar position
+    this.initializeEnergyParticles(false);  // false = flowing FROM pillar
+  }
+
+  /**
+   * v5.2.1: Initialize energy particles for SPECTACULAR animation
+   * Features:
+   * - Dramatic Bézier arcs with spiral-like paths
+   * - Edge particles move FIRST, core/eyes move LAST (reverse importance)
+   * - Scale shrinks as particles approach pillar
+   * - Rotation adds spin effect
+   * - Varying trail lengths for visual depth
+   * @param toPillar - true if flowing to pillar, false if returning from pillar
+   */
+  private initializeEnergyParticles(toPillar: boolean): void {
+    const grids = [
+      { grid: this.bodyGrid, section: 'body' },
+      { grid: this.armsGrid, section: 'arms' },
+      { grid: this.legsGrid, section: 'legs' }
+    ];
+
+    // Count total digits for stagger calculation
+    let digitIndex = 0;
+    const totalDigits = grids.reduce((sum, { grid }) =>
+      sum + (grid?.flat().filter(d => !d.isEmpty).length || 0), 0);
+
+    // Calculate grid dimensions for position-based effects
+    const maxRows = Math.max(...grids.map(g => g.grid?.length || 0));
+    const maxCols = Math.max(...grids.map(g => g.grid?.[0]?.length || 0));
+
+    for (const { grid, section } of grids) {
+      if (!grid) continue;
+
+      grid.forEach((row, ri) => {
+        row.forEach((digit, ci) => {
+          if (digit.isEmpty) return;
+
+          const key = `${section}-${ri}-${ci}`;
+
+          // === POSITION CALCULATION ===
+          let startX: number, startY: number, endX: number, endY: number;
+
+          // Scatter at destination for organic convergence (larger for dramatic effect)
+          const scatter = 30;
+          const randomX = (Math.random() - 0.5) * scatter;
+          const randomY = (Math.random() - 0.5) * scatter;
+
+          if (toPillar) {
+            startX = 0;
+            startY = 0;
+            endX = this.pillarTargetX + randomX;
+            endY = this.pillarTargetY + randomY;
+          } else {
+            startX = this.pillarTargetX + randomX;
+            startY = this.pillarTargetY + randomY;
+            endX = 0;
+            endY = 0;
+          }
+
+          // === DRAMATIC BÉZIER CURVES ===
+          const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+          const midX = (startX + endX) / 2;
+          const midY = (startY + endY) / 2;
+
+          // Arc height based on distance (more dramatic arcs)
+          const baseArcHeight = Math.min(distance * 0.7, 200);
+
+          // Position in grid affects arc direction (creates spiral-like pattern)
+          const gridPosX = ci / maxCols - 0.5; // -0.5 to 0.5
+          const gridPosY = ri / maxRows - 0.5;
+
+          // Particles on left arc left, particles on right arc right
+          const horizontalBias = gridPosX * 150;
+          // Particles on top arc higher
+          const verticalBias = (0.5 - gridPosY) * 80;
+
+          // Control points with dramatic curves and position-based variation
+          const arcDirection = toPillar ? -1 : 1;
+          const controlRandom1 = (Math.random() - 0.5) * 80 + horizontalBias;
+          const controlRandom2 = (Math.random() - 0.5) * 80 + horizontalBias * 0.5;
+
+          const controlPoint1X = startX + (endX - startX) * 0.3 + controlRandom1;
+          const controlPoint1Y = midY + arcDirection * (baseArcHeight * 0.8 + verticalBias);
+          const controlPoint2X = startX + (endX - startX) * 0.7 + controlRandom2;
+          const controlPoint2Y = midY + arcDirection * (baseArcHeight * 1.2 + verticalBias * 0.5);
+
+          // === STAGGER DELAY (REVERSED - edges first, core last) ===
+          // For toPillar: edges move first (sacrificial), core/eyes move last (most important)
+          // For exit: reverse - core appears first, edges fill in
+          const typeMass = ASSEMBLY_CONFIG.TYPE_MASS[digit.type] ?? 0.75;
+
+          let delayFactor: number;
+          if (toPillar) {
+            // TO PILLAR: Edges (low mass) move FIRST, Core/Eyes (high mass) move LAST
+            delayFactor = typeMass; // 1.0 (core) = max delay, 0.5 (edge) = low delay
+          } else {
+            // FROM PILLAR: Core appears FIRST, Edges fill in LAST
+            delayFactor = 1 - typeMass;
+          }
+
+          // Add position-based stagger (outer particles move slightly before inner)
+          const distFromCenter = Math.sqrt(gridPosX * gridPosX + gridPosY * gridPosY);
+          const positionStagger = toPillar ? distFromCenter * 0.3 : (1 - distFromCenter) * 0.3;
+
+          // Random variation for organic feel
+          const randomStagger = Math.random() * 0.2;
+
+          const delay = (delayFactor * 0.5 + positionStagger + randomStagger) * this.MAX_STAGGER_DELAY;
+
+          // === VISUAL PROPERTIES ===
+          // Scale: larger particles (core) start bigger and shrink more dramatically
+          const startScale = toPillar ? (0.8 + typeMass * 0.4) : 0.2;
+          const endScale = toPillar ? 0.2 : (0.8 + typeMass * 0.4);
+
+          // Rotation speed varies by particle (creates visual variety)
+          const rotationSpeed = (Math.random() - 0.5) * 720; // -360 to +360 degrees/sec
+
+          // Trail length based on distance traveled
+          const trailLength = Math.floor(3 + Math.random() * 4);
+
+          this.energyParticleStates.set(key, {
+            startX,
+            startY,
+            currentX: startX,
+            currentY: startY,
+            targetX: endX,
+            targetY: endY,
+            progress: 0,
+            delay,
+            controlPoint1X,
+            controlPoint1Y,
+            controlPoint2X,
+            controlPoint2Y,
+            // Visual properties
+            scale: startScale,
+            opacity: 1,
+            rotation: Math.random() * 360, // Random initial rotation
+            rotationSpeed,
+            startScale,
+            endScale,
+            trailLength
+          });
+
+          digitIndex++;
+        });
+      });
+    }
+  }
+
+  /**
+   * v5.2.1: Update energy animation each frame with SPECTACULAR effects
+   * Updates position, scale, opacity, and rotation for each particle
+   */
+  private updateEnergyAnimation(currentTime: number): void {
+    const phase = this.assemblyPhase();
+
+    // Only process during energization phases
+    if (phase !== AssemblyPhase.ENERGIZING && phase !== AssemblyPhase.EXITING_PILLAR) {
+      return;
+    }
+
+    const elapsed = currentTime - this.energyAnimationStartTime;
+    const duration = phase === AssemblyPhase.ENERGIZING
+      ? this.ENERGY_ANIMATION_DURATION
+      : this.EXIT_ANIMATION_DURATION;
+
+    const deltaTime = 1 / 60; // Assume 60fps for rotation calculation
+    let allComplete = true;
+
+    this.energyParticleStates.forEach((state) => {
+      // Apply stagger delay
+      const adjustedElapsed = elapsed - state.delay;
+      if (adjustedElapsed < 0) {
+        allComplete = false;
+        // Particle hasn't started yet - keep it at start position but slightly fade in
+        state.opacity = 0.3 + (elapsed / state.delay) * 0.7; // Fade in while waiting
+        return;
+      }
+
+      // Calculate progress (0-1) with individual timing per particle
+      const particleDuration = duration - state.delay;
+      const rawProgress = adjustedElapsed / particleDuration;
+      state.progress = Math.min(1, rawProgress);
+
+      if (state.progress < 1) {
+        allComplete = false;
+      }
+
+      // === EASING ===
+      // Use different easing for different phases
+      const t = phase === AssemblyPhase.ENERGIZING
+        ? this.easeOutQuart(state.progress)  // Fast start, slow end (dramatic arrival)
+        : this.easeInOutCubic(state.progress); // Smooth both ways
+
+      // === POSITION (Bézier curve) ===
+      state.currentX = this.cubicBezier(
+        t,
+        state.startX,
+        state.controlPoint1X,
+        state.controlPoint2X,
+        state.targetX
+      );
+      state.currentY = this.cubicBezier(
+        t,
+        state.startY,
+        state.controlPoint1Y,
+        state.controlPoint2Y,
+        state.targetY
+      );
+
+      // === SCALE (shrink as approaching pillar, grow when leaving) ===
+      state.scale = state.startScale + (state.endScale - state.startScale) * t;
+
+      // === OPACITY (glow brighter in middle of journey, fade at end) ===
+      if (phase === AssemblyPhase.ENERGIZING) {
+        // Bright in middle, fade as approaching pillar
+        const midGlow = Math.sin(state.progress * Math.PI); // Peak at 0.5
+        state.opacity = 0.6 + midGlow * 0.5 - state.progress * 0.3;
+      } else {
+        // Exiting: start dim, get brighter as forming
+        state.opacity = 0.3 + state.progress * 0.7;
+      }
+      state.opacity = Math.max(0.1, Math.min(1, state.opacity));
+
+      // === ROTATION (continuous spin) ===
+      state.rotation += state.rotationSpeed * deltaTime;
+      // Slow down rotation as approaching destination
+      state.rotationSpeed *= 0.995;
+    });
+
+    // Check for completion
+    if (allComplete || elapsed > duration + 800) {
+      this.completeEnergyAnimation(phase);
+    }
+  }
+
+  /**
+   * v5.2.1: Ease out quart - fast start, very slow end (dramatic arrival)
+   */
+  private easeOutQuart(t: number): number {
+    return 1 - Math.pow(1 - t, 4);
+  }
+
+  /**
+   * v5.2: Complete energy animation and transition to next state
+   */
+  private completeEnergyAnimation(phase: AssemblyPhase): void {
+    this.energyParticleStates.clear();
+
+    if (phase === AssemblyPhase.ENERGIZING) {
+      // Robot is now inside pillar
+      this.isEnergizing.set(false);
+      this.isInsidePillar.set(true);
+      this.assemblyPhase.set(AssemblyPhase.INSIDE_PILLAR);
+      this.energizationComplete.emit();
+    } else if (phase === AssemblyPhase.EXITING_PILLAR) {
+      // Robot has recomposed
+      this.assemblyPhase.set(AssemblyPhase.ASSEMBLED);
+      this.exitPillarComplete.emit();
+    }
+  }
+
+  /**
+   * v5.2: Cubic Bézier interpolation
+   * B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
+   */
+  private cubicBezier(t: number, p0: number, p1: number, p2: number, p3: number): number {
+    const mt = 1 - t;
+    return mt * mt * mt * p0 +
+           3 * mt * mt * t * p1 +
+           3 * mt * t * t * p2 +
+           t * t * t * p3;
+  }
+
+  /**
+   * v5.2: Ease in-out cubic
+   */
+  private easeInOutCubic(t: number): number {
+    return t < 0.5
+      ? 4 * t * t * t
+      : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  /**
+   * v5.2: Check if robot is currently inside a pillar (public getter)
+   */
+  isRobotInsidePillar(): boolean {
+    return this.isInsidePillar();
   }
 }
