@@ -179,10 +179,11 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   private pillarTargetY = 0;  // Target pillar Y (relative to robot)
   private robotOriginalX = 0; // Robot position before energizing
   private robotOriginalY = 0;
-  // v5.2.1: Increased durations for spectacular effect
-  private readonly ENERGY_ANIMATION_DURATION = 2500; // 2.5 seconds - dramatic decomposition
-  private readonly EXIT_ANIMATION_DURATION = 1800;   // 1.8 seconds - elegant recomposition
-  private readonly MAX_STAGGER_DELAY = 800;          // Max delay between particles (ms)
+  // v5.2.2: STREAMING EFFECT - particles flow one by one
+  private readonly ENERGY_ANIMATION_DURATION = 3500; // 3.5 seconds total for all particles
+  private readonly EXIT_ANIMATION_DURATION = 3000;   // 3.0 seconds to recompose
+  private readonly PARTICLE_FLIGHT_TIME = 800;       // Each particle takes 800ms to travel
+  private readonly TOTAL_STAGGER_SPREAD = 2500;      // 2.5 seconds spread across all particles
 
   // ========== V4.0 - GIVING LIFE ==========
 
@@ -1135,13 +1136,10 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * v5.2.1: Initialize energy particles for SPECTACULAR animation
-   * Features:
-   * - Dramatic Bézier arcs with spiral-like paths
-   * - Edge particles move FIRST, core/eyes move LAST (reverse importance)
-   * - Scale shrinks as particles approach pillar
-   * - Rotation adds spin effect
-   * - Varying trail lengths for visual depth
+   * v5.2.2: STREAMING EFFECT - particles flow ONE BY ONE
+   * Key concept: Each particle starts at a different time, creating a "stream"
+   * - TO PILLAR: Edges/limbs go first, core/eyes go last (like dissolving)
+   * - FROM PILLAR: Core/eyes appear first, edges fill in last (like materializing)
    * @param toPillar - true if flowing to pillar, false if returning from pillar
    */
   private initializeEnergyParticles(toPillar: boolean): void {
@@ -1151,12 +1149,20 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
       { grid: this.legsGrid, section: 'legs' }
     ];
 
-    // Count total digits for stagger calculation
-    let digitIndex = 0;
-    const totalDigits = grids.reduce((sum, { grid }) =>
-      sum + (grid?.flat().filter(d => !d.isEmpty).length || 0), 0);
+    // First pass: collect all particles with their properties for sorting
+    const particles: Array<{
+      key: string;
+      digit: any;
+      section: string;
+      ri: number;
+      ci: number;
+      gridPosX: number;
+      gridPosY: number;
+      typeMass: number;
+      distFromCenter: number;
+    }> = [];
 
-    // Calculate grid dimensions for position-based effects
+    // Calculate grid dimensions
     const maxRows = Math.max(...grids.map(g => g.grid?.length || 0));
     const maxCols = Math.max(...grids.map(g => g.grid?.[0]?.length || 0));
 
@@ -1168,120 +1174,132 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
           if (digit.isEmpty) return;
 
           const key = `${section}-${ri}-${ci}`;
-
-          // === POSITION CALCULATION ===
-          let startX: number, startY: number, endX: number, endY: number;
-
-          // Scatter at destination for organic convergence (larger for dramatic effect)
-          const scatter = 30;
-          const randomX = (Math.random() - 0.5) * scatter;
-          const randomY = (Math.random() - 0.5) * scatter;
-
-          if (toPillar) {
-            startX = 0;
-            startY = 0;
-            endX = this.pillarTargetX + randomX;
-            endY = this.pillarTargetY + randomY;
-          } else {
-            startX = this.pillarTargetX + randomX;
-            startY = this.pillarTargetY + randomY;
-            endX = 0;
-            endY = 0;
-          }
-
-          // === DRAMATIC BÉZIER CURVES ===
-          const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-          const midX = (startX + endX) / 2;
-          const midY = (startY + endY) / 2;
-
-          // Arc height based on distance (more dramatic arcs)
-          const baseArcHeight = Math.min(distance * 0.7, 200);
-
-          // Position in grid affects arc direction (creates spiral-like pattern)
-          const gridPosX = ci / maxCols - 0.5; // -0.5 to 0.5
+          const gridPosX = ci / maxCols - 0.5;
           const gridPosY = ri / maxRows - 0.5;
-
-          // Particles on left arc left, particles on right arc right
-          const horizontalBias = gridPosX * 150;
-          // Particles on top arc higher
-          const verticalBias = (0.5 - gridPosY) * 80;
-
-          // Control points with dramatic curves and position-based variation
-          const arcDirection = toPillar ? -1 : 1;
-          const controlRandom1 = (Math.random() - 0.5) * 80 + horizontalBias;
-          const controlRandom2 = (Math.random() - 0.5) * 80 + horizontalBias * 0.5;
-
-          const controlPoint1X = startX + (endX - startX) * 0.3 + controlRandom1;
-          const controlPoint1Y = midY + arcDirection * (baseArcHeight * 0.8 + verticalBias);
-          const controlPoint2X = startX + (endX - startX) * 0.7 + controlRandom2;
-          const controlPoint2Y = midY + arcDirection * (baseArcHeight * 1.2 + verticalBias * 0.5);
-
-          // === STAGGER DELAY (REVERSED - edges first, core last) ===
-          // For toPillar: edges move first (sacrificial), core/eyes move last (most important)
-          // For exit: reverse - core appears first, edges fill in
           const typeMass = ASSEMBLY_CONFIG.TYPE_MASS[digit.type] ?? 0.75;
-
-          let delayFactor: number;
-          if (toPillar) {
-            // TO PILLAR: Edges (low mass) move FIRST, Core/Eyes (high mass) move LAST
-            delayFactor = typeMass; // 1.0 (core) = max delay, 0.5 (edge) = low delay
-          } else {
-            // FROM PILLAR: Core appears FIRST, Edges fill in LAST
-            delayFactor = 1 - typeMass;
-          }
-
-          // Add position-based stagger (outer particles move slightly before inner)
           const distFromCenter = Math.sqrt(gridPosX * gridPosX + gridPosY * gridPosY);
-          const positionStagger = toPillar ? distFromCenter * 0.3 : (1 - distFromCenter) * 0.3;
 
-          // Random variation for organic feel
-          const randomStagger = Math.random() * 0.2;
-
-          const delay = (delayFactor * 0.5 + positionStagger + randomStagger) * this.MAX_STAGGER_DELAY;
-
-          // === VISUAL PROPERTIES ===
-          // Scale: larger particles (core) start bigger and shrink more dramatically
-          const startScale = toPillar ? (0.8 + typeMass * 0.4) : 0.2;
-          const endScale = toPillar ? 0.2 : (0.8 + typeMass * 0.4);
-
-          // Rotation speed varies by particle (creates visual variety)
-          const rotationSpeed = (Math.random() - 0.5) * 720; // -360 to +360 degrees/sec
-
-          // Trail length based on distance traveled
-          const trailLength = Math.floor(3 + Math.random() * 4);
-
-          this.energyParticleStates.set(key, {
-            startX,
-            startY,
-            currentX: startX,
-            currentY: startY,
-            targetX: endX,
-            targetY: endY,
-            progress: 0,
-            delay,
-            controlPoint1X,
-            controlPoint1Y,
-            controlPoint2X,
-            controlPoint2Y,
-            // Visual properties
-            scale: startScale,
-            opacity: 1,
-            rotation: Math.random() * 360, // Random initial rotation
-            rotationSpeed,
-            startScale,
-            endScale,
-            trailLength
+          particles.push({
+            key, digit, section, ri, ci,
+            gridPosX, gridPosY, typeMass, distFromCenter
           });
-
-          digitIndex++;
         });
       });
     }
+
+    // Sort particles to determine streaming order
+    if (toPillar) {
+      // TO PILLAR: Sort by (low mass first, then outer first)
+      // This makes edges/limbs leave first, core/eyes leave last
+      particles.sort((a, b) => {
+        // Primary: lower mass goes first (edges before core)
+        const massSort = a.typeMass - b.typeMass;
+        if (Math.abs(massSort) > 0.1) return massSort;
+        // Secondary: outer particles go first
+        return b.distFromCenter - a.distFromCenter;
+      });
+    } else {
+      // FROM PILLAR: Sort by (high mass first, then inner first)
+      // This makes core/eyes appear first, edges fill in last
+      particles.sort((a, b) => {
+        // Primary: higher mass goes first (core before edges)
+        const massSort = b.typeMass - a.typeMass;
+        if (Math.abs(massSort) > 0.1) return massSort;
+        // Secondary: inner particles go first
+        return a.distFromCenter - b.distFromCenter;
+      });
+    }
+
+    // Second pass: assign sequential delays based on sorted order
+    const totalParticles = particles.length;
+
+    particles.forEach((p, index) => {
+      const { key, digit, section, ri, ci, gridPosX, gridPosY, typeMass } = p;
+
+      // === SEQUENTIAL DELAY - the key to streaming effect ===
+      // Each particle starts slightly after the previous one
+      const sequentialDelay = (index / totalParticles) * this.TOTAL_STAGGER_SPREAD;
+      // Add small random variation for organic feel
+      const randomVariation = (Math.random() - 0.5) * 50;
+      const delay = sequentialDelay + randomVariation;
+
+      // === POSITION CALCULATION ===
+      let startX: number, startY: number, endX: number, endY: number;
+
+      // Smaller scatter at destination for tighter convergence
+      const scatter = 15;
+      const randomX = (Math.random() - 0.5) * scatter;
+      const randomY = (Math.random() - 0.5) * scatter;
+
+      if (toPillar) {
+        startX = 0;
+        startY = 0;
+        endX = this.pillarTargetX + randomX;
+        endY = this.pillarTargetY + randomY;
+      } else {
+        startX = this.pillarTargetX + randomX;
+        startY = this.pillarTargetY + randomY;
+        endX = 0;
+        endY = 0;
+      }
+
+      // === BÉZIER CURVES - particles curve outward based on their grid position ===
+      const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+      const midX = (startX + endX) / 2;
+      const midY = (startY + endY) / 2;
+
+      // Arc height - moderate for cleaner streaming effect
+      const baseArcHeight = Math.min(distance * 0.5, 120);
+
+      // Position affects curve direction
+      const horizontalBias = gridPosX * 100;
+      const verticalBias = (0.5 - gridPosY) * 50;
+
+      const arcDirection = toPillar ? -1 : 1;
+      const controlRandom1 = (Math.random() - 0.5) * 40 + horizontalBias;
+      const controlRandom2 = (Math.random() - 0.5) * 40 + horizontalBias * 0.6;
+
+      const controlPoint1X = startX + (endX - startX) * 0.35 + controlRandom1;
+      const controlPoint1Y = midY + arcDirection * (baseArcHeight * 0.7 + verticalBias);
+      const controlPoint2X = startX + (endX - startX) * 0.65 + controlRandom2;
+      const controlPoint2Y = midY + arcDirection * (baseArcHeight + verticalBias * 0.5);
+
+      // === VISUAL PROPERTIES ===
+      const startScale = toPillar ? 1.0 : 0.3;
+      const endScale = toPillar ? 0.3 : 1.0;
+      const rotationSpeed = (Math.random() - 0.5) * 540; // Slightly slower rotation
+      const trailLength = Math.floor(2 + Math.random() * 3);
+
+      this.energyParticleStates.set(key, {
+        startX,
+        startY,
+        currentX: startX,
+        currentY: startY,
+        targetX: endX,
+        targetY: endY,
+        progress: 0,
+        delay,
+        controlPoint1X,
+        controlPoint1Y,
+        controlPoint2X,
+        controlPoint2Y,
+        scale: startScale,
+        opacity: toPillar ? 1 : 0, // Start invisible when exiting pillar
+        rotation: Math.random() * 360,
+        rotationSpeed,
+        startScale,
+        endScale,
+        trailLength
+      });
+    });
   }
 
   /**
-   * v5.2.1: Update energy animation each frame with SPECTACULAR effects
-   * Updates position, scale, opacity, and rotation for each particle
+   * v5.2.2: STREAMING animation - particles flow one by one
+   * Each particle:
+   * - Waits for its delay before starting
+   * - Takes PARTICLE_FLIGHT_TIME to travel from start to end
+   * - Becomes invisible (toPillar) or visible (fromPillar) upon arrival
    */
   private updateEnergyAnimation(currentTime: number): void {
     const phase = this.assemblyPhase();
@@ -1292,82 +1310,99 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
     }
 
     const elapsed = currentTime - this.energyAnimationStartTime;
-    const duration = phase === AssemblyPhase.ENERGIZING
-      ? this.ENERGY_ANIMATION_DURATION
-      : this.EXIT_ANIMATION_DURATION;
+    const toPillar = phase === AssemblyPhase.ENERGIZING;
+    const deltaTime = 1 / 60;
 
-    const deltaTime = 1 / 60; // Assume 60fps for rotation calculation
     let allComplete = true;
+    let anyStarted = false;
 
     this.energyParticleStates.forEach((state) => {
-      // Apply stagger delay
       const adjustedElapsed = elapsed - state.delay;
+
+      // === PARTICLE HASN'T STARTED YET ===
       if (adjustedElapsed < 0) {
         allComplete = false;
-        // Particle hasn't started yet - keep it at start position but slightly fade in
-        state.opacity = 0.3 + (elapsed / state.delay) * 0.7; // Fade in while waiting
+        // Keep at start position, with appropriate visibility
+        state.currentX = state.startX;
+        state.currentY = state.startY;
+        state.scale = state.startScale;
+        state.opacity = toPillar ? 1 : 0; // Visible when waiting to leave, invisible when waiting to appear
         return;
       }
 
-      // Calculate progress (0-1) with individual timing per particle
-      const particleDuration = duration - state.delay;
-      const rawProgress = adjustedElapsed / particleDuration;
+      anyStarted = true;
+
+      // === PARTICLE IS IN FLIGHT ===
+      const rawProgress = adjustedElapsed / this.PARTICLE_FLIGHT_TIME;
       state.progress = Math.min(1, rawProgress);
 
       if (state.progress < 1) {
         allComplete = false;
-      }
 
-      // === EASING ===
-      // Use different easing for different phases
-      const t = phase === AssemblyPhase.ENERGIZING
-        ? this.easeOutQuart(state.progress)  // Fast start, slow end (dramatic arrival)
-        : this.easeInOutCubic(state.progress); // Smooth both ways
+        // Easing for smooth movement
+        const t = toPillar
+          ? this.easeInOutQuad(state.progress)  // Smooth acceleration/deceleration
+          : this.easeOutCubic(state.progress);  // Quick start, gentle arrival
 
-      // === POSITION (Bézier curve) ===
-      state.currentX = this.cubicBezier(
-        t,
-        state.startX,
-        state.controlPoint1X,
-        state.controlPoint2X,
-        state.targetX
-      );
-      state.currentY = this.cubicBezier(
-        t,
-        state.startY,
-        state.controlPoint1Y,
-        state.controlPoint2Y,
-        state.targetY
-      );
+        // Position along Bézier curve
+        state.currentX = this.cubicBezier(t, state.startX, state.controlPoint1X, state.controlPoint2X, state.targetX);
+        state.currentY = this.cubicBezier(t, state.startY, state.controlPoint1Y, state.controlPoint2Y, state.targetY);
 
-      // === SCALE (shrink as approaching pillar, grow when leaving) ===
-      state.scale = state.startScale + (state.endScale - state.startScale) * t;
+        // Scale interpolation
+        state.scale = state.startScale + (state.endScale - state.startScale) * t;
 
-      // === OPACITY (glow brighter in middle of journey, fade at end) ===
-      if (phase === AssemblyPhase.ENERGIZING) {
-        // Bright in middle, fade as approaching pillar
-        const midGlow = Math.sin(state.progress * Math.PI); // Peak at 0.5
-        state.opacity = 0.6 + midGlow * 0.5 - state.progress * 0.3;
+        // Opacity: bright during flight
+        if (toPillar) {
+          // Glow bright then fade as approaching pillar
+          state.opacity = 1.0 - state.progress * 0.7;
+        } else {
+          // Fade in as materializing
+          state.opacity = 0.3 + state.progress * 0.7;
+        }
+
+        // Rotation
+        state.rotation += state.rotationSpeed * deltaTime;
+        state.rotationSpeed *= 0.98; // Slow down
+
       } else {
-        // Exiting: start dim, get brighter as forming
-        state.opacity = 0.3 + state.progress * 0.7;
-      }
-      state.opacity = Math.max(0.1, Math.min(1, state.opacity));
+        // === PARTICLE HAS ARRIVED ===
+        state.currentX = state.targetX;
+        state.currentY = state.targetY;
+        state.scale = state.endScale;
 
-      // === ROTATION (continuous spin) ===
-      state.rotation += state.rotationSpeed * deltaTime;
-      // Slow down rotation as approaching destination
-      state.rotationSpeed *= 0.995;
+        if (toPillar) {
+          // Arrived at pillar - become invisible (absorbed)
+          state.opacity = 0;
+        } else {
+          // Arrived at robot position - become fully visible
+          state.opacity = 1;
+        }
+      }
     });
 
     // Check for completion
-    if (allComplete || elapsed > duration + 800) {
+    const maxDuration = this.TOTAL_STAGGER_SPREAD + this.PARTICLE_FLIGHT_TIME + 200;
+    if (allComplete || elapsed > maxDuration) {
       this.completeEnergyAnimation(phase);
     }
   }
 
   /**
-   * v5.2.1: Ease out quart - fast start, very slow end (dramatic arrival)
+   * v5.2.2: Ease in-out quadratic - smooth acceleration and deceleration
+   */
+  private easeInOutQuad(t: number): number {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+
+  /**
+   * v5.2.2: Ease out cubic - quick start, gentle end
+   */
+  private easeOutCubic(t: number): number {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  /**
+   * v5.2.1: Ease out quart - fast start, very slow end
    */
   private easeOutQuart(t: number): number {
     return 1 - Math.pow(1 - t, 4);
