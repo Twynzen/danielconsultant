@@ -336,8 +336,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
   /**
    * v2.0: Walk robot to a specific pillar
+   * v2.1: Now also energizes the pillar after arriving (auto-presses E)
    */
-  private walkToPillar(pillarId: string | undefined): void {
+  private walkToPillar(pillarId: string | undefined, autoEnergize: boolean = true): void {
     if (!pillarId) return;
 
     const pillar = PILLARS.find(p => p.id === pillarId);
@@ -348,9 +349,22 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
     // Get pillar world X position
     const targetX = pillar.worldX;
+    const currentX = this.physicsService.state().x;
+    const walkDuration = Math.abs(currentX - targetX) * 2; // ~2ms per pixel
 
     // Animate walk to pillar
     this.animateWalkTo(targetX);
+
+    // v2.1: Auto-energize pillar after walk completes
+    if (autoEnergize && this.characterComponent) {
+      setTimeout(() => {
+        const pillarScreenX = this.cameraService.worldToScreenX(pillar.worldX);
+        const pillarTop = window.innerHeight - SIDESCROLLER_CONFIG.GROUND_HEIGHT - PILLAR_INTERACTION.PILLAR_HEIGHT;
+        const pillarScreenY = pillarTop + 25;
+
+        this.characterComponent.activatePillar(pillar, pillarScreenX, pillarScreenY);
+      }, walkDuration + 300); // Walk duration + small buffer
+    }
   }
 
   /**
@@ -387,24 +401,11 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
   /**
    * v2.0: Energize a pillar via AI command
+   * v2.1: Now just calls walkToPillar with autoEnergize=true (same behavior)
    */
   private energizePillarByAI(pillarId: string | undefined): void {
-    if (!pillarId || !this.characterComponent) return;
-
-    const pillar = PILLARS.find(p => p.id === pillarId);
-    if (!pillar) return;
-
-    // First walk to pillar, then energize
-    this.walkToPillar(pillarId);
-
-    // After walk completes, activate pillar
-    setTimeout(() => {
-      const pillarScreenX = this.cameraService.worldToScreenX(pillar.worldX);
-      const pillarTop = window.innerHeight - SIDESCROLLER_CONFIG.GROUND_HEIGHT - PILLAR_INTERACTION.PILLAR_HEIGHT;
-      const pillarScreenY = pillarTop + 25;
-
-      this.characterComponent.activatePillar(pillar, pillarScreenX, pillarScreenY);
-    }, Math.abs(this.physicsService.state().x - pillar.worldX) * 2 + 500);
+    // walkToPillar now handles both walking and energizing
+    this.walkToPillar(pillarId, true);
   }
 
   /**

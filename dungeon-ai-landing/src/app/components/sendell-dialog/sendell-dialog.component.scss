@@ -164,12 +164,119 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   100% { transform: translateX(100%); }
 }
 
+// v2.0: Loading footer with percent and info icon
+.loading-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
 .loading-percent {
   font-family: 'Courier New', monospace;
   font-size: 18px;
   font-weight: bold;
   color: $matrix-green;
   text-shadow: 0 0 10px $matrix-green-glow;
+}
+
+// v2.0: LLM Info icon and tooltip
+.llm-info-container {
+  position: relative;
+}
+
+.llm-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  color: $matrix-green-dim;
+  border: 1px solid $matrix-border;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $matrix-green;
+    border-color: $matrix-green;
+    box-shadow: 0 0 8px $matrix-green-glow;
+  }
+}
+
+.llm-info-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  width: 280px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.98);
+  border: 1px solid $matrix-green;
+  border-radius: 6px;
+  box-shadow: 0 0 20px $matrix-green-glow;
+  z-index: 100;
+  animation: tooltipAppear 0.2s ease-out;
+
+  .tooltip-title {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: $matrix-green;
+    margin-bottom: 8px;
+  }
+
+  .tooltip-content {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: $matrix-green-dim;
+    margin-bottom: 8px;
+
+    strong {
+      color: $matrix-green;
+    }
+  }
+
+  .tooltip-note {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    color: rgba(0, 255, 68, 0.5);
+    font-style: italic;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 255, 68, 0.2);
+    margin-bottom: 8px;
+  }
+
+  .tooltip-close {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: $matrix-green-dim;
+    text-align: center;
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $matrix-green;
+    }
+  }
+}
+
+@keyframes tooltipAppear {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 // v5.1: Welcome Section
@@ -574,6 +681,28 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   color: rgba(0, 255, 68, 0.4);
   text-align: center;
   letter-spacing: 0.03em;
+}
+
+// v2.1: Double-click hint
+.chat-hint-double-click {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 255, 68, 0.15);
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: rgba(0, 255, 68, 0.35);
+  letter-spacing: 0.05em;
+}
+
+// v2.1: Slower blink for double-click hint
+.blink-slow {
+  animation: blinkSlow 2s ease-in-out infinite;
+}
+
+@keyframes blinkSlow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.2; }
 }
 
 // Chat mode wrapper positioning

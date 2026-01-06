@@ -1,15 +1,17 @@
 /**
  * OnboardingService - Sendell Welcome System
  * v1.0: State machine for first-time visitor experience
+ * v2.0: Integrated LLM preloading during initial loading phase
  *
  * Manages:
  * - Onboarding phases (darkness → dialogs → illumination)
  * - Progressive illumination (ground → title → pillars)
  * - User choice (tour vs free exploration)
  * - LocalStorage persistence
+ * - Background LLM preloading (v2.0)
  */
 
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import {
   DialogMessage,
   PRE_SPAWN_DIALOGS,
@@ -53,10 +55,31 @@ export interface OnboardingState {
   loadingProgress: number;  // v5.1: 0-100 loading bar progress
 }
 
+// v2.0: Import LLM service for background preloading
+import { LLMService } from './llm.service';
+
 @Injectable({
   providedIn: 'root'
 })
 export class OnboardingService {
+  // v2.0: LLM service for background preloading
+  private llmService = inject(LLMService);
+
+  // v2.0: LLM preloading state (separate from onboarding state)
+  private _llmPreloadStarted = signal(false);
+  private _llmPreloadProgress = signal(0);
+  private _llmPreloadText = signal('');
+  private _isWebGPUSupported = signal<boolean | null>(null); // null = not checked yet
+
+  // v2.0: Public signals for LLM state
+  readonly llmPreloadProgress = computed(() => this._llmPreloadProgress());
+  readonly llmPreloadText = computed(() => this._llmPreloadText());
+  readonly isLLMPreloading = computed(() =>
+    this._llmPreloadStarted() && this._llmPreloadProgress() < 100
+  );
+  readonly isLLMReady = computed(() => this._llmPreloadProgress() >= 100);
+  readonly isWebGPUSupported = computed(() => this._isWebGPUSupported());
+
   // Internal state
   private state = signal<OnboardingState>({
     phase: OnboardingPhase.DARKNESS,
@@ -185,10 +208,14 @@ export class OnboardingService {
 
   /**
    * v5.1: Animate loading bar from 0 to 100
+   * v2.0: Also starts LLM preloading in background
    */
   private startLoadingAnimation(): void {
     const startTime = performance.now();
     const duration = ONBOARDING_TIMING.LOADING_DURATION_MS;
+
+    // v2.0: Start LLM preloading in background (non-blocking)
+    this.startLLMPreloading();
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
@@ -212,6 +239,40 @@ export class OnboardingService {
     };
 
     this.loadingAnimationId = requestAnimationFrame(animate);
+  }
+
+  /**
+   * v2.0: Start LLM preloading in background
+   * This runs independently of the onboarding animation
+   * The UI will use fallback responses until the LLM is ready
+   */
+  private async startLLMPreloading(): Promise<void> {
+    if (this._llmPreloadStarted()) {
+      return; // Already started
+    }
+
+    this._llmPreloadStarted.set(true);
+    this._llmPreloadText.set('Verificando compatibilidad...');
+
+    // Subscribe to LLM state changes
+    this.llmService.state$.subscribe(state => {
+      this._llmPreloadProgress.set(state.progress);
+      this._llmPreloadText.set(state.progressText);
+
+      if (state.status === 'unsupported') {
+        this._isWebGPUSupported.set(false);
+      } else if (state.status === 'ready') {
+        this._isWebGPUSupported.set(true);
+      }
+    });
+
+    try {
+      // Start LLM initialization (runs in background, doesn't block)
+      await this.llmService.initialize();
+    } catch (error) {
+      console.warn('LLM preloading failed, will use fallback mode:', error);
+      this._isWebGPUSupported.set(false);
+    }
   }
 
   /**

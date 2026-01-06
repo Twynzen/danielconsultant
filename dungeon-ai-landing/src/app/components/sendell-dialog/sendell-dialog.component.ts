@@ -93,8 +93,13 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   // v2.0: Chat mode state
   isChatMode = signal(false);  // True when onboarding is complete and chat is active
   isAITyping = signal(false);  // True when AI is generating response
-  showChatInput = signal(false);  // Show input after Sendell finishes talking
+  showChatInput = signal(false);  // v2.1: Only shows when user double-clicks dialog
+  isChatOpen = signal(false);  // v2.1: Tracks if chat mode is actively open
   private aiInitialized = false;
+  private lastClickTime = 0;  // v2.1: For double-click detection
+
+  // v2.0: LLM info tooltip state
+  showLLMInfo = signal(false);
 
   constructor() {
     // v1.1: Effect to detect dialog changes from onboarding service
@@ -274,6 +279,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * v5.1: Handle click to advance dialog
    * v2.0: Handle click in chat mode
+   * v2.1: Handle double-click to open chat input
    */
   @HostListener('document:click', ['$event'])
   onClick(event: MouseEvent): void {
@@ -288,10 +294,23 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
-    // v2.0: Chat mode - skip typing on click outside input
+    // v2.0: Chat mode handling
     if (this.isChatMode()) {
+      // Skip typing on click
       if (this.isTyping()) {
         this.skipToEnd();
+        return;
+      }
+
+      // v2.1: Check for double-click on dialog to open chat
+      // Only check if chat is not already open
+      if (!this.isChatOpen()) {
+        const now = Date.now();
+        if (now - this.lastClickTime < 400) {
+          // Double-click detected - check if clicking on dialog
+          this.openChatInput();
+        }
+        this.lastClickTime = now;
       }
       return;
     }
@@ -307,6 +326,29 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
     // Advance dialog
     this.advanceDialog();
+  }
+
+  /**
+   * v2.1: Open chat input (called on double-click)
+   */
+  openChatInput(): void {
+    this.isChatOpen.set(true);
+    this.showChatInput.set(true);
+    this.cdr.markForCheck();
+
+    // Focus chat input after a small delay
+    setTimeout(() => {
+      this.chatInputRef?.nativeElement?.focus();
+    }, 100);
+  }
+
+  /**
+   * v2.1: Close chat input (called when clicking outside or after sending)
+   */
+  closeChatInput(): void {
+    this.isChatOpen.set(false);
+    this.showChatInput.set(false);
+    this.cdr.markForCheck();
   }
 
   /**
@@ -528,19 +570,22 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * v2.0: Finish AI typing and show input
+   * v2.0: Finish AI typing
+   * v2.1: No longer auto-shows input - user must double-click to chat
    */
   private finishAITyping(): void {
     this.clearTypingInterval();
     this.isTyping.set(false);
     this.isAITyping.set(false);
-    this.showChatInput.set(true);
+    // v2.1: Don't auto-show input - only show if chat is already open
+    if (this.isChatOpen()) {
+      this.showChatInput.set(true);
+      // Focus chat input after a small delay
+      setTimeout(() => {
+        this.chatInputRef?.nativeElement?.focus();
+      }, 100);
+    }
     this.cdr.markForCheck();
-
-    // Focus chat input after a small delay
-    setTimeout(() => {
-      this.chatInputRef?.nativeElement?.focus();
-    }, 100);
   }
 
   /**
@@ -598,5 +643,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
    */
   onChatInputClick(event: MouseEvent): void {
     event.stopPropagation();
+  }
+
+  /**
+   * v2.0: Toggle LLM info tooltip visibility
+   */
+  toggleLLMInfo(): void {
+    this.showLLMInfo.update(v => !v);
   }
 }

@@ -127,9 +127,38 @@ export class SendellAIService {
 
   /**
    * Initialize the AI system
-   * Should be called after onboarding completes
+   * v2.0: Now checks if LLM is already loading/ready (via OnboardingService preloading)
    */
   async initialize(): Promise<void> {
+    // v2.0: Check if LLM is already ready (preloaded during onboarding)
+    if (this.llmService.isReady) {
+      console.log('LLM already ready (preloaded during onboarding)');
+      this._status.set('ready');
+      this._isWebGPUSupported.set(true);
+      return;
+    }
+
+    // v2.0: Check if LLM is currently loading
+    const currentState = this.llmService.currentState;
+    if (currentState.status === 'loading') {
+      console.log('LLM already loading (preloaded during onboarding)');
+      this._status.set('loading_llm');
+      // Wait for loading to complete
+      return new Promise((resolve) => {
+        const subscription = this.llmService.state$.subscribe(state => {
+          if (state.status === 'ready') {
+            this._status.set('ready');
+            subscription.unsubscribe();
+            resolve();
+          } else if (state.status === 'error' || state.status === 'unsupported') {
+            this._status.set('fallback_only');
+            subscription.unsubscribe();
+            resolve();
+          }
+        });
+      });
+    }
+
     this._status.set('initializing');
 
     // Check WebGPU support first

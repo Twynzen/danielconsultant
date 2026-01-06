@@ -35,13 +35,34 @@
         </div>
 
         <!-- v5.1: Loading Bar (onboarding) -->
+        <!-- v2.0: Added LLM preload info icon -->
         @if (isLoading()) {
           <div class="loading-section">
             <div class="loading-text">{{ loadingText }}</div>
             <div class="loading-bar-container">
               <div class="loading-bar" [style.width.%]="loadingProgress()"></div>
             </div>
-            <div class="loading-percent">{{ loadingProgress() | number:'1.0-0' }}%</div>
+            <div class="loading-footer">
+              <div class="loading-percent">{{ loadingProgress() | number:'1.0-0' }}%</div>
+              <!-- v2.0: Info icon about LLM/WebGPU -->
+              <div class="llm-info-container">
+                <span class="llm-info-icon" (click)="toggleLLMInfo()">?</span>
+                @if (showLLMInfo()) {
+                  <div class="llm-info-tooltip">
+                    <div class="tooltip-title">⚡ IA Local en tu Navegador</div>
+                    <div class="tooltip-content">
+                      Esta web utiliza <strong>WebGPU</strong> para ejecutar un modelo de IA
+                      directamente en tu dispositivo. El modelo se descarga en caché (~700MB).
+                    </div>
+                    <div class="tooltip-note">
+                      Puedes continuar navegando. Algunas funciones de Sendell estarán
+                      limitadas hasta completar la descarga.
+                    </div>
+                    <div class="tooltip-close" (click)="toggleLLMInfo()">[CERRAR]</div>
+                  </div>
+                }
+              </div>
+            </div>
           </div>
         }
 
@@ -98,6 +119,7 @@
         }
 
         <!-- v2.0: Chat Input (post-onboarding) -->
+        <!-- v2.1: Only shown after double-click on dialog -->
         @if (isChatMode() && showChatInput()) {
           <div class="chat-input-section">
             <div class="chat-input-wrapper">
@@ -109,13 +131,20 @@
                 [(ngModel)]="chatInput"
                 (keydown)="onChatKeydown($event)"
                 (click)="onChatInputClick($event)"
-                placeholder="Escribe tu pregunta..."
+                placeholder="¿Algo que me quieras decir?"
                 autocomplete="off"
                 spellcheck="false">
             </div>
             <div class="chat-hint">
               Pregunta sobre servicios de IA de Daniel
             </div>
+          </div>
+        }
+
+        <!-- v2.1: Double-click hint (only when chat is not open) -->
+        @if (isChatMode() && !showChatInput() && !isTyping()) {
+          <div class="chat-hint-double-click">
+            <span class="blink-slow">[DOBLE CLICK PARA HABLAR]</span>
           </div>
         }
 
