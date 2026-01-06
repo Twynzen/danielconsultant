@@ -48,7 +48,7 @@ export const SIDESCROLLER_CONFIG = {
 
 /**
  * Pillar positions distributed horizontally across the level
- * v5.1: 8 pillars - removed FinOps AI & Process Automation, added MultiDesktopFlow
+ * v5.2.3: 9 pillars - added GitHub, reordered Nuvaris & MultiDesktopFlow
  * NOTE: Actual positions are defined in pillar.config.ts PILLARS array
  */
 export const SIDESCROLLER_PILLAR_POSITIONS = [
@@ -58,8 +58,9 @@ export const SIDESCROLLER_PILLAR_POSITIONS = [
   { x: 2800, service: 'agent-orchestration' },
   { x: 3400, service: 'custom-integrations' },
   { x: 4000, service: 'calendly' },
-  { x: 4600, service: 'nuvaris' },
-  { x: 5200, service: 'multidesktopflow' },
+  { x: 4600, service: 'github' },           // v5.2.3: New pillar
+  { x: 5200, service: 'nuvaris' },          // v5.2.3: Moved
+  { x: 5800, service: 'multidesktopflow' }, // v5.2.3: Moved
 ];
 
 /**

@@ -89,15 +89,20 @@ export const PILLAR_ICONS: Record<string, string> = {
     <line x1="8" y1="21" x2="16" y2="21"/>
     <line x1="12" y1="17" x2="12" y2="21"/>
     <path d="M6 7h4M6 10h8"/>
+  </svg>`,
+
+  // v5.2.3: GitHub icon
+  'github': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/>
   </svg>`
 };
 
 /**
- * 8 Pillars distributed horizontally across the side-scroller level
- * v5.1: Reorganized - removed FinOps AI & Process Automation, added MultiDesktopFlow
+ * 9 Pillars distributed horizontally across the side-scroller level
+ * v5.2.3: Added GitHub pillar, marked Nuvaris & MultiDesktopFlow as "Próximamente"
  * Layout:
- * |--spawn--|--QUIÉN SOY--|--LOCAL LLMS--|--RAG--|--AGENTS--|--INTEGRATIONS--|--CALENDLY--|--NUVARIS--|--MULTIDESKTOPFLOW--|
- *    400px      1000px        1600px      2200px    2800px       3400px          4000px       4600px         5200px
+ * |--spawn--|--QUIÉN SOY--|--LOCAL LLMS--|--RAG--|--AGENTS--|--INTEGRATIONS--|--CALENDLY--|--GITHUB--|--NUVARIS--|--MDF--|
+ *    400px      1000px        1600px      2200px    2800px       3400px          4000px      4600px     5200px     5800px
  */
 export const PILLARS: PillarConfig[] = [
   // v5.1: "Quién Soy" pillar with animated hologram portrait
@@ -161,25 +166,38 @@ export const PILLARS: PillarConfig[] = [
     worldX: 4000,
     description: 'Agenda una sesión de consultoría'
   },
+  // v5.2.3: GitHub pillar - link to Twynzen profile
+  {
+    id: 'github',
+    label: 'GITHUB',
+    icon: 'github',
+    type: 'external',
+    destination: 'https://github.com/Twynzen',
+    color: '#ffffff',  // White for GitHub
+    worldX: 4600,
+    description: 'Mis proyectos en GitHub'
+  },
+  // v5.2.3: Nuvaris - Próximamente
   {
     id: 'nuvaris',
-    label: 'NUVARIS',
+    label: 'PRÓXIMAMENTE',
     icon: 'globe',
-    type: 'external',
-    destination: 'https://nuvaris.com',
+    type: 'modal',  // Changed from 'external' to prevent navigation
+    destination: 'nuvaris',
     color: '#00ff88',
-    worldX: 4600,
-    description: 'Visita Nuvaris - Plataforma de IA'
+    worldX: 5200,
+    description: 'Nuvaris - Próximamente'
   },
+  // v5.2.3: MultiDesktopFlow - Próximamente
   {
     id: 'multidesktopflow',
-    label: 'MULTIDESKTOPFLOW',
+    label: 'PRÓXIMAMENTE',
     icon: 'desktop',
-    type: 'internal',
-    destination: '/multidesktopflow',
-    color: '#aa00ff',  // Purple for internal route
-    worldX: 5200,
-    description: 'Sistema de flujo multi-escritorio'
+    type: 'modal',  // Changed from 'internal' to prevent navigation
+    destination: 'multidesktopflow',
+    color: '#aa00ff',
+    worldX: 5800,
+    description: 'MultiDesktopFlow - Próximamente'
   }
 ];
 
