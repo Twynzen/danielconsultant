@@ -1,0 +1,103 @@
+<!-- Viewport - Fixed window into the side-scroller world -->
+<!-- v4.6.3: Added zoom binding for cinematic effect -->
+<!-- v5.0: Added onboarding state bindings -->
+<div class="dungeon-viewport"
+     [class.zoomed]="isZoomed"
+     [class.onboarding]="isOnboardingActive()"
+     [style.--zoom-scale]="zoomScale">
+
+  <!-- ========== FIXED UI LAYER (doesn't scroll) ========== -->
+  <div class="fixed-ui">
+    <!-- Title - Fixed at top of screen -->
+    <!-- v5.0: Title visibility controlled by onboarding -->
+    <div class="fixed-title"
+         [class.visible]="titleOpacity() > 0"
+         [style.opacity]="titleOpacity()">
+      <span class="main-title">CONSULTOR IA</span>
+      <span class="subtitle">DANIEL CASTIBLANCO</span>
+    </div>
+
+    <!-- v5.1: Single decorative torch in top-right corner -->
+    <!-- Lights up when title becomes visible -->
+    <app-torch-system></app-torch-system>
+  </div>
+
+  <!-- ========== WORLD LAYER (scrolls horizontally) ========== -->
+  <div class="dungeon-world"
+       [style.width.px]="levelWidth"
+       [style.transform]="cameraTransformValue">
+
+    <!-- Background with circuits CSS approach -->
+    <app-circuits-background></app-circuits-background>
+
+    <!-- v4.7: Hieroglyphic Wall - Service inscriptions that illuminate on proximity -->
+    <!-- v4.7.2: Added serviceClicked event to open modal on inscription click -->
+    <!-- v5.2: Added energizedPillarId for hologram energy states -->
+    <app-hieroglyphic-wall
+      [pillarIlluminations]="pillarIlluminations"
+      [energizedPillarId]="energizedPillarId()"
+      (serviceClicked)="onServiceClicked($event)">
+    </app-hieroglyphic-wall>
+
+    <!-- Ground visual -->
+    <!-- v5.0: Ground visibility controlled by onboarding -->
+    <div class="ground"
+         [class.visible]="groundOpacity() > 0"
+         [style.height.px]="groundHeight"
+         [style.opacity]="groundOpacity()">
+    </div>
+
+    <!-- Pillar System - Interactive navigation (world coordinates) -->
+    <!-- v4.7: Added illuminationsChanged for hieroglyphic wall -->
+    <!-- v5.0: Base illumination from onboarding -->
+    <!-- v5.2: Added energizedPillarId for [E] indicator states and exit handling -->
+    <app-pillar-system
+      [baseIllumination]="pillarsBaseIllumination()"
+      [energizedPillarId]="energizedPillarId()"
+      (pillarActivated)="onPillarActivated($event)"
+      (illuminationsChanged)="onIlluminationsChanged($event)"
+      (pillarExitRequested)="onPillarExitRequested()">
+    </app-pillar-system>
+
+  </div>
+
+  <!-- ========== SCREEN LAYER (Fixed to viewport) ========== -->
+
+  <!-- Character - Fixed X (centered), Y moves with jump -->
+  <!-- v5.0: Only show after onboarding spawn phase -->
+  <!-- v5.2: Added energization event handlers -->
+  @if (shouldShowCharacter()) {
+    <app-flame-head-character
+      (energizationStarted)="onEnergizationStarted($event)"
+      (energizationFinished)="onEnergizationFinished($event)"
+      (pillarExitStarted)="onPillarExitStarted()"
+      (pillarExitFinished)="onPillarExitFinished()">
+    </app-flame-head-character>
+  }
+
+  <!-- v5.0: Sendell Dialog - Centralized dialog for onboarding -->
+  <app-sendell-dialog
+    [isCentered]="isDialogCentered()">
+  </app-sendell-dialog>
+
+  <!-- v4.7: DEPRECATED - Hologram replaced by HieroglyphicWall -->
+  <!-- <app-hologram-projection
+    [pillarConfig]="activeHologramPillar"
+    [pillarScreenX]="hologramScreenX"
+    [pillarScreenY]="hologramScreenY"
+    [isVisible]="isHologramActive"
+    [isZoomed]="isZoomed"
+    (closeHologram)="onCloseHologram()"
+    (urlClicked)="onHologramUrlClick($event)">
+  </app-hologram-projection> -->
+
+  <!-- v4.7.2: Modal Service - Opens when clicking service inscriptions -->
+  <!-- v4.7.2: Added serviceColor for dynamic theming -->
+  <app-modal-service
+    [serviceId]="selectedServiceId"
+    [isOpen]="isModalOpen"
+    [serviceColor]="selectedServiceColor"
+    (closeModal)="onCloseModal()">
+  </app-modal-service>
+
+</div>

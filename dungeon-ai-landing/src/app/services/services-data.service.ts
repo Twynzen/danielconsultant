@@ -351,6 +351,48 @@ export class ServicesDataService {
         }
       ],
       technologies: ['FastAPI', 'Apache Kafka', 'Redis', 'RabbitMQ', 'Airbyte', 'Mulesoft', 'Custom Python/Node.js']
+    },
+    // v5.2.3: Nuvaris - Próximamente
+    {
+      id: 'nuvaris',
+      title: 'NUVARIS',
+      description: 'Próximamente - Plataforma innovadora de IA empresarial en desarrollo. Mantente atento para más información.',
+      features: [
+        {
+          icon: 'clock',
+          iconType: 'lucide',
+          animation: 'pulse',
+          text: 'En desarrollo activo'
+        },
+        {
+          icon: 'rocket',
+          iconType: 'lucide',
+          animation: 'bounce',
+          text: 'Próximo lanzamiento'
+        }
+      ],
+      technologies: ['Próximamente']
+    },
+    // v5.2.3: MultiDesktopFlow - Próximamente
+    {
+      id: 'multidesktopflow',
+      title: 'MULTIDESKTOPFLOW',
+      description: 'Próximamente - Sistema avanzado de flujo multi-escritorio para automatización de workflows. En desarrollo.',
+      features: [
+        {
+          icon: 'clock',
+          iconType: 'lucide',
+          animation: 'pulse',
+          text: 'En desarrollo activo'
+        },
+        {
+          icon: 'monitor',
+          iconType: 'lucide',
+          animation: 'bounce',
+          text: 'Multi-escritorio inteligente'
+        }
+      ],
+      technologies: ['Próximamente']
     }
   ];
 

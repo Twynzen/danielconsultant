@@ -1,0 +1,279 @@
+// Flame Head Character - Estilos y Animaciones
+
+.character {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  transition: transform 0.1s ease-out;
+}
+
+// Container for the binary character v3.0
+.character-container {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  width: 180px;
+  height: 220px;
+}
+
+// ===== GLOW EFFECT =====
+.glow-effect {
+  animation: pulse 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.6; }
+}
+
+// ===== PARTICULAS =====
+.particle {
+  animation: particleUp linear infinite;
+}
+
+.p1 { animation-duration: 0.7s; }
+.p2 { animation-duration: 0.9s; animation-delay: 0.15s; }
+.p3 { animation-duration: 0.8s; animation-delay: 0.3s; }
+.p4 { animation-duration: 0.85s; animation-delay: 0.45s; }
+
+@keyframes particleUp {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+
+// ===== VISTAS =====
+.view-side { display: none; }
+.view-front { display: none; }
+
+.facing-side .view-side { display: block; }
+.facing-front .view-front { display: block; }
+
+// ===== ANIMACIONES VISTA LATERAL (piernas con transform) =====
+.facing-side.walking {
+  .leg-right {
+    animation: legRight 0.35s ease-in-out infinite;
+  }
+  .leg-left {
+    animation: legLeft 0.35s ease-in-out infinite;
+  }
+  .arm-right {
+    animation: armRight 0.35s ease-in-out infinite;
+  }
+  .arm-left {
+    animation: armLeft 0.35s ease-in-out infinite;
+  }
+}
+
+@keyframes legRight {
+  0%, 100% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+}
+
+@keyframes legLeft {
+  0%, 100% { transform: translateX(8px); }
+  50% { transform: translateX(-8px); }
+}
+
+@keyframes armRight {
+  0%, 100% { transform: translateX(5px); }
+  50% { transform: translateX(-5px); }
+}
+
+@keyframes armLeft {
+  0%, 100% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+}
+
+// ===== ANIMACIONES VISTA FRONTAL (frames alternos) =====
+.frame1 { opacity: 1; }
+.frame2 { opacity: 0; }
+
+.facing-front.walking {
+  .frame1 {
+    animation: frame1Anim 0.35s step-end infinite;
+  }
+  .frame2 {
+    animation: frame2Anim 0.35s step-end infinite;
+  }
+}
+
+@keyframes frame1Anim {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+@keyframes frame2Anim {
+  0%, 50% { opacity: 0; }
+  50.01%, 100% { opacity: 1; }
+}
+
+// ===== REBOTE AL CAMINAR =====
+.walking .body-main {
+  animation: bounce 0.175s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+// ===== LLAMA ANIMADA =====
+.flame-outer,
+.flame-inner {
+  // Las animaciones del SVG se manejan con <animate>
+}
+
+.flame-core {
+  // Animación del núcleo en SVG
+}
+
+// ===== DIALOG BOX STYLES =====
+.dialog-box {
+  position: fixed;
+  z-index: 1001;
+  animation: dialogAppear 0.4s ease-out;
+}
+
+@keyframes dialogAppear {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dialog-content {
+  background: linear-gradient(135deg, rgba(0, 15, 0, 0.97) 0%, rgba(0, 8, 0, 0.98) 100%);
+  border: 2px solid #00ff44;
+  border-radius: 12px;
+  padding: 16px 20px;
+  min-width: 380px;
+  max-width: 480px;
+  box-shadow:
+    0 0 30px rgba(0, 255, 68, 0.4),
+    0 0 60px rgba(0, 255, 68, 0.15),
+    inset 0 0 30px rgba(0, 255, 68, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(0, 255, 68, 0.3);
+}
+
+.dialog-indicator {
+  width: 8px;
+  height: 8px;
+  background: #00ff44;
+  border-radius: 50%;
+  animation: indicatorPulse 1s ease-in-out infinite;
+}
+
+@keyframes indicatorPulse {
+  0%, 100% {
+    box-shadow: 0 0 4px #00ff44;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 12px #00ff44, 0 0 20px rgba(0, 255, 68, 0.5);
+    opacity: 0.8;
+  }
+}
+
+.dialog-title {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: bold;
+  color: #00ff44;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.dialog-text {
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  color: #00ff44;
+  line-height: 1.6;
+  text-shadow: 0 0 10px rgba(0, 255, 68, 0.5);
+  min-height: 28px;
+  letter-spacing: 0.5px;
+}
+
+.typing-effect {
+  white-space: pre-wrap;
+}
+
+.cursor {
+  display: inline-block;
+  animation: cursorBlink 0.6s step-end infinite;
+  color: #00ff44;
+  font-weight: bold;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.dialog-prompt {
+  margin-top: 10px;
+  text-align: right;
+}
+
+.dialog-prompt .blink {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: rgba(0, 255, 68, 0.6);
+  animation: promptBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes promptBlink {
+  0%, 40%, 100% { opacity: 0.4; }
+  20%, 60% { opacity: 1; }
+}
+
+// Flecha que apunta hacia la izquierda (al personaje)
+.dialog-arrow-left {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-right: 12px solid #00ff44;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 4px;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 10px solid rgba(0, 15, 0, 0.97);
+  }
+}
+
+// Fallback for old arrow (in case needed)
+.dialog-arrow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #00ff44;
+}

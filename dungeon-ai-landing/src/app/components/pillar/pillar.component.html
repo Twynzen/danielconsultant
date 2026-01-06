@@ -1,0 +1,71 @@
+<!-- v5.0: Pillar is invisible when illumination=0, gradually visible as it increases -->
+<div class="pillar"
+     [style.left.px]="worldX"
+     [style.top.px]="worldY"
+     [style.--pillar-color]="config.color"
+     [style.--illumination]="illumination"
+     [style.opacity]="illumination > 0 ? (0.4 + illumination * 0.6) : 0"
+     [class.highlighted]="isHighlighted"
+     [class.interactable]="isInteractable"
+     [attr.data-pillar-id]="config.id">
+
+  <!-- v4.7.2: Removed glyph symbol - interferes visually with hieroglyphic inscriptions -->
+
+  <!-- v4.6: Floating Binary Particles -->
+  <div class="particle-field" *ngIf="isHighlighted">
+    <span class="particle" *ngFor="let p of particles" [style.--delay]="p.delay" [style.--x]="p.x">
+      {{ p.char }}
+    </span>
+  </div>
+
+  <!-- Glow effect behind pillar -->
+  <div class="pillar-glow"></div>
+
+  <!-- Main pillar structure -->
+  <div class="pillar-column">
+    <!-- Top with icon -->
+    <div class="pillar-top">
+      <div class="pillar-icon" [innerHTML]="iconSvg"></div>
+      <div class="icon-glow"></div>
+    </div>
+
+    <!-- Body with tech patterns -->
+    <div class="pillar-body">
+      <!-- v4.6: Circuit Etch Lines -->
+      <div class="circuit-lines">
+        <div class="circuit-line left"></div>
+        <div class="circuit-line right"></div>
+      </div>
+
+      <!-- v4.6: Energy Core -->
+      <div class="energy-core"></div>
+
+      <!-- Tech lines (existing) -->
+      <div class="tech-lines">
+        <span class="line"></span>
+        <span class="line"></span>
+        <span class="line"></span>
+      </div>
+    </div>
+
+    <!-- Base -->
+    <div class="pillar-base">
+      <!-- v4.6: Enhanced base glow -->
+      <div class="base-glow"></div>
+      <div class="base-ring"></div>
+    </div>
+  </div>
+
+  <!-- Label (appears when highlighted) -->
+  <div class="pillar-label" *ngIf="isHighlighted || illumination > 0.3">
+    <span class="label-text">{{ config.label }}</span>
+  </div>
+
+  <!-- v5.2: Interaction Indicator [e] - Simplified -->
+  <div class="pillar-interact-indicator"
+       *ngIf="isRobotNearby || showExitIndicator"
+       [class.active]="isRobotNearby && !isEnergized"
+       [class.exit-mode]="showExitIndicator">
+    <span class="key-hint">[e]</span>
+  </div>
+</div>

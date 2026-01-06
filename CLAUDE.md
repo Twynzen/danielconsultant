@@ -1,8 +1,193 @@
-# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v5.1 FINAL
+# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v6.0 GAME UPDATE
 
-## 🎯 **ESTADO ACTUAL - SISTEMA COMPLETO Y FUNCIONAL**
-**Fecha**: Septiembre 6, 2025  
-**Status**: ✅ PRODUCCIÓN READY
+## 🎮 **NUEVO: VAMPIRE SURVIVORS GAME - COMPLETAMENTE INTEGRADO**
+**Fecha**: Noviembre 13, 2025
+**Status**: ✅ JUEGO FUNCIONAL + LANDING PAGE INTACTA
+
+Se ha integrado un videojuego completo estilo **Vampire Survivors** como página independiente, accesible mediante routing sin afectar la landing page principal.
+
+### **🎯 CARACTERÍSTICAS DEL JUEGO:**
+- ✅ **Game Engine completo** con Canvas HTML5 y RequestAnimationFrame loop a 60fps
+- ✅ **Sistema de entidades robusto**: Player, Enemies (4 tipos), Projectiles, XP Orbs
+- ✅ **Auto-ataque inteligente** al enemigo más cercano dentro del rango
+- ✅ **Sistema de XP y niveles** con 6 upgrades diferentes (Damage, Speed, Range, HP, etc.)
+- ✅ **Spawn de enemigos progresivo** con dificultad escalable cada 30 segundos
+- ✅ **4 tipos de enemigos**: Basic (cuadrado), Fast (triángulo), Tank (cuadrado grande), Boss (pentágono)
+- ✅ **Sistema de puntuación** con High Score guardado en localStorage
+- ✅ **UI completa**: Menú, HUD en tiempo real, Pausa, Level Up, Game Over
+- ✅ **Controles**: WASD/Arrows para movimiento, ESC para pausar, SPACE para iniciar
+- ✅ **Estética Matrix coherente** con la landing page (verde neón, efectos glow)
+- ✅ **Responsive y optimizado** para navegadores modernos
+
+### **📁 ESTRUCTURA DEL JUEGO:**
+```
+dungeon-ai-landing/src/app/components/
+├── vampire-survivors-game/
+│   ├── vampire-survivors-game.component.ts      # 800+ líneas de game logic
+│   ├── vampire-survivors-game.component.html    # Overlays + Canvas
+│   ├── vampire-survivors-game.component.scss    # Estilos Matrix theme
+│   └── vampire-survivors-game.component.spec.ts # Unit tests
+├── landing-page/                                # Landing page movida aquí
+│   ├── landing-page.component.ts
+│   ├── landing-page.component.html
+│   ├── landing-page.component.scss
+│   └── landing-page.component.spec.ts
+```
+
+### **🔀 ROUTING CONFIGURADO:**
+```typescript
+// app.routes.ts
+'/'       → LandingPageComponent  // Landing page original
+'/game'   → VampireSurvivorsGameComponent  // Juego nuevo
+```
+
+### **🎮 MECÁNICAS DEL JUEGO:**
+
+#### **Player System:**
+- Movimiento fluido en 8 direcciones (normalizado en diagonales)
+- Auto-ataque automático al enemigo más cercano
+- Sistema de rango de ataque visible
+- Radio de pickup para XP orbs
+- Health bar dinámica con colores según HP%
+
+#### **Enemy System:**
+- **Basic**: 30 HP, velocidad media, color rojo
+- **Fast**: 20 HP, velocidad alta, color naranja, forma triangular
+- **Tank**: 80 HP, velocidad lenta, color rojo oscuro, tamaño grande
+- **Boss**: 300 HP, velocidad media, color magenta, forma pentagonal
+- Spawn desde bordes aleatorios (top/right/bottom/left)
+- Health bars individuales sobre cada enemigo
+- AI de persecución directa al jugador
+
+#### **Progression System:**
+- XP para level up con curva exponencial (xp * 1.5 por nivel)
+- Al subir nivel: +20 HP curación inmediata
+- 6 upgrades aleatorios para elegir:
+  - **+20% Damage**: Aumenta daño de proyectiles
+  - **+15% Attack Speed**: Más ataques por segundo
+  - **+20% Range**: Mayor alcance de ataque
+  - **+10% Move Speed**: Movimiento más rápido
+  - **+20 Max Health**: Vida máxima aumentada
+  - **+30% Pickup Radius**: Recolectar XP desde más lejos
+
+#### **Difficulty Scaling:**
+- Multiplicador de dificultad aumenta cada 30 segundos
+- Spawn rate de enemigos se acelera progresivamente
+- Límite máximo de enemigos incrementa hasta 200
+- Stats de enemigos escalan con dificultad (HP, damage, XP, size)
+
+### **🎨 UI/UX DEL JUEGO:**
+
+#### **Menu Screen:**
+- Título grande "VAMPIRE SURVIVORS" con glow effect
+- Controles e instrucciones claras
+- High Score display si existe
+- Botones: "START GAME" y "Back to Landing"
+
+#### **HUD (In-Game):**
+- Level y XP actual/requerido
+- Score en tiempo real
+- Kill count
+- Tiempo de supervivencia
+- Health bar grande en bottom con HP numérico
+
+#### **Level Up Screen:**
+- Pausa automática del juego
+- Grid de 3 upgrades aleatorios
+- Icono emoji + nombre + descripción
+- Cards con hover effects Matrix
+
+#### **Game Over Screen:**
+- Stats finales: Score, Level, Kills, Time
+- Indicador de NEW HIGH SCORE si aplica
+- Botones: "PLAY AGAIN" y "Main Menu"
+
+### **⚙️ TECHNICAL IMPLEMENTATION:**
+
+#### **Game Loop:**
+```typescript
+- RequestAnimationFrame a 60fps
+- Delta time para frame-rate independence
+- Update → Render → Loop
+- Performance.now() para timing preciso
+```
+
+#### **Collision Detection:**
+```typescript
+- Circle-to-circle para todas las colisiones
+- Projectile vs Enemy (marca projectile para removal)
+- Enemy vs Player (damage continuo por frame)
+- XP Orb vs Player pickup radius (magnetismo)
+```
+
+#### **Entity Management:**
+```typescript
+- Arrays dinámicos para enemies, projectiles, xpOrbs
+- Cleanup automático de entidades muertas/expiradas
+- Pooling implícito mediante array filtering
+```
+
+#### **Canvas Rendering:**
+```typescript
+- Clear → Grid → XP → Enemies → Projectiles → Player → HUD
+- Figuras geométricas simples (rect, circle, polygon)
+- Glow effects con shadowBlur
+- Color coding por tipo de enemigo/objeto
+```
+
+### **🚀 CÓMO ACCEDER AL JUEGO:**
+
+#### **Desarrollo Local:**
+```bash
+cd dungeon-ai-landing
+npm install
+npm start
+# Navegar a: http://localhost:4200/game
+```
+
+#### **Build Producción:**
+```bash
+npm run build
+# Output: dist/dungeon-ai-landing/
+# Ruta del juego: https://tu-dominio.com/game
+```
+
+#### **Desde la Landing Page:**
+- Agregar un botón/link que navegue a `/game`
+- Ejemplo: `<a routerLink="/game">🎮 Play Game</a>`
+- El juego incluye botón "Back to Landing" (ESC también funciona)
+
+### **📊 BUNDLE SIZE POST-INTEGRACIÓN:**
+```
+main.js:      333.47 kB raw / 80.00 kB gzipped
+polyfills.js:  33.71 kB raw / 11.02 kB gzipped
+styles.css:     1.78 kB raw / 629 bytes gzipped
+TOTAL:        368.96 kB raw / 91.63 kB gzipped
+```
+**Impacto**: +35 kB compressed vs landing sola (juego completamente auto-contenido)
+
+### **✅ TESTING CHECKLIST JUEGO:**
+- [x] Menú principal muestra correctamente
+- [x] START GAME inicia el juego
+- [x] Movimiento WASD/Arrows funciona
+- [x] Auto-ataque dispara al enemigo más cercano
+- [x] Enemigos spawean y persiguen al jugador
+- [x] Colisiones funcionan (proyectiles, daño player)
+- [x] XP orbs spawean al matar enemigos
+- [x] XP orbs son atraídos al jugador
+- [x] Level up pausa y muestra upgrades
+- [x] Upgrades se aplican correctamente
+- [x] Dificultad escala progresivamente
+- [x] Game Over muestra stats finales
+- [x] High Score se guarda en localStorage
+- [x] Pausa con ESC funciona
+- [x] Botón "Back to Landing" navega correctamente
+- [x] Responsive en diferentes tamaños de pantalla
+
+---
+
+## 🎯 **LANDING PAGE - SISTEMA COMPLETO Y FUNCIONAL**
+**Status**: ✅ PRODUCCIÓN READY (INTACTA - NO AFECTADA POR JUEGO)
 
 Landing page profesional Matrix para **Daniel Castiblanco - Consultor IA** con sistema de iluminación por proximidad calibrado y todas las características implementadas.
 

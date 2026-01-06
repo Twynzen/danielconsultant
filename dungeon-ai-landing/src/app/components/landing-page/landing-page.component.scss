@@ -1,0 +1,212 @@
+/**
+ * Side-Scroller Landing Page Styles
+ * Mario-style horizontal scrolling with fixed UI
+ */
+
+// Viewport - Fixed window that clips the world
+.dungeon-viewport {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0a0a;
+  font-family: 'Courier New', monospace;
+}
+
+// ========== FIXED UI LAYER ==========
+.fixed-ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.fixed-title {
+  position: absolute;
+  top: 30px;
+  left: 30px; // v4.7.1: Moved to top-left to avoid overlap with inscriptions
+  text-align: left;
+  user-select: none;
+  pointer-events: none;
+
+  // v5.0: Initial state hidden for onboarding
+  opacity: 0;
+  transition: opacity 1s ease-out;
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
+.fixed-title .main-title {
+  display: block;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 900;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+  color: rgba(0, 255, 68, 0.9);
+  text-shadow:
+    0 0 20px rgba(0, 255, 68, 0.6),
+    0 0 40px rgba(0, 255, 68, 0.3),
+    2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.fixed-title .subtitle {
+  display: block;
+  font-size: clamp(0.7rem, 1.5vw, 1rem);
+  font-weight: 400;
+  letter-spacing: 0.6em;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+  font-family: 'Courier New', monospace;
+  color: rgba(0, 255, 68, 0.6);
+  text-shadow:
+    0 0 10px rgba(0, 255, 68, 0.4),
+    1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+// ========== WORLD LAYER ==========
+.dungeon-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  // Width set via [style.width.px] in template
+
+  // GPU-accelerated transform for smooth camera movement
+  // Transform set via [style.transform] in template
+  will-change: transform;
+
+  // Prevent any layout shift during transform
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+// Ground - Solid floor at bottom
+.ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  // Height set via [style.height.px] in template
+  background: linear-gradient(
+    to bottom,
+    #1a3a1a 0%,
+    #0d1f0d 30%,
+    #0a170a 70%,
+    #060d06 100%
+  );
+  border-top: 3px solid #00ff44;
+  box-shadow:
+    0 -5px 20px rgba(0, 255, 68, 0.3),
+    inset 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  // v5.0: Initial state hidden for onboarding
+  opacity: 0;
+  transition: opacity 1.5s ease-out;
+
+  &.visible {
+    opacity: 1;
+  }
+
+  // Grid pattern on ground
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 255, 68, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 68, 0.05) 1px, transparent 1px);
+    background-size: 50px 20px;
+    opacity: 0.5;
+  }
+}
+
+/**
+ * Z-index hierarchy:
+ *
+ * FIXED UI LAYER:
+ * 100 - Fixed title
+ * 200 - Modals
+ *
+ * SCREEN LAYER (fixed to viewport):
+ * 50 - Character
+ *
+ * WORLD LAYER (scrolls):
+ * 2  - Circuits background
+ * 5  - Pillar system
+ * 10 - Ground
+ */
+
+// World layer elements
+:host ::ng-deep {
+  .dungeon-world {
+    app-circuits-background {
+      z-index: 2;
+    }
+
+    app-pillar-system {
+      z-index: 5;
+    }
+
+    .ground {
+      z-index: 10;
+    }
+  }
+
+  // Screen layer elements
+  app-flame-head-character {
+    z-index: 50;
+  }
+
+  app-modal-service {
+    z-index: 200;
+  }
+}
+
+// ========== v4.6.4: CINEMATIC ZOOM EFFECT (Fixed) ==========
+// v4.6.4: Zoom ONLY affects title fade - hologram handles its own scale
+// This prevents the robot from floating when world was scaled
+.dungeon-viewport.zoomed {
+  // Fade the title slightly during zoom
+  .fixed-ui .fixed-title {
+    opacity: 0.4;
+    transform: scale(0.85); // v4.7.1: Removed translateX since title is now left-aligned
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .fixed-title {
+    top: 20px;
+  }
+
+  .fixed-title .main-title {
+    letter-spacing: 0.2em;
+  }
+
+  .fixed-title .subtitle {
+    letter-spacing: 0.3em;
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fixed-title {
+    top: 15px;
+  }
+
+  .fixed-title .main-title {
+    font-size: 1.5rem;
+    letter-spacing: 0.15em;
+  }
+
+  .fixed-title .subtitle {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    margin-top: 0.3rem;
+  }
+}

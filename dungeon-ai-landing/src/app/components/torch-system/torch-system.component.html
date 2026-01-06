@@ -1,153 +1,131 @@
+<!-- v5.1: Single torch in top-right corner, lights with title -->
 <div class="torch-system">
-  <div 
-    *ngFor="let torch of torches" 
-    [id]="torch.id"
-    [attr.data-torch-id]="torch.id"
+  <div
+    id="single-torch"
     class="torch-container"
-    [ngClass]="getTorchClass(torch)"
-    [ngStyle]="getTorchStyle(torch)"
-    (click)="onTorchClick(torch)"
-  >
+    [ngClass]="torchClasses()"
+    [ngStyle]="torchStyle">
+
     <!-- Tech Matrix Torch SVG -->
     <svg class="torch-svg" width="60" height="90" viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <!-- Gradients for metallic handle -->
-        <linearGradient [id]="'metalHandle-' + torch.id" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#e0e0e0"/>
-          <stop offset="25%" stop-color="#c0c0c0"/>
-          <stop offset="50%" stop-color="#888"/>
-          <stop offset="75%" stop-color="#666"/>
-          <stop offset="100%" stop-color="#444"/>
-        </linearGradient>
-        
-        <!-- Cup gradient -->
-        <linearGradient [id]="'metalCup-' + torch.id" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#f0f0f0"/>
-          <stop offset="30%" stop-color="#c8c8c8"/>
-          <stop offset="70%" stop-color="#999"/>
-          <stop offset="100%" stop-color="#777"/>
-        </linearGradient>
-        
         <!-- Matrix flame gradient -->
-        <linearGradient [id]="'matrixFlame-' + torch.id" x1="0%" y1="100%" x2="0%" y2="0%">
+        <linearGradient id="matrixFlame" x1="0%" y1="100%" x2="0%" y2="0%">
           <stop offset="0%" stop-color="#00ff44"/>
           <stop offset="30%" stop-color="#00cc33"/>
           <stop offset="60%" stop-color="#00aa22"/>
           <stop offset="100%" stop-color="#008811"/>
         </linearGradient>
-        
+
         <!-- Green glow -->
-        <radialGradient [id]="'greenGlow-' + torch.id" cx="50%" cy="50%" r="60%">
+        <radialGradient id="greenGlow" cx="50%" cy="50%" r="60%">
           <stop offset="0%" stop-color="#00ff44" stop-opacity="0.6"/>
           <stop offset="100%" stop-color="#00ff44" stop-opacity="0"/>
         </radialGradient>
       </defs>
-      
+
       <!-- Resplandor (only when lit) -->
-      <circle 
-        *ngIf="torch.isLit" 
-        cx="30" 
-        cy="25" 
-        r="35" 
-        [attr.fill]="'url(#greenGlow-' + torch.id + ')'"
-        class="glow-effect"
-      />
-      
+      @if (isLit()) {
+        <circle cx="30" cy="25" r="35" fill="url(#greenGlow)" class="glow-effect"/>
+      }
+
       <!-- Handle silueta verde - solo contorno -->
-      <rect x="26" y="35" width="8" height="50" 
-            fill="transparent" 
-            stroke="#00ff44" 
-            stroke-width="1.5" 
+      <rect x="26" y="35" width="8" height="50"
+            fill="transparent"
+            stroke="#00ff44"
+            stroke-width="1.5"
             rx="1"
-            [attr.opacity]="torch.isLit ? 1 : 0.6"/>
-      
+            [attr.opacity]="isLit() ? 1 : 0.3"/>
+
       <!-- Tech details en mango - solo contornos -->
-      <polygon points="22,42 38,42 36,50 24,50" 
-               fill="transparent" 
-               stroke="#00ff44" 
+      <polygon points="22,42 38,42 36,50 24,50"
+               fill="transparent"
+               stroke="#00ff44"
                stroke-width="1"
-               [attr.opacity]="torch.isLit ? 0.8 : 0.4"/>
-      <polygon points="23,58 37,58 35,65 25,65" 
-               fill="transparent" 
-               stroke="#00ff44" 
+               [attr.opacity]="isLit() ? 0.8 : 0.2"/>
+      <polygon points="23,58 37,58 35,65 25,65"
+               fill="transparent"
+               stroke="#00ff44"
                stroke-width="1"
-               [attr.opacity]="torch.isLit ? 0.8 : 0.4"/>
-      
-      <!-- LEDs en mango - más brillantes -->
-      <circle *ngIf="torch.isLit" cx="30" cy="46" r="1.5" fill="#00ff44" opacity="1">
-        <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite"/>
-      </circle>
-      <circle *ngIf="torch.isLit" cx="30" cy="61" r="1.5" fill="#00cc33" opacity="0.9">
-        <animate attributeName="opacity" values="0.9;0.4;0.9" dur="1.5s" repeatCount="indefinite"/>
-      </circle>
-      
+               [attr.opacity]="isLit() ? 0.8 : 0.2"/>
+
+      <!-- LEDs en mango (only when lit) -->
+      @if (isLit()) {
+        <circle cx="30" cy="46" r="1.5" fill="#00ff44" opacity="1">
+          <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="30" cy="61" r="1.5" fill="#00cc33" opacity="0.9">
+          <animate attributeName="opacity" values="0.9;0.4;0.9" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+      }
+
       <!-- Copa - solo contorno verde -->
-      <ellipse cx="30" cy="32" rx="16" ry="5" 
-               fill="transparent" 
-               stroke="#00ff44" 
+      <ellipse cx="30" cy="32" rx="16" ry="5"
+               fill="transparent"
+               stroke="#00ff44"
                stroke-width="1.5"
-               [attr.opacity]="torch.isLit ? 1 : 0.6"/>
-      <rect x="14" y="25" width="32" height="12" 
-            fill="transparent" 
-            stroke="#00ff44" 
-            stroke-width="1.5" 
+               [attr.opacity]="isLit() ? 1 : 0.3"/>
+      <rect x="14" y="25" width="32" height="12"
+            fill="transparent"
+            stroke="#00ff44"
+            stroke-width="1.5"
             rx="2"
-            [attr.opacity]="torch.isLit ? 1 : 0.6"/>
-      <ellipse cx="30" cy="25" rx="16" ry="5" 
-               fill="transparent" 
-               stroke="#00ff44" 
+            [attr.opacity]="isLit() ? 1 : 0.3"/>
+      <ellipse cx="30" cy="25" rx="16" ry="5"
+               fill="transparent"
+               stroke="#00ff44"
                stroke-width="1.5"
-               [attr.opacity]="torch.isLit ? 1 : 0.6"/>
-      
-      <!-- Matrix flame MÁS BRILLANTE (only when lit) -->
-      <g *ngIf="torch.isLit">
-        <!-- Outer flame más grande -->
-        <path d="M14 25 Q30 1 46 25 Q42 40 36 34 Q30 37 24 34 Q18 40 14 25" 
-              [attr.fill]="'url(#matrixFlame-' + torch.id + ')'" 
-              class="flame-main"
-              opacity="0.9">
-          <animateTransform attributeName="transform" 
-                            type="scale" 
-                            values="1;1.08;0.92;1" 
-                            dur="0.7s" 
-                            repeatCount="indefinite"/>
-        </path>
-        
-        <!-- Inner flame más brillante -->
-        <path d="M18 25 Q30 5 42 25 Q38 34 34 30 Q30 32 26 30 Q22 34 18 25" 
-              fill="#00ff44" 
-              opacity="1">
-          <animateTransform attributeName="transform" 
-                            type="scale" 
-                            values="1;1.12;0.88;1" 
-                            dur="0.9s" 
-                            repeatCount="indefinite"/>
-        </path>
-        
-        <!-- Core flame súper brillante -->
-        <path d="M22 25 Q30 10 38 25 Q35 30 32 27 Q30 29 28 27 Q25 30 22 25" 
-              fill="#66ff66" 
-              opacity="0.8">
-          <animateTransform attributeName="transform" 
-                            type="scale" 
-                            values="1;1.15;0.85;1" 
-                            dur="0.6s" 
-                            repeatCount="indefinite"/>
-        </path>
-      </g>
-      
-      <!-- Matrix binary particles (only when lit) -->
-      <g *ngIf="torch.isLit" class="matrix-particles">
-        <text x="18" y="12" fill="#00ff44" font-size="4" font-family="monospace" opacity="0.9">1</text>
-        <text x="38" y="8" fill="#00cc33" font-size="3" font-family="monospace" opacity="0.8">0</text>
-        <text x="26" y="10" fill="#00aa22" font-size="4" font-family="monospace" opacity="0.7">1</text>
-        <text x="34" y="15" fill="#008811" font-size="3" font-family="monospace" opacity="0.9">0</text>
-        <text x="22" y="18" fill="#00ff44" font-size="3" font-family="monospace" opacity="0.6">1</text>
-        <text x="40" y="20" fill="#00cc33" font-size="4" font-family="monospace" opacity="0.8">0</text>
-      </g>
+               [attr.opacity]="isLit() ? 1 : 0.3"/>
+
+      <!-- Matrix flame (only when lit) -->
+      @if (isLit()) {
+        <g class="flame-group">
+          <!-- Outer flame -->
+          <path d="M14 25 Q30 1 46 25 Q42 40 36 34 Q30 37 24 34 Q18 40 14 25"
+                fill="url(#matrixFlame)"
+                class="flame-main"
+                opacity="0.9">
+            <animateTransform attributeName="transform"
+                              type="scale"
+                              values="1;1.08;0.92;1"
+                              dur="0.7s"
+                              repeatCount="indefinite"
+                              additive="sum"/>
+          </path>
+
+          <!-- Inner flame -->
+          <path d="M18 25 Q30 5 42 25 Q38 34 34 30 Q30 32 26 30 Q22 34 18 25"
+                fill="#00ff44"
+                opacity="1">
+            <animateTransform attributeName="transform"
+                              type="scale"
+                              values="1;1.12;0.88;1"
+                              dur="0.9s"
+                              repeatCount="indefinite"
+                              additive="sum"/>
+          </path>
+
+          <!-- Core flame -->
+          <path d="M22 25 Q30 10 38 25 Q35 30 32 27 Q30 29 28 27 Q25 30 22 25"
+                fill="#66ff66"
+                opacity="0.8">
+            <animateTransform attributeName="transform"
+                              type="scale"
+                              values="1;1.15;0.85;1"
+                              dur="0.6s"
+                              repeatCount="indefinite"
+                              additive="sum"/>
+          </path>
+        </g>
+
+        <!-- Matrix binary particles -->
+        <g class="matrix-particles">
+          <text x="18" y="12" fill="#00ff44" font-size="4" font-family="monospace" opacity="0.9">1</text>
+          <text x="38" y="8" fill="#00cc33" font-size="3" font-family="monospace" opacity="0.8">0</text>
+          <text x="26" y="10" fill="#00aa22" font-size="4" font-family="monospace" opacity="0.7">1</text>
+          <text x="34" y="15" fill="#008811" font-size="3" font-family="monospace" opacity="0.9">0</text>
+        </g>
+      }
     </svg>
-    
-    <!-- Subtle hint pulse (only when hintVisible) -->
-    <div *ngIf="torch.hintVisible" class="hint-pulse"></div>
   </div>
 </div>

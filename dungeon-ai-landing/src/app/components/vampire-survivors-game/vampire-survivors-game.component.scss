@@ -1,0 +1,413 @@
+.game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
+
+  canvas {
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
+// ========== OVERLAYS ==========
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 100;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ========== MENU ==========
+.menu-overlay {
+  .menu-content {
+    text-align: center;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    animation: glitchText 2s infinite;
+
+    .game-title {
+      font-size: 4rem;
+      margin-bottom: 2rem;
+      text-shadow:
+        0 0 10px #00ff00,
+        0 0 20px #00ff00,
+        0 0 30px #00ff00,
+        0 0 40px #00ff44;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .menu-instructions {
+      margin: 2rem 0;
+      font-size: 1.2rem;
+      line-height: 1.8;
+
+      strong {
+        color: #00ff44;
+        text-shadow: 0 0 10px #00ff44;
+      }
+
+      p {
+        margin: 0.5rem 0;
+      }
+    }
+
+    .high-score {
+      margin: 2rem 0;
+      font-size: 1.5rem;
+      color: #ffff00;
+      text-shadow: 0 0 10px #ffff00;
+    }
+  }
+}
+
+// ========== PAUSE ==========
+.pause-overlay {
+  .pause-content {
+    text-align: center;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+
+    h2 {
+      font-size: 3rem;
+      margin-bottom: 2rem;
+      text-shadow: 0 0 20px #00ff00;
+    }
+
+    .pause-stats {
+      font-size: 1.5rem;
+      margin: 2rem 0;
+      line-height: 2;
+
+      p {
+        margin: 0.5rem 0;
+      }
+    }
+  }
+}
+
+// ========== LEVEL UP ==========
+.levelup-overlay {
+  .levelup-content {
+    text-align: center;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    max-width: 900px;
+
+    h2 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 20px #00ff00;
+      animation: bounce 0.5s ease-in-out;
+    }
+
+    .level-text {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #ffff00;
+      text-shadow: 0 0 15px #ffff00;
+    }
+
+    .choose-text {
+      font-size: 1.3rem;
+      margin-bottom: 2rem;
+    }
+
+    .upgrades-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+
+      .upgrade-card {
+        background: rgba(0, 255, 0, 0.05);
+        border: 2px solid #00ff00;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Courier New', monospace;
+        color: #00ff00;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        &:hover {
+          background: rgba(0, 255, 0, 0.15);
+          border-color: #00ff44;
+          box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+          transform: translateY(-5px);
+        }
+
+        .upgrade-icon {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+        }
+
+        .upgrade-name {
+          font-size: 1.2rem;
+          font-weight: bold;
+          margin-bottom: 0.5rem;
+          text-shadow: 0 0 10px #00ff00;
+        }
+
+        .upgrade-description {
+          font-size: 0.9rem;
+          color: #00cc00;
+        }
+      }
+    }
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+// ========== GAME OVER ==========
+.gameover-overlay {
+  .gameover-content {
+    text-align: center;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    max-width: 600px;
+
+    .gameover-title {
+      font-size: 3.5rem;
+      margin-bottom: 2rem;
+      color: #ff0000;
+      text-shadow: 0 0 20px #ff0000;
+      animation: shake 0.5s ease-in-out;
+    }
+
+    .final-stats {
+      background: rgba(0, 255, 0, 0.05);
+      border: 2px solid #00ff00;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      font-size: 1.3rem;
+
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        margin: 1rem 0;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &.high-score-row {
+          border: 2px solid #ffff00;
+          padding: 1rem;
+          margin-top: 1.5rem;
+          background: rgba(255, 255, 0, 0.1);
+
+          .stat-label {
+            width: 100%;
+            text-align: center;
+            color: #ffff00;
+            font-size: 1.5rem;
+            text-shadow: 0 0 15px #ffff00;
+            animation: pulse 1s ease-in-out infinite;
+          }
+        }
+
+        .stat-label {
+          font-weight: normal;
+          color: #00cc00;
+        }
+
+        .stat-value {
+          font-weight: bold;
+          color: #00ff44;
+          text-shadow: 0 0 10px #00ff44;
+        }
+      }
+    }
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+// ========== BUTTONS ==========
+.game-button {
+  font-family: 'Courier New', monospace;
+  font-size: 1.3rem;
+  padding: 1rem 3rem;
+  margin: 0.5rem;
+  border: 2px solid #00ff00;
+  background: transparent;
+  color: #00ff00;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(0, 255, 0, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+
+  &:hover {
+    background: rgba(0, 255, 0, 0.1);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    transform: translateY(-2px);
+
+    &::before {
+      width: 300px;
+      height: 300px;
+    }
+  }
+
+  &.primary {
+    border-color: #00ff44;
+    color: #00ff44;
+    text-shadow: 0 0 10px #00ff44;
+
+    &:hover {
+      box-shadow: 0 0 30px rgba(0, 255, 68, 0.7);
+    }
+  }
+
+  &.secondary {
+    border-color: #00aa00;
+    color: #00aa00;
+    font-size: 1rem;
+    padding: 0.8rem 2rem;
+
+    &:hover {
+      border-color: #00ff00;
+      color: #00ff00;
+    }
+  }
+}
+
+// ========== ANIMATIONS ==========
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes glitchText {
+  0%, 90%, 100% {
+    text-shadow:
+      0 0 10px #00ff00,
+      0 0 20px #00ff00,
+      0 0 30px #00ff00;
+  }
+  92% {
+    text-shadow:
+      -2px 0 10px #00ff00,
+      2px 0 20px #ff0000,
+      0 0 30px #00ff00;
+  }
+  94% {
+    text-shadow:
+      2px 0 10px #ff0000,
+      -2px 0 20px #00ff00,
+      0 0 30px #00ff00;
+  }
+}
+
+// ========== RESPONSIVE ==========
+@media (max-width: 1250px) {
+  .game-container canvas {
+    max-width: 95vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .menu-overlay .menu-content .game-title {
+    font-size: 2.5rem;
+  }
+
+  .levelup-overlay .levelup-content .upgrades-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto 2rem;
+  }
+
+  .game-button {
+    font-size: 1rem;
+    padding: 0.8rem 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .menu-overlay .menu-content {
+    .game-title {
+      font-size: 2rem;
+    }
+
+    .menu-instructions {
+      font-size: 1rem;
+    }
+  }
+
+  .gameover-overlay .gameover-content {
+    max-width: 90%;
+
+    .gameover-title {
+      font-size: 2.5rem;
+    }
+
+    .final-stats {
+      font-size: 1rem;
+      padding: 1rem;
+    }
+  }
+}

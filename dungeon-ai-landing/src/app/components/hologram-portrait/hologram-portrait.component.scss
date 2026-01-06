@@ -1,0 +1,470 @@
+/**
+ * HologramPortraitComponent Styles - v4.8.1
+ * Matrix-style hologram with scan lines, glow, and animation
+ * Fixed positioning to work like inscriptions
+ */
+
+// Host element needs absolute positioning
+:host {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hologram-portrait {
+  width: 280px;
+
+  // Default state variables
+  --portrait-color: #00ff44;
+  --illumination: 0;
+
+  // Dormant state (default)
+  opacity: 0.06;
+  transform: scale(0.95);
+  filter: grayscale(100%) blur(2px);
+  transition: all 0.6s ease-out;
+
+  // Awakening state (approaching)
+  &.awakening {
+    opacity: 0.6;
+    transform: scale(0.98);
+    filter: grayscale(50%) blur(1px);
+
+    .scan-line {
+      opacity: 0.5;
+    }
+
+    .hologram-overlay {
+      opacity: 0.2;
+    }
+
+    .portrait-legend {
+      opacity: 0.7;
+    }
+  }
+
+  // Active state (fully visible)
+  &.active {
+    opacity: 1;
+    transform: scale(1);
+    filter: grayscale(0%) blur(0);
+
+    .frame-container {
+      box-shadow:
+        0 0 40px color-mix(in srgb, var(--portrait-color) 50%, transparent),
+        0 0 80px color-mix(in srgb, var(--portrait-color) 25%, transparent),
+        inset 0 0 30px color-mix(in srgb, var(--portrait-color) 15%, transparent);
+    }
+
+    .scan-line {
+      opacity: 1;
+      animation: scanMove 2s linear infinite;
+    }
+
+    .hologram-overlay {
+      opacity: 0.4;
+      animation: hologramFlicker 0.15s infinite;
+    }
+
+    .corner-bracket {
+      opacity: 1;
+    }
+
+    .portrait-legend {
+      opacity: 1;
+
+      .legend-name {
+        animation: glitchPulse 4s ease-in-out infinite;
+      }
+    }
+  }
+}
+
+.frame-container {
+  position: relative;
+  border: 2px solid var(--portrait-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0a0a0a;
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--portrait-color) 30%, transparent),
+    inset 0 0 15px color-mix(in srgb, var(--portrait-color) 10%, transparent);
+  transition: box-shadow 0.4s ease;
+}
+
+.portrait-frame {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: brightness(1.05) contrast(1.02);
+}
+
+// Scan line effect
+.scan-line {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 255, 68, 0.03) 2px,
+    rgba(0, 255, 68, 0.03) 4px
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--portrait-color) 20%, transparent) 50%,
+      transparent 100%
+    );
+    background-size: 100% 60px;
+    animation: scanSweep 3s linear infinite;
+  }
+}
+
+@keyframes scanMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+
+@keyframes scanSweep {
+  0% { background-position: 0 -60px; }
+  100% { background-position: 0 calc(100% + 60px); }
+}
+
+// Hologram flicker overlay
+.hologram-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    var(--portrait-color) 0%,
+    transparent 15%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes hologramFlicker {
+  0%, 100% { opacity: 0.35; }
+  25% { opacity: 0.3; }
+  50% { opacity: 0.4; }
+  75% { opacity: 0.32; }
+}
+
+// Corner brackets decoration
+.corner-bracket {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--portrait-color);
+  border-style: solid;
+  border-width: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &.top-left {
+    top: 8px;
+    left: 8px;
+    border-top-width: 2px;
+    border-left-width: 2px;
+  }
+
+  &.top-right {
+    top: 8px;
+    right: 8px;
+    border-top-width: 2px;
+    border-right-width: 2px;
+  }
+
+  &.bottom-left {
+    bottom: 8px;
+    left: 8px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+  }
+
+  &.bottom-right {
+    bottom: 8px;
+    right: 8px;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+  }
+}
+
+// Legend section
+.portrait-legend {
+  padding: 12px 15px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  color: var(--portrait-color);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(10, 10, 10, 0.95) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--portrait-color) 40%, transparent);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.legend-name {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 4px 0;
+  text-shadow: 0 0 10px var(--portrait-color);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.legend-title {
+  font-size: 11px;
+  margin: 0 0 2px 0;
+  opacity: 0.9;
+  letter-spacing: 0.05em;
+}
+
+.legend-subtitle {
+  font-size: 10px;
+  margin: 0;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+// Glitch pulse animation for active state
+@keyframes glitchPulse {
+  0%, 94%, 100% {
+    text-shadow: 0 0 10px var(--portrait-color);
+  }
+  95% {
+    text-shadow:
+      -2px 0 #ff0066,
+      2px 0 #00ffff,
+      0 0 10px var(--portrait-color);
+  }
+  96% {
+    text-shadow:
+      2px 0 #ff0066,
+      -2px 0 #00ffff,
+      0 0 10px var(--portrait-color);
+  }
+  97% {
+    text-shadow: 0 0 15px var(--portrait-color);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .hologram-portrait {
+    width: 220px;
+  }
+
+  .legend-name {
+    font-size: 14px;
+  }
+
+  .legend-title {
+    font-size: 10px;
+  }
+
+  .legend-subtitle {
+    font-size: 9px;
+  }
+}
+
+// ========== v5.2: Energy States for Robot Energization ==========
+
+// Low energy state: Robot nearby but NOT energizing (glitched/grayscale)
+.hologram-portrait.low-energy {
+  filter: grayscale(70%) brightness(0.6);
+  opacity: 0.5;
+
+  .frame-container {
+    animation: lowEnergyGlitch 0.3s infinite;
+    box-shadow:
+      0 0 20px color-mix(in srgb, var(--portrait-color) 15%, transparent),
+      inset 0 0 10px color-mix(in srgb, var(--portrait-color) 5%, transparent);
+  }
+
+  .portrait-frame {
+    filter: grayscale(70%) brightness(0.8) contrast(1.1);
+  }
+
+  .scan-line {
+    opacity: 0.2;
+    animation: scanMove 1s linear infinite;
+  }
+
+  .hologram-overlay {
+    opacity: 0.15;
+    animation: hologramFlicker 0.1s infinite;
+  }
+
+  .portrait-legend {
+    opacity: 0.4;
+    filter: grayscale(50%);
+
+    .legend-name {
+      animation: lowEnergyTitleGlitch 0.5s infinite;
+    }
+  }
+
+  .corner-bracket {
+    opacity: 0.3;
+  }
+}
+
+// Fully energized state: Robot inside pillar (full color/stable/glowing)
+.hologram-portrait.fully-energized {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.02);
+
+  .frame-container {
+    animation: fullyEnergizedPulse 2s ease-in-out infinite;
+    box-shadow:
+      0 0 50px color-mix(in srgb, var(--portrait-color) 70%, transparent),
+      0 0 100px color-mix(in srgb, var(--portrait-color) 40%, transparent),
+      0 0 150px color-mix(in srgb, var(--portrait-color) 20%, transparent),
+      inset 0 0 40px color-mix(in srgb, var(--portrait-color) 25%, transparent);
+    border-color: var(--portrait-color);
+    border-width: 3px;
+  }
+
+  .portrait-frame {
+    filter: brightness(1.15) contrast(1.05) saturate(1.2);
+  }
+
+  .scan-line {
+    opacity: 1;
+    animation: scanMove 2.5s linear infinite;
+  }
+
+  .hologram-overlay {
+    opacity: 0.5;
+    animation: none;
+    background: linear-gradient(
+      0deg,
+      var(--portrait-color) 0%,
+      transparent 20%
+    );
+  }
+
+  .portrait-legend {
+    opacity: 1;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 20, 0, 0.95) 0%,
+      rgba(0, 30, 0, 0.98) 100%
+    );
+    border-color: var(--portrait-color);
+
+    .legend-name {
+      animation: none;
+      text-shadow:
+        0 0 15px var(--portrait-color),
+        0 0 30px var(--portrait-color);
+    }
+
+    .legend-title,
+    .legend-subtitle {
+      text-shadow: 0 0 8px var(--portrait-color);
+    }
+  }
+
+  .corner-bracket {
+    opacity: 1;
+    border-width: 3px;
+  }
+}
+
+// Low energy glitch animation
+@keyframes lowEnergyGlitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  10% {
+    transform: translate(-1px, 0);
+  }
+  20% {
+    transform: translate(1px, 0);
+  }
+  30% {
+    transform: translate(0, 1px);
+  }
+  40% {
+    transform: translate(-1px, -1px);
+  }
+  50% {
+    transform: translate(1px, 1px);
+  }
+  60% {
+    transform: translate(0);
+  }
+  70% {
+    transform: translate(-1px, 0);
+  }
+  80% {
+    transform: translate(1px, -1px);
+  }
+  90% {
+    transform: translate(-1px, 1px);
+  }
+}
+
+// Low energy title glitch
+@keyframes lowEnergyTitleGlitch {
+  0%, 90%, 100% {
+    text-shadow: 0 0 5px var(--portrait-color);
+    transform: translateX(0);
+  }
+  92% {
+    text-shadow:
+      -2px 0 #ff0066,
+      2px 0 #00ffff;
+    transform: translateX(-2px);
+  }
+  94% {
+    text-shadow:
+      2px 0 #ff0066,
+      -2px 0 #00ffff;
+    transform: translateX(2px);
+  }
+  96% {
+    text-shadow: 0 0 10px var(--portrait-color);
+    transform: translateX(-1px);
+  }
+  98% {
+    text-shadow: 0 0 8px var(--portrait-color);
+    transform: translateX(1px);
+  }
+}
+
+// Fully energized pulse animation
+@keyframes fullyEnergizedPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 50px color-mix(in srgb, var(--portrait-color) 70%, transparent),
+      0 0 100px color-mix(in srgb, var(--portrait-color) 40%, transparent),
+      0 0 150px color-mix(in srgb, var(--portrait-color) 20%, transparent),
+      inset 0 0 40px color-mix(in srgb, var(--portrait-color) 25%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 60px color-mix(in srgb, var(--portrait-color) 80%, transparent),
+      0 0 120px color-mix(in srgb, var(--portrait-color) 50%, transparent),
+      0 0 180px color-mix(in srgb, var(--portrait-color) 30%, transparent),
+      inset 0 0 50px color-mix(in srgb, var(--portrait-color) 35%, transparent);
+  }
+}

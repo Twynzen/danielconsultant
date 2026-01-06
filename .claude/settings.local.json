@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(dungeon-ai-landing/src/app/core/config/game.config.ts )",
+      "Bash(dungeon-ai-landing/src/app/core/interfaces/game-state.interfaces.ts )",
+      "Bash(dungeon-ai-landing/src/app/core/services/game-loop.service.ts )",
+      "Bash(dungeon-ai-landing/src/app/core/services/game-state.service.ts )",
+      "Bash(dungeon-ai-landing/src/app/core/services/input.service.ts )",
+      "Bash(dungeon-ai-landing/src/app/core/services/lighting.service.ts )",
+      "Bash(dungeon-ai-landing/src/app/core/services/navigation.service.ts )",
+      "Bash(dungeon-ai-landing/src/app/features/game/dungeon-scene/door/door.component.scss )",
+      "Bash(dungeon-ai-landing/src/app/features/game/dungeon-scene/door/door.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/features/game/dungeon-scene/dungeon-scene.component.scss )",
+      "Bash(dungeon-ai-landing/src/app/features/game/dungeon-scene/dungeon-scene.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/features/game/dungeon-scene/lighting-overlay/lighting-overlay.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/features/game/dungeon-scene/player-character/player-character.component.scss )",
+      "Bash(dungeon-ai-landing/src/app/features/game/dungeon-scene/player-character/player-character.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/features/game/game-container.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/features/game/ui-overlay/ui-overlay.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/pages/multidesktopflow/multidesktopflow.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/shared/modals/about-modal.component.ts )",
+      "Bash(dungeon-ai-landing/src/app/shared/modals/consulting-modal.component.ts)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(cat:*)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}

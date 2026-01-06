@@ -1,0 +1,15 @@
+<!-- v5.2: Added energization state props -->
+<div class="pillar-system">
+  <app-pillar
+    *ngFor="let state of pillarStates(); trackBy: trackByPillarId"
+    [config]="state.config"
+    [isHighlighted]="state.isHighlighted"
+    [isInteractable]="state.isInteractable"
+    [illumination]="state.illumination"
+    [worldX]="state.worldX"
+    [worldY]="state.worldY"
+    [isRobotNearby]="state.isRobotNearby"
+    [isEnergized]="state.isEnergized"
+    [showExitIndicator]="state.showExitIndicator">
+  </app-pillar>
+</div>

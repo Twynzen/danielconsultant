@@ -1,0 +1,759 @@
+/**
+ * HieroglyphicWall Styles v1.1
+ * Ancient inscriptions with Matrix glow effects
+ * v4.7.1: Dynamic colors via --inscription-color
+ */
+
+// Default color (will be overridden by --inscription-color)
+$default-color: #00ff44;
+$stone-dark: #0d0d0d;
+
+.hieroglyphic-wall {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3; // Above circuits, below pillars
+  overflow: visible;
+}
+
+// ============================================
+// INSCRIPTION CONTAINER
+// ============================================
+.inscription {
+  position: absolute;
+  width: 380px;
+  max-height: 500px;
+  padding: 24px;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+
+  // v4.7.1: Default color variable
+  --inscription-color: #{$default-color};
+
+  // v4.7.2: Not clickable by default
+  pointer-events: none;
+  cursor: default;
+
+  // Default DORMANT state
+  opacity: 0.06;
+  color: #222;
+  filter: grayscale(100%) blur(1px);
+  transform: scale(0.97);
+  transition:
+    opacity 0.8s ease-out,
+    color 0.8s ease-out,
+    filter 0.8s ease-out,
+    transform 0.5s ease-out;
+
+  // v5.0: Completely hidden during onboarding darkness
+  &.hidden-darkness {
+    opacity: 0 !important;
+    visibility: hidden;
+  }
+
+  // v4.7.2: Clickable state (when illuminated)
+  &.clickable {
+    pointer-events: auto;
+    cursor: pointer;
+
+    // Hover effect for modal inscriptions
+    &:not(.external):hover {
+      transform: scale(1.02);
+      filter: brightness(1.1);
+    }
+  }
+
+  // External type is more compact
+  &.external {
+    width: 280px;
+    max-height: 250px;
+    text-align: center;
+
+    .inscription-title {
+      font-size: 18px;
+    }
+
+    .rune-separator {
+      justify-content: center;
+    }
+
+    .inscription-description {
+      text-align: center;
+    }
+  }
+}
+
+// ============================================
+// TABLET BORDER (stone frame effect)
+// ============================================
+.tablet-border {
+  position: absolute;
+  inset: 0;
+  border: 2px solid color-mix(in srgb, var(--inscription-color) 15%, transparent);
+  border-radius: 4px;
+  pointer-events: none;
+  transition: border-color 0.5s ease, box-shadow 0.5s ease;
+
+  // Corner decorations
+  &::before,
+  &::after {
+    content: '◇';
+    position: absolute;
+    font-size: 10px;
+    color: inherit;
+    opacity: 0.5;
+  }
+  &::before {
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  &::after {
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+// ============================================
+// SCAN LINE EFFECT
+// ============================================
+.scan-line {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--inscription-color) 50%, transparent) 48%,
+    color-mix(in srgb, var(--inscription-color) 80%, transparent) 50%,
+    color-mix(in srgb, var(--inscription-color) 50%, transparent) 52%,
+    transparent 100%
+  );
+  background-size: 100% 10px;
+  background-position: 0 -100%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+// ============================================
+// TITLE
+// ============================================
+.inscription-title {
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0 0 8px 0;
+  position: relative;
+
+  .title-text {
+    display: inline-block;
+  }
+}
+
+// ============================================
+// RUNE SEPARATOR
+// ============================================
+.rune-separator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  opacity: 0.7;
+
+  .rune {
+    font-size: 8px;
+    animation: runePulse 2s ease-in-out infinite;
+  }
+
+  .rune-line {
+    flex: 1;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.4;
+  }
+}
+
+// ============================================
+// DESCRIPTION
+// ============================================
+.inscription-description {
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+  opacity: 0.85;
+}
+
+// ============================================
+// FEATURES
+// ============================================
+.inscription-features {
+  margin-bottom: 16px;
+}
+
+.features-header,
+.tech-header {
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  margin: 0 0 8px 0;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.feature-glyph {
+  flex-shrink: 0;
+  font-size: 8px;
+  margin-top: 2px;
+  animation: featurePulse 2.5s ease-in-out infinite;
+}
+
+// ============================================
+// TECHNOLOGIES
+// ============================================
+.inscription-technologies {
+  margin-top: auto;
+}
+
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tech-rune {
+  font-size: 9px;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  opacity: 0.7;
+  transition: opacity 0.3s ease, background 0.3s ease;
+}
+
+// ============================================
+// EXTERNAL URL SECTION
+// ============================================
+.external-url-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  pointer-events: auto; // Allow clicking
+}
+
+.wifi-waves {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+
+  .wave {
+    font-size: 14px;
+    opacity: 0.4;
+    animation: wavePulse 1.5s ease-in-out infinite;
+
+    &.wave-1 { animation-delay: 0s; }
+    &.wave-2 { animation-delay: 0.2s; }
+    &.wave-3 { animation-delay: 0.4s; }
+  }
+}
+
+.external-url {
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+
+  &:hover {
+    transform: scale(1.05);
+    text-shadow: 0 0 20px currentColor;
+    box-shadow: 0 0 15px color-mix(in srgb, var(--inscription-color) 50%, transparent);
+  }
+}
+
+.external-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  opacity: 0.6;
+  animation: hintBlink 2s ease-in-out infinite;
+}
+
+.hint-arrow {
+  animation: arrowBounce 1s ease-in-out infinite;
+}
+
+// ============================================
+// STATE: AWAKENING
+// ============================================
+.inscription.awakening {
+  opacity: calc(0.1 + var(--illumination, 0) * 0.9);
+  color: var(--inscription-color);
+  filter: grayscale(0%) blur(0);
+  transform: scale(0.99);
+
+  .tablet-border {
+    border-color: color-mix(in srgb, var(--inscription-color) 40%, transparent);
+  }
+
+  .scan-line {
+    opacity: 1;
+    animation: scanReveal 1.2s ease-out forwards;
+  }
+}
+
+// ============================================
+// STATE: ACTIVE (very close)
+// ============================================
+.inscription.active {
+  opacity: 1;
+  color: var(--inscription-color);
+  filter: grayscale(0%) blur(0);
+  transform: scale(1);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--inscription-color) 60%, transparent);
+
+  .tablet-border {
+    border-color: color-mix(in srgb, var(--inscription-color) 60%, transparent);
+    box-shadow:
+      0 0 20px color-mix(in srgb, var(--inscription-color) 30%, transparent),
+      inset 0 0 30px color-mix(in srgb, var(--inscription-color) 5%, transparent);
+  }
+
+  .inscription-title .title-text {
+    animation: titleGlitch 4s ease-in-out infinite;
+  }
+
+  .feature-glyph {
+    text-shadow: 0 0 8px color-mix(in srgb, var(--inscription-color) 60%, transparent);
+  }
+
+  .tech-rune:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--inscription-color) 10%, transparent);
+  }
+
+  .wifi-waves .wave {
+    opacity: 1;
+  }
+}
+
+// ============================================
+// v4.7.2: BINARY SHIMMER EFFECT (Dormant State)
+// ============================================
+
+// Binary overlay layer - shows faint 0s and 1s before text is revealed
+.binary-overlay {
+  position: absolute;
+  inset: 0;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--inscription-color);
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+
+  // Random binary pattern
+  &::before {
+    content: '01001010 11010010 00101101 10110100 01101001 10010110 01001011 00110101 10101010 01010101 11001100 00110011 10011001 01100110 11110000 00001111 01010101 10101010 00110011 11001100';
+    position: absolute;
+    inset: 0;
+    word-break: break-all;
+    letter-spacing: 0.15em;
+    white-space: pre-wrap;
+  }
+}
+
+// Dormant state: Binary visible with occasional shimmer
+.inscription.dormant {
+  .binary-overlay {
+    opacity: 0.08;
+    animation: binaryShimmer 8s ease-in-out infinite;
+  }
+
+  // Hide actual content in dormant
+  .inscription-title,
+  .inscription-description,
+  .inscription-features,
+  .inscription-technologies,
+  .external-url-section {
+    opacity: 0;
+  }
+}
+
+// Awakening state: Binary fades, text appears
+.inscription.awakening {
+  .binary-overlay {
+    opacity: calc(0.1 - var(--illumination, 0) * 0.1);
+    animation: binaryDecode 1.5s ease-out forwards;
+  }
+
+  .inscription-title,
+  .inscription-description,
+  .inscription-features,
+  .inscription-technologies,
+  .external-url-section {
+    animation: textReveal 1.2s ease-out forwards;
+    animation-delay: 0.3s;
+  }
+}
+
+// Active state: Binary gone, text fully visible
+.inscription.active {
+  .binary-overlay {
+    opacity: 0;
+  }
+}
+
+// Binary shimmer animation - subtle glints
+@keyframes binaryShimmer {
+  0%, 100% {
+    opacity: 0.06;
+    filter: blur(1px);
+  }
+  15% {
+    opacity: 0.12;
+    filter: blur(0.5px);
+    text-shadow: 0 0 3px var(--inscription-color);
+  }
+  30% {
+    opacity: 0.04;
+    filter: blur(1.5px);
+  }
+  45% {
+    opacity: 0.1;
+    filter: blur(0.5px);
+  }
+  60% {
+    opacity: 0.05;
+    filter: blur(1px);
+  }
+  75% {
+    opacity: 0.15;
+    filter: blur(0px);
+    text-shadow: 0 0 5px var(--inscription-color);
+  }
+  85% {
+    opacity: 0.03;
+    filter: blur(2px);
+  }
+}
+
+// Binary decode animation - transforms into text
+@keyframes binaryDecode {
+  0% {
+    opacity: 0.15;
+    filter: blur(0);
+    letter-spacing: 0.15em;
+  }
+  30% {
+    opacity: 0.2;
+    filter: blur(0);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 10px var(--inscription-color);
+  }
+  60% {
+    opacity: 0.1;
+    filter: blur(2px);
+    letter-spacing: 0.05em;
+  }
+  100% {
+    opacity: 0;
+    filter: blur(4px);
+    letter-spacing: 0;
+  }
+}
+
+// Text reveal animation - fades in as binary decodes
+@keyframes textReveal {
+  0% {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(5px);
+  }
+  50% {
+    opacity: 0.5;
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+// ============================================
+// ANIMATIONS
+// ============================================
+
+// Scan line reveal
+@keyframes scanReveal {
+  0% { background-position: 0 -100%; }
+  100% { background-position: 0 200%; }
+}
+
+// Title glitch effect
+@keyframes titleGlitch {
+  0%, 92%, 100% {
+    text-shadow: 0 0 10px color-mix(in srgb, var(--inscription-color) 60%, transparent);
+    transform: translateX(0);
+  }
+  93% {
+    text-shadow:
+      -3px 0 #ff0066,
+      3px 0 #00ffff;
+    transform: translateX(-2px);
+  }
+  94% {
+    text-shadow:
+      3px 0 #ff0066,
+      -3px 0 #00ffff;
+    transform: translateX(2px);
+  }
+  95% {
+    text-shadow:
+      -2px 0 #ff0066,
+      2px 0 #00ffff;
+    transform: translateX(-1px);
+  }
+}
+
+// Rune pulse
+@keyframes runePulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+// Feature glyph pulse
+@keyframes featurePulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+// WiFi wave pulse
+@keyframes wavePulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+// Hint blink
+@keyframes hintBlink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+// Arrow bounce
+@keyframes arrowBounce {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+// ============================================
+// V5.2: ENERGY STATES (Pillar Energization)
+// ============================================
+
+// LOW ENERGY STATE: Robot nearby but NOT energizing
+// Hologram is visible but glitched/grayscale
+.inscription.low-energy {
+  opacity: 0.7;
+  filter: grayscale(70%) brightness(0.7) blur(0.5px);
+
+  // Glitch animation on all content
+  animation: lowEnergyGlitch 0.4s infinite;
+
+  .inscription-title .title-text {
+    animation: lowEnergyTitleGlitch 0.3s infinite;
+  }
+
+  .tablet-border {
+    border-color: color-mix(in srgb, var(--inscription-color) 30%, transparent);
+    animation: lowEnergyBorderFlicker 0.5s infinite;
+  }
+
+  // Binary overlay visible and flickering
+  .binary-overlay {
+    opacity: 0.15;
+    animation: binaryFlicker 0.2s infinite;
+  }
+
+  // Scan line visible
+  .scan-line {
+    opacity: 0.5;
+  }
+}
+
+// Glitch effect for low-energy state
+@keyframes lowEnergyGlitch {
+  0%, 100% {
+    transform: translate(0, 0) scale(0.99);
+    filter: grayscale(70%) brightness(0.7) blur(0.5px);
+  }
+  20% {
+    transform: translate(-1px, 1px) scale(0.99);
+    filter: grayscale(80%) brightness(0.6) blur(1px);
+  }
+  40% {
+    transform: translate(1px, -0.5px) scale(1);
+    filter: grayscale(60%) brightness(0.8) blur(0);
+  }
+  60% {
+    transform: translate(-0.5px, 0.5px) scale(0.99);
+    filter: grayscale(75%) brightness(0.65) blur(0.5px);
+  }
+  80% {
+    transform: translate(0.5px, -1px) scale(1);
+    filter: grayscale(65%) brightness(0.75) blur(0);
+  }
+}
+
+@keyframes lowEnergyTitleGlitch {
+  0%, 100% {
+    opacity: 0.8;
+    text-shadow: none;
+  }
+  25% {
+    opacity: 0.6;
+    text-shadow: -2px 0 #ff0066, 2px 0 #00ffff;
+    transform: translateX(-1px);
+  }
+  50% {
+    opacity: 0.9;
+    text-shadow: 1px 0 #ff0066, -1px 0 #00ffff;
+    transform: translateX(1px);
+  }
+  75% {
+    opacity: 0.7;
+    text-shadow: -1px 0 #00ffff, 1px 0 #ff0066;
+    transform: translateX(0);
+  }
+}
+
+@keyframes lowEnergyBorderFlicker {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes binaryFlicker {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.25; }
+}
+
+// FULLY ENERGIZED STATE: Robot inside pillar
+// Hologram is full color with intense glow
+.inscription.fully-energized {
+  opacity: 1 !important;
+  filter: grayscale(0%) blur(0) brightness(1.1);
+  transform: scale(1.02);
+
+  // Intense glow effect
+  text-shadow:
+    0 0 15px color-mix(in srgb, var(--inscription-color) 80%, transparent),
+    0 0 30px color-mix(in srgb, var(--inscription-color) 40%, transparent);
+
+  .tablet-border {
+    border-color: var(--inscription-color);
+    box-shadow:
+      0 0 30px color-mix(in srgb, var(--inscription-color) 60%, transparent),
+      0 0 60px color-mix(in srgb, var(--inscription-color) 30%, transparent),
+      inset 0 0 40px color-mix(in srgb, var(--inscription-color) 15%, transparent);
+    animation: fullyEnergizedPulse 1.5s ease-in-out infinite;
+  }
+
+  .inscription-title .title-text {
+    animation: none;
+    text-shadow:
+      0 0 20px var(--inscription-color),
+      0 0 40px color-mix(in srgb, var(--inscription-color) 50%, transparent);
+  }
+
+  // No binary overlay when fully energized
+  .binary-overlay {
+    opacity: 0 !important;
+  }
+
+  // No scan line when fully energized
+  .scan-line {
+    opacity: 0;
+  }
+
+  // All content brighter
+  .inscription-description,
+  .feature-text,
+  .tech-rune {
+    color: var(--inscription-color);
+    text-shadow: 0 0 5px color-mix(in srgb, var(--inscription-color) 50%, transparent);
+  }
+}
+
+@keyframes fullyEnergizedPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 30px color-mix(in srgb, var(--inscription-color) 60%, transparent),
+      0 0 60px color-mix(in srgb, var(--inscription-color) 30%, transparent),
+      inset 0 0 40px color-mix(in srgb, var(--inscription-color) 15%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 40px color-mix(in srgb, var(--inscription-color) 80%, transparent),
+      0 0 80px color-mix(in srgb, var(--inscription-color) 40%, transparent),
+      inset 0 0 50px color-mix(in srgb, var(--inscription-color) 20%, transparent);
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .inscription {
+    width: 300px;
+    padding: 16px;
+
+    &.external {
+      width: 220px;
+    }
+  }
+
+  .inscription-title {
+    font-size: 16px;
+  }
+
+  .inscription-description {
+    font-size: 10px;
+  }
+
+  .feature-item {
+    font-size: 9px;
+  }
+
+  .tech-rune {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
+
+  .external-url {
+    font-size: 14px;
+  }
+}

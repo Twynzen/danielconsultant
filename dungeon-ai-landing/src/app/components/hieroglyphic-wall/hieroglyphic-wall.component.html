@@ -1,0 +1,128 @@
+<!-- Hieroglyphic Wall v1.2 - Background inscriptions that illuminate -->
+<!-- v4.7.1: Added dynamic colors and external pillar support -->
+<!-- v4.8: Added 'about' type with animated portrait hologram -->
+<div class="hieroglyphic-wall">
+  <!-- One inscription per pillar -->
+  @for (inscription of inscriptions; track trackById($index, inscription)) {
+
+    <!-- v4.8: ABOUT TYPE - Animated portrait hologram -->
+    <!-- v5.0: Invisible when illumination=0 (onboarding darkness) -->
+    <!-- v5.2: Added low-energy and fully-energized states -->
+    @if (inscription.type === 'about') {
+      <app-hologram-portrait
+        [isVisible]="(isActive(inscription.id) || isAwakening(inscription.id)) && getIllumination(inscription.id) > 0"
+        [color]="inscription.color"
+        [illumination]="getIllumination(inscription.id)"
+        [isLowEnergy]="isLowEnergy(inscription.id)"
+        [isFullyEnergized]="isFullyEnergized(inscription.id)"
+        [style.left.px]="inscription.x"
+        [style.bottom.px]="inscription.bottom"
+        [style.opacity]="getIllumination(inscription.id) > 0 ? 1 : 0">
+      </app-hologram-portrait>
+    } @else {
+    <!-- v4.7.2: Use bottom positioning + click handlers -->
+    <!-- v5.0: Invisible when illumination=0 (onboarding darkness) -->
+    <!-- v5.2: Added low-energy and fully-energized states -->
+    <div class="inscription"
+         [class.awakening]="isAwakening(inscription.id)"
+         [class.active]="isActive(inscription.id)"
+         [class.dormant]="isDormant(inscription.id)"
+         [class.external]="inscription.type === 'external'"
+         [class.clickable]="isClickable(inscription.id)"
+         [class.hidden-darkness]="getIllumination(inscription.id) === 0"
+         [class.low-energy]="isLowEnergy(inscription.id)"
+         [class.fully-energized]="isFullyEnergized(inscription.id)"
+         [style.--illumination]="getIlluminationStyle(inscription.id)"
+         [style.--inscription-color]="inscription.color"
+         [style.left.px]="inscription.x"
+         [style.bottom.px]="inscription.bottom"
+         (click)="onInscriptionClick(inscription)">
+
+      <!-- v4.7.2: Binary shimmer layer - visible in dormant state -->
+      <div class="binary-overlay"></div>
+
+      <!-- Scan line effect overlay -->
+      <div class="scan-line"></div>
+
+      <!-- Stone tablet border -->
+      <div class="tablet-border"></div>
+
+      <!-- Title with glitch effect -->
+      <h2 class="inscription-title">
+        <span class="title-text">{{ inscription.title }}</span>
+      </h2>
+
+      <!-- Separator rune line -->
+      <div class="rune-separator">
+        <span class="rune">◆</span>
+        <span class="rune-line"></span>
+        <span class="rune">◆</span>
+      </div>
+
+      <!-- MODAL TYPE: Full service info -->
+      @if (inscription.type === 'modal') {
+        <!-- Description -->
+        <p class="inscription-description">
+          {{ inscription.description }}
+        </p>
+
+        <!-- Features list -->
+        @if (inscription.features && inscription.features.length > 0) {
+          <div class="inscription-features">
+            <h3 class="features-header">// CARACTERÍSTICAS</h3>
+            <ul class="features-list">
+              @for (feature of inscription.features; track trackByText($index, feature)) {
+                <li class="feature-item">
+                  <span class="feature-glyph">◈</span>
+                  <span class="feature-text">{{ feature.text }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        <!-- Technologies -->
+        @if (inscription.technologies && inscription.technologies.length > 0) {
+          <div class="inscription-technologies">
+            <h3 class="tech-header">// STACK</h3>
+            <div class="tech-tags">
+              @for (tech of inscription.technologies; track trackByTech($index, tech)) {
+                <span class="tech-rune">{{ tech }}</span>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <!-- EXTERNAL TYPE: URL display -->
+      @if (inscription.type === 'external') {
+        <p class="inscription-description">
+          {{ inscription.description }}
+        </p>
+
+        <!-- URL Display with WiFi waves -->
+        <div class="external-url-section">
+          <div class="wifi-waves">
+            <span class="wave wave-1">)</span>
+            <span class="wave wave-2">)</span>
+            <span class="wave wave-3">)</span>
+          </div>
+
+          <a class="external-url"
+             [href]="inscription.url"
+             target="_blank"
+             rel="noopener noreferrer">
+            {{ inscription.urlDisplay }}
+          </a>
+
+          <div class="external-hint">
+            <span class="hint-arrow">→</span>
+            <span class="hint-text">CLICK PARA VISITAR</span>
+          </div>
+        </div>
+      }
+
+    </div>
+    } <!-- End @else -->
+  }
+</div>

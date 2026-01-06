@@ -1,0 +1,165 @@
+/**
+ * GlyphSymbol Styles v1.0
+ * Animated SVG symbols with Matrix glow effects
+ * v4.7.1: Dynamic color support via --glyph-color
+ */
+
+// Fallback color (will be overridden by --glyph-color)
+$default-color: #00ff44;
+
+.glyph-container {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // v4.7.1: Use dynamic color from pillar
+  --glyph-color: #{$default-color};
+}
+
+.glyph-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+
+  .glyph-path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    // For draw animation
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    transition: stroke 0.5s ease, filter 0.5s ease;
+  }
+
+  .gear-tooth {
+    stroke-width: 4;
+  }
+}
+
+.glyph-glow {
+  position: absolute;
+  inset: -30px;
+  // v4.7.1: Base glow uses CSS variable
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--glyph-color) 40%, transparent) 0%,
+    color-mix(in srgb, var(--glyph-color) 10%, transparent) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+// ============================================
+// STATE: DORMANT (default - barely visible)
+// ============================================
+.glyph-container.dormant {
+  opacity: 0.12;
+  color: #333;
+  filter: grayscale(100%);
+
+  .glyph-svg .glyph-path {
+    stroke-dashoffset: 300; // Hidden
+  }
+
+  .glyph-glow {
+    opacity: 0;
+  }
+}
+
+// ============================================
+// STATE: AWAKENING (approaching)
+// ============================================
+.glyph-container.awakening {
+  opacity: calc(0.2 + var(--illumination, 0) * 0.8);
+  color: var(--glyph-color);
+  filter: grayscale(0%);
+
+  .glyph-svg .glyph-path {
+    animation: svgDraw 1.5s ease-out forwards;
+  }
+
+  .glyph-glow {
+    opacity: calc(var(--illumination, 0) * 0.5);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--glyph-color) 40%, transparent) 0%,
+      color-mix(in srgb, var(--glyph-color) 10%, transparent) 40%,
+      transparent 70%
+    );
+  }
+}
+
+// ============================================
+// STATE: ACTIVE (very close)
+// ============================================
+.glyph-container.active {
+  opacity: 1;
+  color: var(--glyph-color);
+
+  .glyph-svg {
+    filter: drop-shadow(0 0 8px var(--glyph-color));
+
+    .glyph-path {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .glyph-glow {
+    opacity: 0.9;
+    animation: glowPulse 2s ease-in-out infinite;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--glyph-color) 40%, transparent) 0%,
+      color-mix(in srgb, var(--glyph-color) 10%, transparent) 40%,
+      transparent 70%
+    );
+  }
+}
+
+// ============================================
+// ANIMATIONS
+// ============================================
+
+// SVG stroke draw animation
+@keyframes svgDraw {
+  0% {
+    stroke-dashoffset: 300;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+// Glow pulse when active
+@keyframes glowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .glyph-container {
+    width: 50px;
+    height: 50px;
+  }
+
+  .glyph-glow {
+    inset: -20px;
+  }
+}

@@ -17,6 +17,7 @@ import { LucideAngularModule } from 'lucide-angular';
 export class ModalServiceComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
   @Input() serviceId: string | null = null;
   @Input() isOpen: boolean = false;
+  @Input() serviceColor: string = '#00ff44'; // v4.7.2: Dynamic color from pillar
   @Output() closeModal = new EventEmitter<void>();
   
   serviceDetail: ServiceDetail | undefined;

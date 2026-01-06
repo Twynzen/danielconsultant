@@ -1,0 +1,105 @@
+<div class="game-container">
+  <!-- Canvas -->
+  <canvas #gameCanvas></canvas>
+
+  <!-- MENU -->
+  <div class="overlay menu-overlay" *ngIf="gameState === GameState.MENU">
+    <div class="menu-content">
+      <h1 class="game-title">VAMPIRE SURVIVORS</h1>
+      <div class="menu-instructions">
+        <p>🎮 <strong>CONTROLS</strong></p>
+        <p>WASD or Arrow Keys - Move</p>
+        <p>Auto-attack nearest enemy</p>
+        <p>ESC - Pause</p>
+      </div>
+      <button class="game-button primary" (click)="startGame()">
+        START GAME
+      </button>
+      <div class="high-score" *ngIf="highScore > 0">
+        <p>🏆 High Score: {{ highScore }}</p>
+      </div>
+      <button class="game-button secondary" (click)="exitToLanding()">
+        ← Back to Landing
+      </button>
+    </div>
+  </div>
+
+  <!-- PAUSED -->
+  <div class="overlay pause-overlay" *ngIf="gameState === GameState.PAUSED">
+    <div class="pause-content">
+      <h2>⏸️ PAUSED</h2>
+      <div class="pause-stats">
+        <p>Level: {{ player.level }}</p>
+        <p>Score: {{ score }}</p>
+        <p>Time: {{ survivalTime }}s</p>
+      </div>
+      <button class="game-button primary" (click)="resumeGame()">
+        RESUME
+      </button>
+      <button class="game-button secondary" (click)="returnToMenu()">
+        Main Menu
+      </button>
+    </div>
+  </div>
+
+  <!-- LEVEL UP -->
+  <div class="overlay levelup-overlay" *ngIf="gameState === GameState.LEVEL_UP">
+    <div class="levelup-content">
+      <h2>🎉 LEVEL UP!</h2>
+      <p class="level-text">Level {{ player.level }}</p>
+      <p class="choose-text">Choose an upgrade:</p>
+
+      <div class="upgrades-grid">
+        <button
+          *ngFor="let upgrade of availableUpgrades"
+          class="upgrade-card"
+          (click)="selectUpgrade(upgrade)"
+        >
+          <div class="upgrade-icon">{{ upgrade.icon }}</div>
+          <div class="upgrade-name">{{ upgrade.name }}</div>
+          <div class="upgrade-description">{{ upgrade.description }}</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="overlay gameover-overlay" *ngIf="gameState === GameState.GAME_OVER">
+    <div class="gameover-content">
+      <h2 class="gameover-title">💀 GAME OVER</h2>
+
+      <div class="final-stats">
+        <div class="stat-row">
+          <span class="stat-label">Final Score:</span>
+          <span class="stat-value">{{ score }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Level Reached:</span>
+          <span class="stat-value">{{ player.level }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Enemies Killed:</span>
+          <span class="stat-value">{{ killCount }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Time Survived:</span>
+          <span class="stat-value">{{ survivalTime }}s</span>
+        </div>
+        <div class="stat-row high-score-row" *ngIf="score === highScore && score > 0">
+          <span class="stat-label">🏆 NEW HIGH SCORE!</span>
+        </div>
+        <div class="stat-row" *ngIf="highScore > 0 && score < highScore">
+          <span class="stat-label">High Score:</span>
+          <span class="stat-value">{{ highScore }}</span>
+        </div>
+      </div>
+
+      <button class="game-button primary" (click)="startGame()">
+        PLAY AGAIN
+      </button>
+      <button class="game-button secondary" (click)="returnToMenu()">
+        Main Menu
+      </button>
+    </div>
+  </div>
+</div>
