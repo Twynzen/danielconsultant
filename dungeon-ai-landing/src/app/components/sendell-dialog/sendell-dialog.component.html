@@ -1,25 +1,40 @@
 <!-- Sendell Dialog - Centralized Dialog System -->
 <!-- v1.0: Supports centered and character-attached modes -->
 <!-- v5.1: Added loading bar and welcome phases -->
+<!-- v2.0: Added AI chat mode post-onboarding -->
 
 @if (isVisible()) {
   <div class="dialog-wrapper"
        [class.centered]="isCentered"
+       [class.chat-mode]="isChatMode()"
        [ngStyle]="getPositionStyle()">
 
     <div class="dialog-box"
          [class.choice-mode]="requiresChoice()"
          [class.loading-mode]="isLoading()"
-         [class.welcome-mode]="isWelcome()">
+         [class.welcome-mode]="isWelcome()"
+         [class.chat-mode]="isChatMode()">
 
       <div class="dialog-content">
         <!-- Terminal Header -->
         <div class="dialog-header">
-          <span class="dialog-indicator"></span>
+          <span class="dialog-indicator" [class.ai-active]="isChatMode() && sendellAI.status() === 'ready'"></span>
           <span class="dialog-title">// SENDELL</span>
+          <!-- v2.0: AI Status indicator -->
+          @if (isChatMode()) {
+            <span class="ai-status" [class.loading]="isLLMLoading()" [class.ready]="sendellAI.status() === 'ready'">
+              @if (isLLMLoading()) {
+                <span class="status-text">IA: {{ llmLoadingProgress() | number:'1.0-0' }}%</span>
+              } @else if (sendellAI.status() === 'ready') {
+                <span class="status-text">IA ACTIVA</span>
+              } @else if (sendellAI.status() === 'fallback_only') {
+                <span class="status-text">MODO BÁSICO</span>
+              }
+            </span>
+          }
         </div>
 
-        <!-- v5.1: Loading Bar -->
+        <!-- v5.1: Loading Bar (onboarding) -->
         @if (isLoading()) {
           <div class="loading-section">
             <div class="loading-text">{{ loadingText }}</div>
@@ -38,9 +53,19 @@
           </div>
         }
 
-        <!-- Dialog Text with Typing Effect (hidden during loading/welcome/empty) -->
+        <!-- v2.0: LLM Loading indicator (chat mode) -->
+        @if (isChatMode() && isLLMLoading()) {
+          <div class="llm-loading-section">
+            <div class="llm-loading-text">{{ llmLoadingText() || 'Inicializando IA...' }}</div>
+            <div class="loading-bar-container small">
+              <div class="loading-bar" [style.width.%]="llmLoadingProgress()"></div>
+            </div>
+          </div>
+        }
+
+        <!-- Dialog Text with Typing Effect -->
         @if (!isLoading() && !isWelcome() && (displayedText() || isTyping())) {
-          <div class="dialog-text">
+          <div class="dialog-text" [class.chat-response]="isChatMode()">
             <span class="typing-effect">{{ displayedText() }}</span>
             @if (isTyping()) {
               <span class="cursor">_</span>
@@ -48,8 +73,8 @@
           </div>
         }
 
-        <!-- Choice Input (Y/N) -->
-        @if (requiresChoice() && !isTyping()) {
+        <!-- Choice Input (Y/N) - only during onboarding -->
+        @if (requiresChoice() && !isTyping() && !isChatMode()) {
           <div class="dialog-input-section">
             <div class="dialog-input">
               <span class="input-prompt">&gt; </span>
@@ -72,7 +97,29 @@
           </div>
         }
 
-        <!-- Continue Prompt -->
+        <!-- v2.0: Chat Input (post-onboarding) -->
+        @if (isChatMode() && showChatInput()) {
+          <div class="chat-input-section">
+            <div class="chat-input-wrapper">
+              <span class="input-prompt">&gt; </span>
+              <input
+                #chatInput
+                type="text"
+                class="chat-input"
+                [(ngModel)]="chatInput"
+                (keydown)="onChatKeydown($event)"
+                (click)="onChatInputClick($event)"
+                placeholder="Escribe tu pregunta..."
+                autocomplete="off"
+                spellcheck="false">
+            </div>
+            <div class="chat-hint">
+              Pregunta sobre servicios de IA de Daniel
+            </div>
+          </div>
+        }
+
+        <!-- Continue Prompt (only during onboarding) -->
         @if (showContinuePrompt()) {
           <div class="dialog-prompt">
             <span class="blink">[CUALQUIER TECLA]</span>

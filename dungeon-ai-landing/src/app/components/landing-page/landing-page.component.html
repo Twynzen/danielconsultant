@@ -76,8 +76,10 @@
   }
 
   <!-- v5.0: Sendell Dialog - Centralized dialog for onboarding -->
+  <!-- v2.0: Added AI action handler for robot control -->
   <app-sendell-dialog
-    [isCentered]="isDialogCentered()">
+    [isCentered]="isDialogCentered()"
+    (aiActionRequested)="onAIActionRequested($event)">
   </app-sendell-dialog>
 
   <!-- v4.7: DEPRECATED - Hologram replaced by HieroglyphicWall -->

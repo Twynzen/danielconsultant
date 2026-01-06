@@ -1,12 +1,15 @@
 /**
  * SendellDialogComponent - Centralized Dialog System
  * v1.0: Supports both centered (pre-spawn) and character-attached modes
+ * v2.0: Added AI chat mode post-onboarding with LLM integration
  *
  * Features:
  * - Typewriter text animation
  * - Y/N choice input
  * - Trigger word detection for illumination
  * - Keyboard navigation (SPACE/ENTER)
+ * - AI Chat mode with LLM (post-onboarding)
+ * - LLM loading indicator with progress
  */
 
 import {
@@ -33,8 +36,10 @@ import { FormsModule } from '@angular/forms';
 import { OnboardingService, OnboardingPhase } from '../../services/onboarding.service';
 import { PhysicsService } from '../../core/services/physics.service';
 import { CameraService } from '../../services/camera.service';
+import { SendellAIService } from '../../services/sendell-ai.service';
 import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG } from '../../config/onboarding.config';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
+import { SendellResponse, RobotAction } from '../../config/sendell-ai.config';
 
 @Component({
   selector: 'app-sendell-dialog',
@@ -49,6 +54,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private physics = inject(PhysicsService);
   private camera = inject(CameraService);
   private cdr = inject(ChangeDetectorRef);
+  // v2.0: AI Service for post-onboarding chat
+  readonly sendellAI = inject(SendellAIService);
 
   // v1.1: Character dimensions for positioning
   private readonly CHARACTER_WIDTH = 180;
@@ -64,10 +71,16 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   @Output() dialogAdvanced = new EventEmitter<void>();
   @Output() choiceSubmitted = new EventEmitter<string>();
   @Output() triggerWordReached = new EventEmitter<string>();
+  // v2.0: AI action events
+  @Output() aiActionRequested = new EventEmitter<RobotAction>();
 
   // Choice input
   @ViewChild('choiceInput') choiceInputRef!: ElementRef<HTMLInputElement>;
+  // v2.0: Chat input reference
+  @ViewChild('chatInput') chatInputRef!: ElementRef<HTMLInputElement>;
   userInput = '';
+  // v2.0: Chat input separate from choice input
+  chatInput = '';
 
   // Internal state
   displayedText = signal('');
@@ -76,6 +89,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private currentCharIndex = 0;
   private hasTriggeredWord = false;
   private lastDialogId: string | null = null;  // v1.1: Track dialog changes
+
+  // v2.0: Chat mode state
+  isChatMode = signal(false);  // True when onboarding is complete and chat is active
+  isAITyping = signal(false);  // True when AI is generating response
+  showChatInput = signal(false);  // Show input after Sendell finishes talking
+  private aiInitialized = false;
 
   constructor() {
     // v1.1: Effect to detect dialog changes from onboarding service
@@ -97,6 +116,21 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
         this.startTypingAnimation(dialog);
       }
     }, { allowSignalWrites: true });
+
+    // v2.0: Effect to detect onboarding completion and enter chat mode
+    effect(() => {
+      const phase = this.onboarding.phase();
+
+      if (phase === OnboardingPhase.COMPLETE && !this.aiInitialized) {
+        this.aiInitialized = true;
+        this.enterChatMode();
+      }
+    }, { allowSignalWrites: true });
+
+    // v2.0: Subscribe to AI actions
+    this.sendellAI.action$.subscribe(action => {
+      this.aiActionRequested.emit(action);
+    });
   }
 
   // Computed from onboarding service or input
@@ -107,10 +141,19 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   readonly isVisible = computed(() => {
     const phase = this.onboarding.phase();
 
-    // Never show during these phases
+    // v2.0: Always show in chat mode
+    if (this.isChatMode()) {
+      return true;
+    }
+
+    // Never show during these phases (except COMPLETE which is now chat mode)
     if (phase === OnboardingPhase.DARKNESS ||
-        phase === OnboardingPhase.COMPLETE ||
         phase === OnboardingPhase.SPAWN_ANIMATION) {
+      return false;
+    }
+
+    // v2.0: Don't show during COMPLETE until chat mode is active
+    if (phase === OnboardingPhase.COMPLETE && !this.isChatMode()) {
       return false;
     }
 
@@ -141,8 +184,19 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     // v5.1.1: Don't show during loading or welcome (welcome has its own hint)
     if (this.isLoading()) return false;
     if (this.isWelcome()) return false;  // Welcome section has its own hint
+    // v2.0: Don't show in chat mode
+    if (this.isChatMode()) return false;
     return !this.isTyping() && !this.requiresChoice();
   });
+
+  // v2.0: Computed for LLM loading state
+  readonly isLLMLoading = computed(() => {
+    const status = this.sendellAI.status();
+    return status === 'loading_llm' || status === 'initializing';
+  });
+
+  readonly llmLoadingProgress = computed(() => this.sendellAI.llmProgress());
+  readonly llmLoadingText = computed(() => this.sendellAI.llmProgressText());
 
   ngOnInit(): void {
     // v1.1: Effect handles automatic typing start now
@@ -163,6 +217,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * Handle keyboard input
    * v5.1: Also handles welcome phase advancement
+   * v2.0: Also handles chat mode input
    */
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
@@ -175,6 +230,23 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     if (this.isWelcome()) {
       event.preventDefault();
       this.onboarding.advanceFromWelcome();
+      return;
+    }
+
+    // v2.0: Chat mode - let input handle most keys
+    if (this.isChatMode()) {
+      // If typing (AI response), skip to end on any key except when in input
+      if (this.isTyping() && document.activeElement !== this.chatInputRef?.nativeElement) {
+        this.skipToEnd();
+        event.preventDefault();
+        return;
+      }
+      // Otherwise, focus chat input if not already focused
+      if (this.showChatInput() && document.activeElement !== this.chatInputRef?.nativeElement) {
+        setTimeout(() => {
+          this.chatInputRef?.nativeElement?.focus();
+        }, 0);
+      }
       return;
     }
 
@@ -201,6 +273,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   /**
    * v5.1: Handle click to advance dialog
+   * v2.0: Handle click in chat mode
    */
   @HostListener('document:click', ['$event'])
   onClick(event: MouseEvent): void {
@@ -212,6 +285,14 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     // Welcome phase - click advances to pre-spawn
     if (this.isWelcome()) {
       this.onboarding.advanceFromWelcome();
+      return;
+    }
+
+    // v2.0: Chat mode - skip typing on click outside input
+    if (this.isChatMode()) {
+      if (this.isTyping()) {
+        this.skipToEnd();
+      }
       return;
     }
 
@@ -399,5 +480,123 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
         top: `${screenY + 20}px`
       };
     }
+  }
+
+  // ==================== v2.0: CHAT MODE METHODS ====================
+
+  /**
+   * v2.0: Enter chat mode after onboarding completes
+   * Initializes AI service and shows initial greeting
+   */
+  private async enterChatMode(): Promise<void> {
+    this.isChatMode.set(true);
+
+    // Start AI initialization in background
+    this.sendellAI.initialize().catch(error => {
+      console.error('AI initialization error:', error);
+    });
+
+    // Show initial greeting with typing effect
+    const greeting = '¡Listo para ayudarte! Pregúntame sobre los servicios de Daniel.';
+    this.startAITypingAnimation(greeting);
+  }
+
+  /**
+   * v2.0: Start typing animation for AI response
+   */
+  private startAITypingAnimation(text: string): void {
+    this.clearTypingInterval();
+    this.isTyping.set(true);
+    this.isAITyping.set(true);
+    this.showChatInput.set(false);
+    this.displayedText.set('');
+    this.currentCharIndex = 0;
+    this.cdr.markForCheck();
+
+    // Start robot mouth animation
+    this.onboarding.startTalking();
+
+    this.typingInterval = setInterval(() => {
+      if (this.currentCharIndex < text.length) {
+        this.currentCharIndex++;
+        this.displayedText.set(text.substring(0, this.currentCharIndex));
+        this.cdr.markForCheck();
+      } else {
+        this.finishAITyping();
+      }
+    }, ONBOARDING_TIMING.TYPING_SPEED_MS);
+  }
+
+  /**
+   * v2.0: Finish AI typing and show input
+   */
+  private finishAITyping(): void {
+    this.clearTypingInterval();
+    this.isTyping.set(false);
+    this.isAITyping.set(false);
+    this.showChatInput.set(true);
+    this.cdr.markForCheck();
+
+    // Focus chat input after a small delay
+    setTimeout(() => {
+      this.chatInputRef?.nativeElement?.focus();
+    }, 100);
+  }
+
+  /**
+   * v2.0: Skip AI typing animation to end
+   */
+  private skipAIToEnd(text: string): void {
+    this.clearTypingInterval();
+    this.displayedText.set(text);
+    this.currentCharIndex = text.length;
+    this.finishAITyping();
+  }
+
+  /**
+   * v2.0: Submit chat message to AI
+   */
+  async submitChat(): Promise<void> {
+    const input = this.chatInput.trim();
+    if (!input) return;
+
+    // Clear input immediately
+    this.chatInput = '';
+    this.showChatInput.set(false);
+
+    // Show processing state
+    this.isAITyping.set(true);
+    this.displayedText.set('...');
+    this.isTyping.set(false);
+    this.cdr.markForCheck();
+
+    try {
+      // Process with AI service
+      const response = await this.sendellAI.processUserInput(input);
+
+      // Show response with typing animation
+      this.startAITypingAnimation(response.dialogue);
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      this.startAITypingAnimation('Disculpa, hubo un error. ¿Puedes repetir?');
+    }
+  }
+
+  /**
+   * v2.0: Handle chat input keydown
+   */
+  onChatKeydown(event: KeyboardEvent): void {
+    if (event.code === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.submitChat();
+    }
+  }
+
+  /**
+   * v2.0: Handle chat input click (prevent propagation)
+   */
+  onChatInputClick(event: MouseEvent): void {
+    event.stopPropagation();
   }
 }

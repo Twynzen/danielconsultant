@@ -21,6 +21,7 @@
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
+    "@mlc-ai/web-llm": "^0.2.74",
     "lucide-angular": "^0.542.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

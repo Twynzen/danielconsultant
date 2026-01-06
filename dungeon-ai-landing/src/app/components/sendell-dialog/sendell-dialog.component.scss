@@ -420,3 +420,163 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   pointer-events: none;
   border-radius: 8px;
 }
+
+// ==================== v2.0: CHAT MODE STYLES ====================
+
+// Chat mode dialog box
+.dialog-box.chat-mode {
+  min-width: 350px;
+  max-width: 450px;
+}
+
+// AI Status indicator in header
+.ai-status {
+  margin-left: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(0, 255, 68, 0.1);
+  border: 1px solid rgba(0, 255, 68, 0.3);
+
+  &.loading {
+    color: rgba(255, 200, 50, 0.8);
+    border-color: rgba(255, 200, 50, 0.3);
+    background: rgba(255, 200, 50, 0.1);
+    animation: statusPulse 1.5s ease-in-out infinite;
+  }
+
+  &.ready {
+    color: $matrix-green;
+    animation: statusGlow 2s ease-in-out infinite;
+  }
+
+  .status-text {
+    text-transform: uppercase;
+  }
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes statusGlow {
+  0%, 100% {
+    text-shadow: 0 0 5px $matrix-green-glow;
+  }
+  50% {
+    text-shadow: 0 0 10px $matrix-green, 0 0 20px $matrix-green-glow;
+  }
+}
+
+// AI indicator active state
+.dialog-indicator.ai-active {
+  background: $matrix-green;
+  box-shadow: 0 0 12px $matrix-green, 0 0 20px $matrix-green-glow;
+  animation: aiIndicatorPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes aiIndicatorPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px $matrix-green;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 15px $matrix-green, 0 0 25px $matrix-green-glow;
+    transform: scale(1.1);
+  }
+}
+
+// LLM Loading section (in chat mode)
+.llm-loading-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 255, 68, 0.15);
+}
+
+.llm-loading-text {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: rgba(255, 200, 50, 0.8);
+  letter-spacing: 0.05em;
+}
+
+.loading-bar-container.small {
+  height: 6px;
+}
+
+// Chat response text
+.dialog-text.chat-response {
+  min-height: 40px;
+}
+
+// Chat input section
+.chat-input-section {
+  margin-top: 16px;
+  animation: chatInputAppear 0.3s ease-out;
+}
+
+@keyframes chatInputAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(0, 255, 68, 0.05);
+  border: 1px solid rgba(0, 255, 68, 0.3);
+  border-radius: 4px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: $matrix-green;
+    box-shadow: 0 0 15px $matrix-green-glow;
+  }
+}
+
+.chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: $matrix-green;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  caret-color: $matrix-green;
+  min-width: 200px;
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: rgba(0, 255, 68, 0.3);
+    font-style: italic;
+  }
+}
+
+.chat-hint {
+  margin-top: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: rgba(0, 255, 68, 0.4);
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+// Chat mode wrapper positioning
+.dialog-wrapper.chat-mode {
+  // Slightly different positioning for chat mode if needed
+}
