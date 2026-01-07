@@ -154,10 +154,13 @@
           </div>
         }
 
-        <!-- v2.1: Double-click hint (only when onboarding complete and chat not open) -->
-        @if (isChatMode() && !showChatInput() && !isTyping() && !isAITyping() && isOnboardingComplete() && !isTourInProgress()) {
-          <div class="chat-hint-double-click">
-            <span class="blink-slow">[DOBLE CLICK PARA HABLAR]</span>
+        <!-- v5.2.5: Double-click hint REMOVED - behavior is now implicit -->
+        <!-- User can double-click Sendell to open chat, but no visible hint -->
+
+        <!-- v5.2.5: Tour Continue Prompt -->
+        @if (showTourContinuePrompt()) {
+          <div class="dialog-prompt">
+            <span class="blink">[CUALQUIER TECLA PARA CONTINUAR]</span>
           </div>
         }
 

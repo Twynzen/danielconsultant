@@ -189,6 +189,14 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
            phase === OnboardingPhase.TOUR_ACTIVE;
   });
 
+  // v5.2.5: Show "[CUALQUIER TECLA PARA CONTINUAR]" during tour
+  readonly showTourContinuePrompt = computed(() => {
+    return this.isTourInProgress() &&
+           !this.isTyping() &&
+           !this.isAITyping() &&
+           !this.showChatInput();
+  });
+
   readonly isVisible = computed(() => {
     const phase = this.onboarding.phase();
 
@@ -613,8 +621,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       });
     }
 
-    // v5.2.4: Tour prompt - explicit and structured
-    const tourPrompt = '[TOUR] Inicia el tour. Preséntate como Sendell el robot guía y di que vas a mostrar los servicios de Daniel. Camina al pilar about-daniel.';
+    // v5.2.5: Tour prompt - indicate we already greeted during onboarding
+    const tourPrompt = '[TOUR] Ya saludaste al usuario durante el onboarding. NO te presentes de nuevo. Di algo como "¡Perfecto! Sígueme, te mostraré los servicios de Daniel." y camina al pilar about-daniel.';
 
     // Send system message to start tour
     try {
@@ -641,7 +649,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       
       if (isGenericResponse) {
         console.log('[Tour] WARNING: LLM gave generic response, using fallback');
-        dialogueToShow = '¡Hola! Soy Sendell, tu guía digital. Voy a mostrarte los servicios de consultoría de IA de Daniel. ¡Sígueme!';
+        // v5.2.5: Fallback also shouldn't re-introduce (we already did in onboarding)
+        dialogueToShow = '¡Perfecto! Sígueme, te mostraré los servicios de consultoría de IA de Daniel.';
         // Emit walk action since LLM probably didn't
         this.aiActionRequested.emit({ type: 'walk_to_pillar', target: 'about-daniel' });
       }
@@ -670,8 +679,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
     } catch (error) {
       console.error('[Tour] ERROR:', error);
-      // Fallback to standard greeting
-      const fallbackMessage = '¡Hola! Soy Sendell, tu guía. Te mostraré los servicios de Daniel.';
+      // v5.2.5: Fallback without re-introduction
+      const fallbackMessage = '¡Vamos! Te mostraré los servicios de Daniel.';
       console.log('[Tour] Using fallback message:', fallbackMessage);
       this.startAITypingAnimation(fallbackMessage);
       this.aiActionRequested.emit({ type: 'walk_to_pillar', target: 'about-daniel' });
