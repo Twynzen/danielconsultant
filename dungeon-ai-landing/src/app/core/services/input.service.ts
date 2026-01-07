@@ -295,6 +295,45 @@ export class InputService implements OnDestroy {
     return Array.from(this._simulatedKeys);
   }
 
+  /**
+   * v5.4.2: Despacha un evento de teclado REAL al DOM
+   * Necesario para que @HostListener lo detecte (e.g., pillar-system)
+   * @param key - La tecla a simular (e.g., 'e', 'Enter')
+   * @param eventType - 'keydown' o 'keyup'
+   */
+  dispatchRealKeyEvent(key: string, eventType: 'keydown' | 'keyup' = 'keydown'): void {
+    const event = new KeyboardEvent(eventType, {
+      key: key,
+      code: `Key${key.toUpperCase()}`,
+      bubbles: true,
+      cancelable: true
+    });
+
+    this._isSendellExecuting.set(true);
+    document.dispatchEvent(event);
+    console.log(`[InputService] Dispatched REAL ${eventType} event: ${key}`);
+
+    // Reset executing flag after a short delay if it's a keyup
+    if (eventType === 'keyup') {
+      setTimeout(() => {
+        if (this._simulatedKeys.size === 0) {
+          this._isSendellExecuting.set(false);
+        }
+      }, 100);
+    }
+  }
+
+  /**
+   * v5.4.2: Despacha una pulsación completa de tecla real (keydown + keyup)
+   * Para acciones que requieren que @HostListener las detecte
+   */
+  dispatchRealKeyPress(key: string, durationMs: number = 100): void {
+    this.dispatchRealKeyEvent(key, 'keydown');
+    setTimeout(() => {
+      this.dispatchRealKeyEvent(key, 'keyup');
+    }, durationMs);
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();

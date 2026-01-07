@@ -76,11 +76,14 @@ export class ActionExecutorService {
 
       case 'activate_pillar':
       case 'energize_pillar':
-        this.simulateEnter();
+        // v5.4.2: Use real key event for E (pillar interaction key)
+        this.simulatePillarAction();
         break;
 
       case 'exit_pillar':
-        this.simulateEnter(); // Same key for enter/exit
+        // v5.4.2: Exit pillar uses E key (same as activate)
+        // Must dispatch REAL event for @HostListener to detect
+        this.simulatePillarAction();
         break;
 
       case 'wave':
@@ -255,11 +258,20 @@ export class ActionExecutorService {
   }
 
   /**
-   * Simular Enter (activar/salir pilar)
+   * Simular Enter (legacy - for actions that need Enter key)
    */
   simulateEnter(): void {
     console.log('[ActionExecutor] Simulating Enter');
     this.inputService.simulateKeyPress('Enter', 100);
+  }
+
+  /**
+   * v5.4.2: Simular tecla E para interacción con pilar (activar/salir)
+   * Despacha un evento de teclado REAL para que @HostListener lo detecte
+   */
+  simulatePillarAction(): void {
+    console.log('[ActionExecutor] Simulating pillar action (E key - REAL event)');
+    this.inputService.dispatchRealKeyPress('e', 100);
   }
 
   /**

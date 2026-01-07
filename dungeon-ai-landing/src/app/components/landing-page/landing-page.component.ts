@@ -59,6 +59,7 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     // v5.4.0: Effect to handle tour ENERGIZING state
     // WALKING is now handled by TourService + ActionExecutor via keyboard simulation
     // v5.4.0: allowSignalWrites required because energizePillarForTour writes to signals
+    // v5.4.2: Small delay to ensure walking animation has fully stopped before energizing
     effect(() => {
       const step = this.tourService.step();
       const pillarId = this.tourService.currentPillarId();
@@ -68,7 +69,11 @@ export class LandingPageComponent implements OnInit, OnDestroy {
         console.log('[LandingPage] Tour ENERGIZING state - energizing pillar:', pillarId);
         const pillar = PILLARS.find(p => p.id === pillarId);
         if (pillar) {
-          this.energizePillarForTour(pillar);
+          // v5.4.2: Delay to allow walking animation to fully stop
+          // This prevents "decomposing while walking" visual bug
+          setTimeout(() => {
+            this.energizePillarForTour(pillar);
+          }, 150);
         }
       }
     }, { allowSignalWrites: true });
