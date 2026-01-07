@@ -321,7 +321,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     if (this.isDragging()) return;  // v5.0: Skip physics while dragging
     if (this.binaryCharacter?.isCrashing?.()) return;  // v5.1: Block during crash
     if (this.isCooldown()) return;  // v5.1: Block during 2-second cooldown after crash
-    if (this.onboarding.isOnboardingActive()) return;  // v5.2.3: Block movement during Sendell dialog
+    // v5.2.3: Block user movement during onboarding
+    // v5.4.0: BUT allow Sendell to move when executing simulated actions
+    if (this.onboarding.isOnboardingActive() && !this.inputService.isSendellExecuting()) return;
 
     // Get input from InputService
     const inputState = this.inputService.inputState();

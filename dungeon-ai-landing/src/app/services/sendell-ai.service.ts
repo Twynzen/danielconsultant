@@ -14,6 +14,7 @@
 import { Injectable, signal, computed, inject, NgZone } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { LLMService, LLMStatus } from './llm.service';
+import { PhysicsService } from '../core/services/physics.service';
 import {
   SendellResponse,
   RobotAction,
@@ -73,6 +74,8 @@ export interface ChatMessage {
 export class SendellAIService {
   private llmService = inject(LLMService);
   private ngZone = inject(NgZone);
+  // v5.3.0: Physics service for robot position awareness
+  private physicsService = inject(PhysicsService);
 
   // Internal state
   private _status = signal<SendellAIStatus>('initializing');
@@ -347,9 +350,14 @@ export class SendellAIService {
   /**
    * Add contextual information to user input based on keywords
    * v3.0: ALWAYS includes Sendell identity context first
+   * v5.3.0: Includes robot position for spatial awareness
    */
   private addContext(input: string): string {
     const relevantPillars = searchPillarsByKeyword(input);
+
+    // v5.3.0: Get robot position for spatial awareness
+    const robotX = Math.round(this.physicsService.state().x);
+    const positionContext = `[POSICIÓN: x=${robotX}]`;
 
     // v3.0: ALWAYS include Sendell identity first to prevent confusion
     let context = SENDELL_IDENTITY_CONTEXT;
@@ -363,7 +371,7 @@ export class SendellAIService {
       context += '\n\n' + pillarContext;
     }
 
-    return `[Contexto de la página]\n${context}\n\n[Pregunta del usuario]\n${input}`;
+    return `${positionContext}\n[Contexto de la página]\n${context}\n\n[Pregunta del usuario]\n${input}`;
   }
   /**
    * Execute robot actions from response

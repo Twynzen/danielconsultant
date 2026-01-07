@@ -87,8 +87,9 @@
         <!-- Dialog Text with Typing Effect -->
         @if (!isLoading() && !isWelcome() && (displayedText() || isTyping())) {
           <div class="dialog-text" [class.chat-response]="isChatMode()">
-            <!-- v5.2.3: Animated loading dots when waiting for LLM -->
-            @if (isAITyping() && !isTyping() && displayedText() === '...') {
+            <!-- v5.4.0: Animated loading dots when waiting for LLM -->
+            @if (isAITyping() && !isTyping()) {
+              <span class="loading-text">{{ displayedText() }}</span>
               <span class="loading-dots">
                 <span class="dot">.</span>
                 <span class="dot">.</span>

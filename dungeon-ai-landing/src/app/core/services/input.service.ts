@@ -7,7 +7,9 @@ import { InputState } from '../interfaces/game-state.interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class InputService implements OnDestroy {
-  private readonly pressedKeys = new Set<string>();
+  // v5.4.0: Separate sets for user keys and Sendell's simulated keys
+  private readonly pressedKeys = new Set<string>();      // User's real keyboard input
+  private readonly _simulatedKeys = new Set<string>();   // Sendell's simulated input
   private readonly destroy$ = new Subject<void>();
 
   // v4.1 FIX: Pause state for dialogs - when paused, all inputs return false
@@ -17,6 +19,10 @@ export class InputService implements OnDestroy {
   // v5.2.3: Tour block state - completely blocks ALL input during guided tour
   private _isTourBlocked = signal(false);
   readonly isTourBlocked = this._isTourBlocked.asReadonly();
+
+  // v5.4.0: Track if Sendell is currently executing an action
+  private _isSendellExecuting = signal(false);
+  readonly isSendellExecuting = this._isSendellExecuting.asReadonly();
 
   readonly inputState = signal<InputState>({
     up: false,
@@ -133,10 +139,22 @@ export class InputService implements OnDestroy {
     });
   }
 
+  /**
+   * v5.4.0: Check if an action is pressed (user OR simulated)
+   * Combines both input sources for unified state
+   */
   private isPressed(action: keyof InputState): boolean {
-    return Array.from(this.pressedKeys).some(
+    // Check user keys
+    const userPressed = Array.from(this.pressedKeys).some(
       code => this.keyMap[code] === action
     );
+
+    // v5.4.0: Also check Sendell's simulated keys
+    const simulatedPressed = Array.from(this._simulatedKeys).some(
+      code => this.keyMap[code] === action
+    );
+
+    return userPressed || simulatedPressed;
   }
 
   /**
@@ -204,6 +222,77 @@ export class InputService implements OnDestroy {
   unblockFromTour(): void {
     this._isTourBlocked.set(false);
     console.log('[InputService] Tour block DISABLED - User has control');
+  }
+
+  // ==================== v5.4.0: SENDELL KEY SIMULATION ====================
+
+  /**
+   * v5.4.0: Simula presionar una tecla (para acciones de Sendell)
+   * Estas teclas se procesan igual que inputs reales del usuario
+   * pero en un canal separado que funciona incluso con tour bloqueado
+   */
+  simulateKeyDown(keyCode: string): void {
+    const action = this.keyMap[keyCode];
+    if (!action) {
+      console.warn('[InputService] Unknown key code to simulate:', keyCode);
+      return;
+    }
+
+    this._simulatedKeys.add(keyCode);
+    this._isSendellExecuting.set(true);
+    this.updateInputState();
+    console.log('[InputService] Sendell simulated keydown:', keyCode, '→', action);
+  }
+
+  /**
+   * v5.4.0: Simula soltar una tecla (para acciones de Sendell)
+   */
+  simulateKeyUp(keyCode: string): void {
+    this._simulatedKeys.delete(keyCode);
+
+    // Si no quedan teclas simuladas, Sendell ya no está ejecutando
+    if (this._simulatedKeys.size === 0) {
+      this._isSendellExecuting.set(false);
+    }
+
+    this.updateInputState();
+    console.log('[InputService] Sendell simulated keyup:', keyCode);
+  }
+
+  /**
+   * v5.4.0: Limpia todas las teclas simuladas de Sendell
+   * Útil para detener cualquier acción en progreso
+   */
+  clearSimulatedInputs(): void {
+    this._simulatedKeys.clear();
+    this._isSendellExecuting.set(false);
+    this.updateInputState();
+    console.log('[InputService] Cleared all Sendell simulated inputs');
+  }
+
+  /**
+   * v5.4.0: Simula una pulsación instantánea (keydown + keyup)
+   * Para acciones de un solo disparo como saltar o activar pilar
+   */
+  simulateKeyPress(keyCode: string, durationMs: number = 50): void {
+    this.simulateKeyDown(keyCode);
+    setTimeout(() => {
+      this.simulateKeyUp(keyCode);
+    }, durationMs);
+  }
+
+  /**
+   * v5.4.0: Verifica si una tecla está siendo simulada por Sendell
+   */
+  isSimulating(keyCode: string): boolean {
+    return this._simulatedKeys.has(keyCode);
+  }
+
+  /**
+   * v5.4.0: Obtiene todas las teclas actualmente simuladas
+   */
+  getSimulatedKeys(): string[] {
+    return Array.from(this._simulatedKeys);
   }
 
   ngOnDestroy(): void {

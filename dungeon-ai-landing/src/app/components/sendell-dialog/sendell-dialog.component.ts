@@ -38,6 +38,7 @@ import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
 import { CameraService } from '../../services/camera.service';
 import { SendellAIService } from '../../services/sendell-ai.service';
+import { TourService, TourStep } from '../../services/tour.service';
 import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG } from '../../config/onboarding.config';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { SendellResponse, RobotAction } from '../../config/sendell-ai.config';
@@ -59,6 +60,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   readonly sendellAI = inject(SendellAIService);
   // v5.2.3: Input service to pause movement while typing
   private inputService = inject(InputService);
+  // v5.3.0: Tour service for intelligent guided tour
+  private tourService = inject(TourService);
 
   // v1.1: Character dimensions for positioning
   private readonly CHARACTER_WIDTH = 180;
@@ -100,6 +103,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   isChatOpen = signal(false);  // v2.1: Tracks if chat mode is actively open
   private aiInitialized = false;
   private tourStarted = false;  // v3.0: Track if guided tour has started
+  private _lastHandledTourStep: TourStep | null = null;  // v5.4.0: Prevent duplicate step handling
+  private _lastHandledPillarIndex = -1;  // v5.4.0: Track pillar index for composite key
+  private _isTourStepProcessing = false;  // v5.4.0: Guard against concurrent processing
   private lastClickTime = 0;  // v2.1: For double-click detection
 
   // v2.0: LLM info tooltip state
@@ -158,7 +164,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       if (phase === OnboardingPhase.TOUR_ACTIVE && !this.tourStarted) {
         this.tourStarted = true;
         // v5.2.3: Clear text and show loading indicator before LLM responds
-        this.displayedText.set('...');
+        this.displayedText.set('Organizando mis circuitos');
         this.isTyping.set(false);
         this.isAITyping.set(true);
         this.cdr.markForCheck();
@@ -167,9 +173,56 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     }, { allowSignalWrites: true });
 
     // v2.0: Subscribe to AI actions
+    // v5.4.0: Skip during tour - TourService handles actions via pendingAction
     this.sendellAI.action$.subscribe(action => {
-      this.aiActionRequested.emit(action);
+      if (!this.tourService.isActive()) {
+        this.aiActionRequested.emit(action);
+      } else {
+        console.log('[SendellDialog] Skipping AI action emit during tour (handled by TourService)');
+      }
     });
+
+    // v5.3.0: Effect to handle TourService step changes
+    // v5.4.0: Added guards against duplicate/concurrent processing
+    effect(() => {
+      const step = this.tourService.step();
+      const pillarIndex = this.tourService.currentPillarIndex();
+
+      // Skip IDLE - tour not started yet
+      if (step === TourStep.IDLE) return;
+
+      // v5.4.0: Skip if currently processing a step
+      if (this._isTourStepProcessing) {
+        console.log('[SendellDialog] Skipping - already processing:', step);
+        return;
+      }
+
+      // v5.4.0: Create composite key for step + pillar to allow INTRO for each pillar
+      const stepKey = `${step}_${pillarIndex}`;
+      const lastKey = this._lastHandledTourStep ? `${this._lastHandledTourStep}_${this._lastHandledPillarIndex}` : null;
+
+      if (stepKey === lastKey) {
+        console.log('[SendellDialog] Skipping duplicate step:', stepKey);
+        return;
+      }
+
+      console.log('[SendellDialog] TourStep changed to:', step, 'pillar:', pillarIndex);
+      this._lastHandledTourStep = step;
+      this._lastHandledPillarIndex = pillarIndex;
+
+      switch (step) {
+        case TourStep.INTRO:
+          this.handleTourIntro();
+          break;
+        case TourStep.PILLAR_INFO:
+          this.handleTourPillarInfo();
+          break;
+        case TourStep.COMPLETE:
+          this.handleTourComplete();
+          break;
+        // TYPING, WALKING, ENERGIZING, WAIT_USER are handled elsewhere
+      }
+    }, { allowSignalWrites: true });
   }
 
   // Computed from onboarding service or input
@@ -189,12 +242,13 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
            phase === OnboardingPhase.TOUR_ACTIVE;
   });
 
-  // v5.2.5: Show "[CUALQUIER TECLA PARA CONTINUAR]" during tour
+  // v5.3.0: Show "[CUALQUIER TECLA PARA CONTINUAR]" during tour (from TourService)
+  // v5.4.0: Also check that typing is not in progress
   readonly showTourContinuePrompt = computed(() => {
-    return this.isTourInProgress() &&
-           !this.isTyping() &&
-           !this.isAITyping() &&
-           !this.showChatInput();
+    const tourWantsPrompt = this.tourService.showContinuePrompt();
+    const notTyping = !this.isTyping() && !this.isAITyping();
+
+    return tourWantsPrompt && notTyping;
   });
 
   readonly isVisible = computed(() => {
@@ -277,6 +331,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
    * Handle keyboard input
    * v5.1: Also handles welcome phase advancement
    * v2.0: Also handles chat mode input
+   * v5.3.0: Handles tour WAIT_USER state
    */
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
@@ -289,6 +344,14 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     if (this.isWelcome()) {
       event.preventDefault();
       this.onboarding.advanceFromWelcome();
+      return;
+    }
+
+    // v5.3.0: Tour WAIT_USER - any key continues the tour
+    if (this.showTourContinuePrompt()) {
+      event.preventDefault();
+      console.log('[Tour] User pressed key to continue');
+      this.tourService.onUserContinue();
       return;
     }
 
@@ -598,18 +661,22 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * v3.0: Start guided tour using LLM
-   * v5.2.3: Blocks user input during tour - Sendell has full control
+   * v5.3.0: Start guided tour using TourService
+   * Initializes AI and starts the tour state machine
    */
   private async startGuidedTour(): Promise<void> {
-    const tourStartTime = performance.now();
     console.log('[Tour] ========== GUIDED TOUR STARTED ==========');
     console.log('[Tour] Blocking user input - Sendell takes control');
-    
-    // v5.2.3: Block ALL user input during tour
+
+    // v5.4.0: Reset tour step tracking for fresh start
+    this._lastHandledTourStep = null;
+    this._lastHandledPillarIndex = -1;
+    this._isTourStepProcessing = false;
+
+    // Block ALL user input during tour
     this.inputService.blockForTour();
-    
-    // Enter chat mode first
+
+    // Enter chat mode
     this.isChatMode.set(true);
 
     // Ensure AI is initialized
@@ -621,77 +688,165 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       });
     }
 
-    // v5.2.5: Tour prompt - indicate we already greeted during onboarding
-    const tourPrompt = '[TOUR] Ya saludaste al usuario durante el onboarding. NO te presentes de nuevo. Di algo como "¡Perfecto! Sígueme, te mostraré los servicios de Daniel." y camina al pilar about-daniel.';
+    // Illuminate pillars (visual effect)
+    this.onboarding.illuminatePillars();
 
-    // Send system message to start tour
+    // Start tour via TourService (this will trigger the INTRO step)
+    this.tourService.startTour();
+  }
+
+  /**
+   * v5.3.0: Handle TOUR_INTRO step - LLM generates intro message
+   * v5.4.0: Added processing guard to prevent duplicate execution
+   */
+  private async handleTourIntro(): Promise<void> {
+    // v5.4.0: Guard against duplicate/concurrent execution
+    if (this._isTourStepProcessing) {
+      console.log('[Tour] INTRO already processing, skipping');
+      return;
+    }
+    this._isTourStepProcessing = true;
+
+    const tourPrompt = this.tourService.getTourPrompt();
+    console.log('[Tour] ====== INTRO - LLM REQUEST ======');
+    console.log('[Tour] Prompt:', tourPrompt);
+
+    // Show loading indicator with descriptive message
+    this.displayedText.set('Organizando mis circuitos');
+    this.isTyping.set(false);
+    this.isAITyping.set(true);
+    this.cdr.markForCheck();
+
     try {
-      console.log('[Tour] ====== LLM REQUEST ======');
-      console.log('[Tour] Prompt:', tourPrompt);
-      const llmStartTime = performance.now();
-      
-      const tourResponse = await this.sendellAI.processUserInput(tourPrompt);
-      
-      const llmDuration = performance.now() - llmStartTime;
-      console.log('[Tour] ====== LLM RESPONSE ======');
-      console.log('[Tour] Dialogue:', tourResponse.dialogue);
-      console.log('[Tour] Emotion:', tourResponse.emotion);
-      console.log('[Tour] Actions:', JSON.stringify(tourResponse.actions));
-      console.log('[Tour] Duration:', llmDuration.toFixed(0) + 'ms');
-      console.log('[Tour] ==========================');
+      const response = await this.sendellAI.processUserInput(tourPrompt);
 
-      // v5.2.4: Detect generic/unhelpful responses and use fallback
-      let dialogueToShow = tourResponse.dialogue;
-      const isGenericResponse = 
+      console.log('[Tour] ====== INTRO - LLM RESPONSE ======');
+      console.log('[Tour] Dialogue:', response.dialogue);
+      console.log('[Tour] Actions:', JSON.stringify(response.actions));
+
+      // Detect generic/loading response and use fallback
+      let dialogueToShow = response.dialogue;
+      const isGenericResponse =
         dialogueToShow.toLowerCase().includes('ayudarte') ||
         dialogueToShow.toLowerCase().includes('en qué puedo') ||
+        dialogueToShow.toLowerCase().includes('cargando mi inteligencia') ||
         dialogueToShow.length < 30;
-      
+
       if (isGenericResponse) {
-        console.log('[Tour] WARNING: LLM gave generic response, using fallback');
-        // v5.2.5: Fallback also shouldn't re-introduce (we already did in onboarding)
-        dialogueToShow = '¡Perfecto! Sígueme, te mostraré los servicios de consultoría de IA de Daniel.';
-        // Emit walk action since LLM probably didn't
-        this.aiActionRequested.emit({ type: 'walk_to_pillar', target: 'about-daniel' });
+        console.log('[Tour] WARNING: Generic/loading response, using fallback');
+        const pillarId = this.tourService.currentPillarId();
+        dialogueToShow = `¡Sígueme! Te mostraré ${pillarId === 'about-daniel' ? 'quién es Daniel' : 'este servicio'}.`;
       }
 
-      // Show response with typing animation
+      // Store pending action (will execute after typing)
+      const walkAction = response.actions.find(a => a.type === 'walk_to_pillar');
+      if (walkAction) {
+        this.tourService.setPendingAction(walkAction);
+      } else {
+        // Fallback: walk to current pillar
+        const currentPillar = this.tourService.currentPillarId();
+        if (currentPillar) {
+          this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar });
+        }
+      }
+
+      // Start typing animation (TourService will be notified when done)
+      this.tourService.onTypingStarted();
       this.startAITypingAnimation(dialogueToShow);
 
-      // v5.2.4: Calculate typing duration and wait before completing
-      const typingDuration = dialogueToShow.length * 30 + 2000; // 30ms per char + 2s buffer
-      console.log('[Tour] Typing duration:', typingDuration + 'ms');
+    } catch (error) {
+      console.error('[Tour] INTRO ERROR:', error);
+      const currentPillar = this.tourService.currentPillarId();
+      const fallback = '¡Vamos! Sígueme.';
+      this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar || 'about-daniel' });
+      this.tourService.onTypingStarted();
+      this.startAITypingAnimation(fallback);
+    } finally {
+      // v5.4.0: Release processing lock
+      this._isTourStepProcessing = false;
+    }
+  }
 
-      // Illuminate pillars (visual effect)
-      this.onboarding.illuminatePillars();
+  /**
+   * v5.3.0: Handle TOUR_PILLAR_INFO step - LLM explains current pillar
+   */
+  private async handleTourPillarInfo(): Promise<void> {
+    const tourPrompt = this.tourService.getTourPrompt();
+    const currentPillar = this.tourService.currentPillarId();
+    console.log('[Tour] ====== PILLAR_INFO - LLM REQUEST ======');
+    console.log('[Tour] Current pillar:', currentPillar);
+    console.log('[Tour] Prompt:', tourPrompt);
 
-      // v5.2.4: Complete onboarding AFTER typing finishes
-      setTimeout(() => {
-        const totalDuration = performance.now() - tourStartTime;
-        console.log('[Tour] Tour intro completed in ' + totalDuration.toFixed(0) + 'ms');
-        console.log('[Tour] Unblocking user input - User takes control');
-        console.log('[Tour] ========== GUIDED TOUR ENDED ==========');
-        
-        // v5.2.3: Unblock user input after tour
-        this.inputService.unblockFromTour();
-        this.onboarding.completeOnboarding();
-      }, typingDuration);
+    // Show loading indicator with descriptive message
+    this.displayedText.set('Analizando pilar');
+    this.isTyping.set(false);
+    this.isAITyping.set(true);
+    this.cdr.markForCheck();
+
+    try {
+      const response = await this.sendellAI.processUserInput(tourPrompt);
+
+      console.log('[Tour] ====== PILLAR_INFO - LLM RESPONSE ======');
+      console.log('[Tour] Dialogue:', response.dialogue);
+
+      // Start typing animation
+      this.tourService.onTypingStarted();
+      this.startAITypingAnimation(response.dialogue);
 
     } catch (error) {
-      console.error('[Tour] ERROR:', error);
-      // v5.2.5: Fallback without re-introduction
-      const fallbackMessage = '¡Vamos! Te mostraré los servicios de Daniel.';
-      console.log('[Tour] Using fallback message:', fallbackMessage);
-      this.startAITypingAnimation(fallbackMessage);
-      this.aiActionRequested.emit({ type: 'walk_to_pillar', target: 'about-daniel' });
-      
-      // Still unblock after fallback typing finishes
-      setTimeout(() => {
-        console.log('[Tour] Fallback completed - Unblocking user input');
-        this.inputService.unblockFromTour();
-        this.onboarding.completeOnboarding();
-      }, 4000);
+      console.error('[Tour] PILLAR_INFO ERROR:', error);
+      const fallback = this.getPillarFallbackInfo(currentPillar);
+      this.tourService.onTypingStarted();
+      this.startAITypingAnimation(fallback);
     }
+  }
+
+  /**
+   * v5.3.0: Get fallback info for a pillar if LLM fails
+   */
+  private getPillarFallbackInfo(pillarId: string | null): string {
+    const fallbacks: Record<string, string> = {
+      'about-daniel': 'Daniel es un consultor de IA con más de 5 años de experiencia en desarrollo.',
+      'local-llms': 'LLMs locales te permiten ejecutar modelos de IA en tu propia infraestructura.',
+      'calendly': 'Aquí puedes agendar una sesión gratuita de 30 minutos con Daniel.'
+    };
+    return fallbacks[pillarId || ''] || 'Este es uno de los servicios de consultoría de IA.';
+  }
+
+  /**
+   * v5.3.0: Handle TOUR_COMPLETE step - farewell message and cleanup
+   */
+  private async handleTourComplete(): Promise<void> {
+    console.log('[Tour] ========== TOUR COMPLETE ==========');
+
+    // Unblock user input
+    this.inputService.unblockFromTour();
+
+    // Get farewell message from LLM
+    const tourPrompt = this.tourService.getTourPrompt();
+    console.log('[Tour] Farewell prompt:', tourPrompt);
+
+    // Show loading indicator with descriptive message
+    this.displayedText.set('Preparando despedida');
+    this.isTyping.set(false);
+    this.isAITyping.set(true);
+    this.cdr.markForCheck();
+
+    try {
+      const response = await this.sendellAI.processUserInput(tourPrompt);
+      console.log('[Tour] Farewell response:', response.dialogue);
+
+      // Start typing animation
+      this.startAITypingAnimation(response.dialogue);
+
+    } catch (error) {
+      console.error('[Tour] COMPLETE ERROR:', error);
+      const fallback = '¡Eso es todo! Explora libremente o agenda una sesión con Daniel.';
+      this.startAITypingAnimation(fallback);
+    }
+
+    // Complete the onboarding
+    this.onboarding.completeOnboarding();
   }
 
   /**
@@ -723,11 +878,19 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * v2.0: Finish AI typing
    * v2.1: No longer auto-shows input - user must double-click to chat
+   * v5.3.0: Notifies TourService when typing completes
    */
   private finishAITyping(): void {
     this.clearTypingInterval();
     this.isTyping.set(false);
     this.isAITyping.set(false);
+
+    // v5.3.0: Notify TourService when typing completes (triggers next step)
+    if (this.tourService.isActive()) {
+      console.log('[Tour] Typing complete, notifying TourService');
+      this.tourService.onTypingComplete();
+    }
+
     // v2.1: Don't auto-show input - only show if chat is already open
     if (this.isChatOpen()) {
       this.showChatInput.set(true);
@@ -761,9 +924,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     this.isChatOpen.set(false);  // v3.0: Reset to prevent auto-show
     this.showChatInput.set(false);
 
-    // Show processing state
+    // Show processing state with descriptive message
     this.isAITyping.set(true);
-    this.displayedText.set('...');
+    this.displayedText.set('Procesando consulta');
     this.isTyping.set(false);
     this.cdr.markForCheck();
 

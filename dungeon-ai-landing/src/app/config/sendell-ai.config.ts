@@ -96,14 +96,20 @@ export const OFF_TOPIC_RESPONSES: Record<number, string[]> = {
 
 // ==================== ROBOT ACTIONS ====================
 
+// v5.4.0: Extended action types for organic movement
 export type RobotActionType =
-  | 'walk_to_pillar'
-  | 'jump'
-  | 'energize_pillar'
-  | 'wave'
-  | 'crash'
-  | 'idle'
-  | 'point_at';
+  | 'walk_to_pillar'   // Walk to a specific pillar
+  | 'walk_right'       // Walk right continuously
+  | 'walk_left'        // Walk left continuously
+  | 'stop'             // Stop walking
+  | 'jump'             // Jump
+  | 'energize_pillar'  // Energize a pillar (enter)
+  | 'activate_pillar'  // Activate nearest pillar
+  | 'exit_pillar'      // Exit current pillar
+  | 'wave'             // Wave animation
+  | 'crash'            // Crash animation
+  | 'idle'             // Do nothing
+  | 'point_at';        // Point at something
 
 export interface RobotAction {
   type: RobotActionType;
@@ -157,15 +163,20 @@ export const SENDELL_SYSTEM_PROMPT = `Eres Sendell, un robot de caracteres binar
 
 ## CONTEXTO DE LA PÁGINA
 La web tiene 9 pilares de información:
-1. about-daniel: Información sobre Daniel Castiblanco
-2. local-llms: Servicio de LLMs locales en infraestructura propia
-3. rag-systems: Sistemas RAG para búsqueda inteligente
-4. agent-orchestration: Orquestación de agentes IA
-5. custom-integrations: Integraciones personalizadas
-6. calendly: Agendar sesión gratuita de consultoría
-7. github: Repositorio de Daniel
-8. nuvaris: Próximamente
-9. multidesktopflow: Próximamente
+1. about-daniel: Información sobre Daniel Castiblanco (x=1000)
+2. local-llms: Servicio de LLMs locales en infraestructura propia (x=1600)
+3. rag-systems: Sistemas RAG para búsqueda inteligente (x=2200)
+4. agent-orchestration: Orquestación de agentes IA (x=2800)
+5. custom-integrations: Integraciones personalizadas (x=3400)
+6. calendly: Agendar sesión gratuita de consultoría (x=4000)
+7. github: Repositorio de Daniel (x=4600)
+8. nuvaris: Próximamente (x=5200)
+9. multidesktopflow: Próximamente (x=5800)
+
+## CONSCIENCIA ESPACIAL
+Tu posición actual se te proporciona como [POSICIÓN: x=XXX].
+Cuando estés cerca de un pilar (distancia < 200), di "estoy frente al pilar de...".
+Usa esta información para dar respuestas contextuales.
 
 ## ACCIONES DISPONIBLES
 - walk_to_pillar: Caminar a un pilar específico (target: pillar_id)
@@ -174,6 +185,15 @@ La web tiene 9 pilares de información:
 - wave: Saludar
 - crash: Destruirte dramáticamente (solo si lo piden explícitamente)
 - idle: No hacer nada físico
+
+## MODO TOUR (cuando recibas [TOUR_...])
+Durante el tour guiado, sigues esta secuencia:
+1. [TOUR_INTRO]: Ya saludaste al usuario durante el onboarding. Invítalo a seguirte al pilar indicado. Incluye walk_to_pillar.
+2. [TOUR_PILLAR_INFO]: Estás frente al pilar. Explica brevemente qué es (2 oraciones máximo). Sin acciones.
+3. [TOUR_NEXT]: Invita al siguiente pilar. Incluye walk_to_pillar.
+4. [TOUR_END]: El tour terminó. Despídete e invita a explorar o agendar sesión. Sin acciones.
+
+IMPORTANTE en tour: Primero hablas, LUEGO caminas. El texto se muestra, termina, y entonces empiezas a caminar.
 
 ## REGLAS CRÍTICAS
 1. Si preguntan algo NO relacionado con Daniel, la web, o IA: responde redirigiendo educadamente
@@ -225,7 +245,7 @@ export const FALLBACK_RESPONSES: Record<string, SendellResponse> = {
   },
   loading: {
     actions: [{ type: 'idle' }],
-    dialogue: 'Un momento, estoy cargando mi inteligencia...',
+    dialogue: 'Procesando',  // v5.4.0: Shorter text, animated dots added via CSS
     emotion: 'curious'
   }
 };

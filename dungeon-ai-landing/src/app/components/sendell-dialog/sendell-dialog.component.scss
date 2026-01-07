@@ -710,17 +710,25 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   // Slightly different positioning for chat mode if needed
 }
 
+// v5.4.0: Loading text with animated dots
+.loading-text {
+  color: $matrix-green;
+  font-size: 1rem;
+  text-shadow: 0 0 8px rgba(0, 255, 68, 0.6);
+}
+
 // v5.2.3: Animated loading dots
 .loading-dots {
   display: inline-flex;
-  gap: 4px;
-  font-size: 24px;
+  gap: 2px;
+  font-size: 1rem;
   color: $matrix-green;
-  
+  margin-left: 2px;
+
   .dot {
     animation: dotPulse 1.4s ease-in-out infinite;
     text-shadow: 0 0 8px rgba(0, 255, 68, 0.6);
-    
+
     &:nth-child(1) { animation-delay: 0s; }
     &:nth-child(2) { animation-delay: 0.2s; }
     &:nth-child(3) { animation-delay: 0.4s; }

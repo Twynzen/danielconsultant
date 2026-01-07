@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener, computed, signal } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
@@ -17,6 +17,10 @@ import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { OnboardingService, OnboardingPhase } from '../../services/onboarding.service';
 // v2.0: AI action types
 import { RobotAction, RobotActionType } from '../../config/sendell-ai.config';
+// v5.3.0: Tour service for intelligent guided tour
+import { TourService, TourStep } from '../../services/tour.service';
+// v5.4.0: ActionExecutor for consistent AI actions
+import { ActionExecutorService } from '../../services/action-executor.service';
 
 @Component({
   selector: 'app-landing-page',
@@ -46,6 +50,29 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
   // v5.0: Onboarding service for first-time visitor experience
   readonly onboarding = inject(OnboardingService);
+  // v5.3.0: Tour service for intelligent guided tour
+  private tourService = inject(TourService);
+  // v5.4.0: ActionExecutor for consistent AI actions
+  private actionExecutor = inject(ActionExecutorService);
+
+  constructor() {
+    // v5.4.0: Effect to handle tour ENERGIZING state
+    // WALKING is now handled by TourService + ActionExecutor via keyboard simulation
+    // v5.4.0: allowSignalWrites required because energizePillarForTour writes to signals
+    effect(() => {
+      const step = this.tourService.step();
+      const pillarId = this.tourService.currentPillarId();
+
+      // When entering ENERGIZING state, activate pillar visuals
+      if (step === TourStep.ENERGIZING && pillarId) {
+        console.log('[LandingPage] Tour ENERGIZING state - energizing pillar:', pillarId);
+        const pillar = PILLARS.find(p => p.id === pillarId);
+        if (pillar) {
+          this.energizePillarForTour(pillar);
+        }
+      }
+    }, { allowSignalWrites: true });
+  }
 
   // v5.0: Computed signals for onboarding visibility
   readonly groundOpacity = computed(() => this.onboarding.groundOpacity());
@@ -244,6 +271,7 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   /**
    * v5.2: Robot finished entering pillar
    * Called when all particles have reached the pillar
+   * v5.3.0: Notifies TourService if tour is active
    */
   onEnergizationFinished(event: { config: PillarConfig }): void {
     this.energizedPillarId.set(event.config.id);
@@ -251,6 +279,12 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     // Activate zoom for better hologram viewing
     this.isZoomed = true;
     this.zoomScale = this.ZOOM_LEVEL;
+
+    // v5.3.0: Notify TourService if tour is active
+    if (this.tourService.isActive()) {
+      console.log('[Tour] Energization complete, notifying TourService');
+      this.tourService.onEnergizeComplete();
+    }
   }
 
   /**
@@ -303,24 +337,26 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
   /**
    * v2.0: Handle AI-requested robot actions
+   * v5.4.0: Now uses ActionExecutor for consistent organic movement
    * Called when Sendell AI decides to move or interact with something
    */
   onAIActionRequested(action: RobotAction): void {
-    console.log('AI Action requested:', action);
+    console.log('[LandingPage] AI Action requested:', action);
 
     switch (action.type) {
       case 'walk_to_pillar':
-        this.walkToPillar(action.target);
+        // v5.4.0: Use ActionExecutor for organic walking
+        this.actionExecutor.executeAction(action);
         break;
       case 'energize_pillar':
         this.energizePillarByAI(action.target);
         break;
       case 'jump':
-        this.triggerJump();
+        // v5.4.0: Use ActionExecutor for consistent jump
+        this.actionExecutor.executeAction(action);
         break;
       case 'wave':
         // Wave animation would be handled by BinaryCharacterComponent
-        // For now, just log it
         console.log('AI: Sendell waves');
         break;
       case 'crash':
@@ -427,5 +463,82 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     if (this.characterComponent?.binaryCharacter) {
       this.characterComponent.binaryCharacter.triggerCrash();
     }
+  }
+
+  // ========== v5.3.0: TOUR-SPECIFIC METHODS ==========
+
+  /**
+   * v5.3.0: Walk to pillar for tour with proper callbacks
+   * Different from walkToPillar because it notifies TourService on completion
+   */
+  private walkToPillarForTour(pillarId: string | undefined): void {
+    if (!pillarId) {
+      console.warn('[Tour] No pillar ID provided for walk');
+      this.tourService.onWalkComplete();
+      return;
+    }
+
+    const pillar = PILLARS.find(p => p.id === pillarId);
+    if (!pillar) {
+      console.warn('[Tour] Pillar not found:', pillarId);
+      this.tourService.onWalkComplete();
+      return;
+    }
+
+    // Get pillar world X position
+    const targetX = pillar.worldX;
+    const currentX = this.physicsService.state().x;
+    const distance = Math.abs(currentX - targetX);
+
+    // If already at pillar, skip walk
+    if (distance < 50) {
+      console.log('[Tour] Already near pillar, skipping walk');
+      this.tourService.onWalkComplete();
+      // Auto-energize
+      setTimeout(() => {
+        this.energizePillarForTour(pillar);
+      }, 300);
+      return;
+    }
+
+    const walkDuration = distance * 2; // ~2ms per pixel
+
+    console.log('[Tour] Walking to pillar:', pillarId, 'distance:', distance, 'duration:', walkDuration);
+
+    // Animate walk to pillar
+    this.animateWalkTo(targetX);
+
+    // After walk completes, notify TourService and energize
+    setTimeout(() => {
+      console.log('[Tour] Walk complete, notifying TourService');
+      this.tourService.onWalkComplete();
+
+      // Auto-energize pillar after short delay
+      setTimeout(() => {
+        this.energizePillarForTour(pillar);
+      }, 300);
+    }, walkDuration);
+  }
+
+  /**
+   * v5.3.0: Energize pillar during tour with proper callbacks
+   */
+  private energizePillarForTour(pillar: PillarConfig): void {
+    if (!this.characterComponent) {
+      console.warn('[Tour] No character component for energization');
+      this.tourService.onEnergizeComplete();
+      return;
+    }
+
+    console.log('[Tour] Energizing pillar:', pillar.id);
+
+    const pillarScreenX = this.cameraService.worldToScreenX(pillar.worldX);
+    const pillarTop = window.innerHeight - SIDESCROLLER_CONFIG.GROUND_HEIGHT - PILLAR_INTERACTION.PILLAR_HEIGHT;
+    const pillarScreenY = pillarTop + 25;
+
+    this.characterComponent.activatePillar(pillar, pillarScreenX, pillarScreenY);
+
+    // Note: onEnergizeComplete will be called from onEnergizationFinished when
+    // the energization animation completes
   }
 }
