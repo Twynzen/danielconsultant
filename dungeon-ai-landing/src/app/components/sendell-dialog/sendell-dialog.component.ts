@@ -41,7 +41,7 @@ import { SendellAIService } from '../../services/sendell-ai.service';
 import { TourService, TourStep } from '../../services/tour.service';
 import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG } from '../../config/onboarding.config';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
-import { SendellResponse, RobotAction, getTourFallback, getPillarDescription } from '../../config/sendell-ai.config';
+import { SendellResponse, RobotAction, getTourFallback, getPillarDescription, TOUR_FAREWELL } from '../../config/sendell-ai.config';
 
 @Component({
   selector: 'app-sendell-dialog',
@@ -107,6 +107,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private _lastHandledPillarIndex = -1;  // v5.4.0: Track pillar index for composite key
   private _isTourStepProcessing = false;  // v5.4.0: Guard against concurrent processing
   private lastClickTime = 0;  // v2.1: For double-click detection
+  private _hideDialogAfterFarewell = signal(false);  // v5.4.3: Hide dialog after tour farewell
+  private _isFarewellTyping = false;  // v5.4.3: Track if we're typing the farewell message
 
   // v2.0: LLM info tooltip state
   showLLMInfo = signal(false);
@@ -254,9 +256,15 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   readonly isVisible = computed(() => {
     const phase = this.onboarding.phase();
 
-    // v2.0: Always show in chat mode
+    // v5.4.3: Hide after farewell unless user opens chat
+    if (this._hideDialogAfterFarewell() && !this.isChatOpen()) {
+      return false;
+    }
+
+    // v2.0: Always show in chat mode (if chat is open or has content)
     if (this.isChatMode()) {
-      return true;
+      // v5.4.3: Only show if chat is actively open or we're typing/have content
+      return this.isChatOpen() || this.isTyping() || this.isAITyping() || this.showChatInput();
     }
 
     // Never show during these phases (except COMPLETE which is now chat mode)
@@ -611,6 +619,17 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * v5.4.3: Handle tour choice via buttons
+   * @param wantsTour - true for guided tour, false for free exploration
+   */
+  selectTourChoice(wantsTour: boolean): void {
+    const choice = wantsTour ? 'Y' : 'N';
+    console.log('[SendellDialog] Tour choice selected:', wantsTour ? 'TOUR' : 'FREE');
+    this.onboarding.setUserChoice(choice);
+    this.choiceSubmitted.emit(choice);
+  }
+
+  /**
    * Get dialog position style
    * v1.1: Now calculates character position internally using physics/camera services
    */
@@ -866,6 +885,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   /**
    * v5.3.0: Handle TOUR_COMPLETE step - farewell message and cleanup
+   * v5.4.3: Now uses predefined TOUR_FAREWELL for reliable control instructions
    */
   private async handleTourComplete(): Promise<void> {
     console.log('[Tour] ========== TOUR COMPLETE ==========');
@@ -873,28 +893,16 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     // Unblock user input
     this.inputService.unblockFromTour();
 
-    // Get farewell message from LLM
-    const tourPrompt = this.tourService.getTourPrompt();
-    console.log('[Tour] Farewell prompt:', tourPrompt);
+    // v5.4.3: Use predefined farewell message with control instructions
+    // This ensures user always gets the A/D control info
+    const farewellMessage = TOUR_FAREWELL.dialogue;
+    console.log('[Tour] Farewell message:', farewellMessage);
 
-    // Show loading indicator with descriptive message
-    this.displayedText.set('Preparando despedida');
-    this.isTyping.set(false);
-    this.isAITyping.set(true);
-    this.cdr.markForCheck();
+    // v5.4.3: Mark that we're typing the farewell (to hide dialog after)
+    this._isFarewellTyping = true;
 
-    try {
-      const response = await this.sendellAI.processUserInput(tourPrompt);
-      console.log('[Tour] Farewell response:', response.dialogue);
-
-      // Start typing animation
-      this.startAITypingAnimation(response.dialogue);
-
-    } catch (error) {
-      console.error('[Tour] COMPLETE ERROR:', error);
-      const fallback = '¡Eso es todo! Explora libremente o agenda una sesión con Daniel.';
-      this.startAITypingAnimation(fallback);
-    }
+    // Start typing animation with farewell
+    this.startAITypingAnimation(farewellMessage);
 
     // Complete the onboarding
     this.onboarding.completeOnboarding();
@@ -930,11 +938,25 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
    * v2.0: Finish AI typing
    * v2.1: No longer auto-shows input - user must double-click to chat
    * v5.3.0: Notifies TourService when typing completes
+   * v5.4.3: Hides dialog after farewell message completes
    */
   private finishAITyping(): void {
     this.clearTypingInterval();
     this.isTyping.set(false);
     this.isAITyping.set(false);
+
+    // v5.4.3: If this was the farewell, hide dialog after a delay
+    if (this._isFarewellTyping) {
+      this._isFarewellTyping = false;
+      console.log('[Tour] Farewell complete, will hide dialog in 3 seconds');
+      setTimeout(() => {
+        this._hideDialogAfterFarewell.set(true);
+        this.displayedText.set(''); // Clear the text
+        this.cdr.markForCheck();
+        console.log('[Tour] Dialog hidden after farewell');
+      }, 3000); // Give user 3 seconds to read the farewell
+      return; // Don't notify TourService for farewell (tour is already complete)
+    }
 
     // v5.3.0: Notify TourService when typing completes (triggers next step)
     if (this.tourService.isActive()) {

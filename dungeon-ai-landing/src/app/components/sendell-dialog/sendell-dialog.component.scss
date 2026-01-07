@@ -362,7 +362,76 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   50% { opacity: 1; }
 }
 
-// Choice Input Section
+// v5.4.3: Choice Buttons Section (replaced Y/N input)
+.dialog-choice-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.choice-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 20px;
+  background: rgba(0, 255, 68, 0.08);
+  border: 1px solid rgba(0, 255, 68, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Courier New', monospace;
+
+  &:hover {
+    background: rgba(0, 255, 68, 0.15);
+    border-color: $matrix-green;
+    box-shadow: 0 0 15px $matrix-green-glow;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 0 8px $matrix-green-glow;
+  }
+
+  .button-icon {
+    font-size: 18px;
+  }
+
+  .button-text {
+    font-size: 14px;
+    font-weight: bold;
+    color: $matrix-green;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &.tour-button {
+    border-color: rgba(0, 255, 68, 0.6);
+
+    &:hover {
+      background: rgba(0, 255, 68, 0.2);
+    }
+  }
+
+  &.free-button {
+    border-color: rgba(0, 255, 68, 0.3);
+
+    .button-text {
+      color: $matrix-green-dim;
+    }
+
+    &:hover {
+      .button-text {
+        color: $matrix-green;
+      }
+    }
+  }
+}
+
+// Legacy Choice Input Section (kept for fallback)
 .dialog-input-section {
   margin-top: 16px;
 }

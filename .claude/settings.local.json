@@ -25,7 +25,11 @@
       "Bash(git commit:*)",
       "WebSearch",
       "Bash(cat:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(__NEW_LINE__ sed -i 's/if \\(phase === OnboardingPhase.LOADING || phase === OnboardingPhase.WELCOME\\)/if \\(phase === OnboardingPhase.LOADING || phase === OnboardingPhase.WELCOME || phase === OnboardingPhase.TOUR_WAITING_LLM || phase === OnboardingPhase.TOUR_ACTIVE\\)/' src/app/components/sendell-dialog/sendell-dialog.component.ts)",
+      "Bash(__NEW_LINE__ echo \"SUCCESS: isVisible updated\")",
+      "Bash(ls:*)"
     ]
   }
 }

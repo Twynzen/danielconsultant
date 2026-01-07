@@ -284,6 +284,16 @@ export const DEFAULT_TOUR_FALLBACK: TourFallback = {
 };
 
 /**
+ * v5.4.3: Tour farewell message when tour completes
+ * Gives user control instructions and invites to explore
+ */
+export const TOUR_FAREWELL: SendellResponse = {
+  actions: [{ type: 'idle' }],
+  dialogue: '¡Eso es todo por ahora! Estaré aquí si me necesitas. Puedes controlarme con A para ir a la izquierda y D para ir a la derecha. ¡Explora libremente!',
+  emotion: 'friendly'
+};
+
+/**
  * Get tour fallback for a specific pillar
  */
 export function getTourFallback(pillarId: string): TourFallback {

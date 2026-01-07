@@ -104,29 +104,21 @@
           </div>
         }
 
-        <!-- Choice Input (Y/N) - only during onboarding -->
+        <!-- v5.4.3: Choice Buttons (Tour vs Free) - visual buttons instead of Y/N -->
         @if (requiresChoice() && !isTyping() && !isChatMode()) {
-          <div class="dialog-input-section">
-            <div class="dialog-input">
-              <span class="input-prompt">&gt; </span>
-              <input
-                #choiceInput
-                type="text"
-                maxlength="3"
-                class="choice-input"
-                [(ngModel)]="userInput"
-                (keydown)="onChoiceKeydown($event)"
-                (focus)="onInputFocus()"
-                (blur)="onInputBlur()"
-                autocomplete="off"
-                spellcheck="false">
-              <span class="input-cursor">_</span>
-            </div>
-            <div class="input-hint">
-              <span class="hint-option">[Y] Sí, guíame</span>
-              <span class="hint-divider">|</span>
-              <span class="hint-option">[N] No, exploraré solo</span>
-            </div>
+          <div class="dialog-choice-section">
+            <button
+              class="choice-button tour-button"
+              (click)="selectTourChoice(true)">
+              <span class="button-icon">🗺️</span>
+              <span class="button-text">Sí, guíame</span>
+            </button>
+            <button
+              class="choice-button free-button"
+              (click)="selectTourChoice(false)">
+              <span class="button-icon">🚀</span>
+              <span class="button-text">Explorar solo</span>
+            </button>
           </div>
         }
 
