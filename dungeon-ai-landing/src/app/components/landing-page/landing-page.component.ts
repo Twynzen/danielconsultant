@@ -298,6 +298,7 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   /**
    * v5.2: Robot finished exiting pillar
    * Called when robot is fully recomposed
+   * v5.4.2: Notifies TourService when exiting during tour
    */
   onPillarExitFinished(): void {
     this.energizedPillarId.set(null);
@@ -305,6 +306,12 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     // Deactivate zoom
     this.isZoomed = false;
     this.zoomScale = 1;
+
+    // v5.4.2: If tour is in EXITING state, notify TourService
+    if (this.tourService.step() === TourStep.EXITING) {
+      console.log('[LandingPage] Tour EXITING state - notifying TourService of exit complete');
+      this.tourService.onExitComplete();
+    }
   }
 
   /**

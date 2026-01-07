@@ -26,6 +26,7 @@ export enum TourStep {
   ENERGIZING = 'energizing',   // Robot entering pillar
   WAIT_USER = 'wait_user',     // Waiting for user to press key
   PILLAR_INFO = 'pillar_info', // LLM explaining current pillar
+  EXITING = 'exiting',         // v5.4.2: Robot exiting pillar before walking to next
   COMPLETE = 'complete'        // Tour finished
 }
 
@@ -232,21 +233,59 @@ export class TourService {
 
   /**
    * Called after pillar info is shown, advances to next pillar or completes
-   * v5.3.0: Resets pillarInfoShown for next pillar
+   * v5.4.2: Now goes to EXITING first before walking to next pillar
    */
   advanceToNextPillar(): void {
     const state = this._state();
     console.log('[TourService] Advancing from pillar', state.currentPillarIndex);
 
     if (state.currentPillarIndex < state.pillarSequence.length - 1) {
-      // More pillars to visit
+      // More pillars to visit - first EXIT the current pillar
+      console.log('[TourService] Need to exit current pillar before walking to next');
+
+      this._state.update(s => ({
+        ...s,
+        step: TourStep.EXITING
+      }));
+
+      // v5.4.2: Execute exit_pillar action via ActionExecutor
+      console.log('[TourService] Executing exit_pillar action');
+      this.actionExecutor.executeAction({
+        type: 'exit_pillar'
+      } as RobotAction);
+
+    } else {
+      // Last pillar - also need to exit before completing
+      console.log('[TourService] Last pillar, exiting before completing tour');
+
+      this._state.update(s => ({
+        ...s,
+        step: TourStep.EXITING
+      }));
+
+      this.actionExecutor.executeAction({
+        type: 'exit_pillar'
+      } as RobotAction);
+    }
+  }
+
+  /**
+   * v5.4.2: Called when robot finishes exiting pillar
+   * Advances to next pillar's INTRO or completes the tour
+   */
+  onExitComplete(): void {
+    const state = this._state();
+    console.log('[TourService] Exit complete, current pillar index:', state.currentPillarIndex);
+
+    if (state.currentPillarIndex < state.pillarSequence.length - 1) {
+      // More pillars to visit - now advance to next and go to INTRO
       const nextIndex = state.currentPillarIndex + 1;
       console.log('[TourService] Moving to pillar', nextIndex, ':', state.pillarSequence[nextIndex]);
 
       this._state.update(s => ({
         ...s,
         currentPillarIndex: nextIndex,
-        step: TourStep.INTRO, // Back to intro for next pillar
+        step: TourStep.INTRO,
         pillarInfoShown: false  // Reset for next pillar
       }));
     } else {
