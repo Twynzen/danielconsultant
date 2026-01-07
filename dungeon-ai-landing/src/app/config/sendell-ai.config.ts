@@ -145,6 +145,158 @@ export const VALID_PILLAR_IDS = [
   'multidesktopflow'
 ] as const;
 
+// ==================== PILLAR DESCRIPTIONS (RAG Context) ====================
+// v5.4.0: Rich descriptions for each pillar that Sendell can use during tour
+
+export interface PillarDescription {
+  id: string;
+  name: string;
+  shortDesc: string;
+  tourIntro: string;      // What Sendell says when inviting to this pillar
+  tourExplain: string;    // What Sendell says when explaining this pillar
+}
+
+export const PILLAR_DESCRIPTIONS: Record<string, PillarDescription> = {
+  'about-daniel': {
+    id: 'about-daniel',
+    name: 'Sobre Daniel',
+    shortDesc: 'Información sobre Daniel Castiblanco, Ingeniero IA',
+    tourIntro: '¡Sígueme! Te presentaré a mi creador, Daniel.',
+    tourExplain: 'Daniel es Ingeniero de IA especializado en orquestación inteligente y automatización. Aquí puedes conocer más sobre su experiencia y proyectos.'
+  },
+  'local-llms': {
+    id: 'local-llms',
+    name: 'LLMs Locales',
+    shortDesc: 'Modelos de IA en tu propia infraestructura',
+    tourIntro: '¡Vamos! Te mostraré los LLMs locales.',
+    tourExplain: 'LLMs que corren en TU infraestructura. Privacidad total de datos, control de costos, y sin enviar información a terceros. Ideal para empresas con datos sensibles.'
+  },
+  'rag-systems': {
+    id: 'rag-systems',
+    name: 'Sistemas RAG',
+    shortDesc: 'Búsqueda inteligente con IA generativa',
+    tourIntro: '¡Sígueme al pilar de RAG!',
+    tourExplain: 'RAG combina bases de conocimiento con IA generativa. Respuestas precisas basadas en TUS documentos, con evaluación continua y guardrails de seguridad.'
+  },
+  'agent-orchestration': {
+    id: 'agent-orchestration',
+    name: 'Orquestación de Agentes',
+    shortDesc: 'Agentes IA que colaboran entre sí',
+    tourIntro: '¡Vamos a ver la orquestación de agentes!',
+    tourExplain: 'Múltiples agentes IA especializados trabajando juntos. Memoria compartida, herramientas integradas, y workflows automatizados para resolver problemas complejos.'
+  },
+  'custom-integrations': {
+    id: 'custom-integrations',
+    name: 'Integraciones Custom',
+    shortDesc: 'Conecta IA con tus sistemas existentes',
+    tourIntro: '¡Te muestro las integraciones personalizadas!',
+    tourExplain: 'APIs a medida para conectar IA con tu stack tecnológico. Webhooks, conectores específicos, y migración de datos sin interrumpir tu operación.'
+  },
+  'calendly': {
+    id: 'calendly',
+    name: 'Agendar Sesión',
+    shortDesc: 'Sesión gratuita de 30 minutos',
+    tourIntro: '¡Aquí puedes agendar una sesión con Daniel!',
+    tourExplain: 'Sesión gratuita de 30 minutos para identificar 3 oportunidades de IA en tu negocio. Sin compromiso, solo valor directo.'
+  },
+  'github': {
+    id: 'github',
+    name: 'GitHub',
+    shortDesc: 'Repositorios y código de Daniel',
+    tourIntro: '¡Te llevo al GitHub de Daniel!',
+    tourExplain: 'Aquí encuentras los proyectos open source de Daniel. Código real, implementaciones de IA, y herramientas que puedes explorar.'
+  },
+  'nuvaris': {
+    id: 'nuvaris',
+    name: 'Nuvaris',
+    shortDesc: 'Próximamente',
+    tourIntro: 'Este pilar está en construcción.',
+    tourExplain: 'Nuvaris es un proyecto en desarrollo. Pronto habrá más información disponible aquí.'
+  },
+  'multidesktopflow': {
+    id: 'multidesktopflow',
+    name: 'MultiDesktopFlow',
+    shortDesc: 'Próximamente',
+    tourIntro: 'Este también está en construcción.',
+    tourExplain: 'MultiDesktopFlow es otro proyecto en camino. Daniel está trabajando en algo interesante aquí.'
+  }
+};
+
+// ==================== TOUR FALLBACKS ====================
+// v5.4.0: Predefined responses when LLM fails or gives generic response
+
+export interface TourFallback {
+  intro: SendellResponse;     // When inviting to pillar
+  explain: SendellResponse;   // When explaining pillar
+}
+
+export const TOUR_FALLBACKS: Record<string, TourFallback> = {
+  'about-daniel': {
+    intro: {
+      actions: [{ type: 'walk_to_pillar', target: 'about-daniel' }],
+      dialogue: '¡Sígueme! Te presentaré a mi creador, Daniel.',
+      emotion: 'friendly'
+    },
+    explain: {
+      actions: [{ type: 'idle' }],
+      dialogue: 'Daniel es Ingeniero de IA. Aquí puedes conocer su experiencia en orquestación inteligente y automatización.',
+      emotion: 'helpful'
+    }
+  },
+  'local-llms': {
+    intro: {
+      actions: [{ type: 'walk_to_pillar', target: 'local-llms' }],
+      dialogue: '¡Vamos! Te mostraré los LLMs locales.',
+      emotion: 'excited'
+    },
+    explain: {
+      actions: [{ type: 'idle' }],
+      dialogue: 'LLMs en TU infraestructura. Privacidad total, control de costos, sin enviar datos a terceros.',
+      emotion: 'helpful'
+    }
+  },
+  'calendly': {
+    intro: {
+      actions: [{ type: 'walk_to_pillar', target: 'calendly' }],
+      dialogue: '¡Y aquí puedes agendar con Daniel!',
+      emotion: 'excited'
+    },
+    explain: {
+      actions: [{ type: 'idle' }],
+      dialogue: '30 minutos gratis para identificar 3 oportunidades de IA en tu negocio. Sin compromiso.',
+      emotion: 'helpful'
+    }
+  }
+};
+
+// Default fallback for any pillar not explicitly defined
+export const DEFAULT_TOUR_FALLBACK: TourFallback = {
+  intro: {
+    actions: [{ type: 'idle' }],
+    dialogue: '¡Sígueme! Te mostraré este servicio.',
+    emotion: 'friendly'
+  },
+  explain: {
+    actions: [{ type: 'idle' }],
+    dialogue: 'Aquí Daniel ofrece servicios especializados de IA. ¿Te gustaría saber más?',
+    emotion: 'helpful'
+  }
+};
+
+/**
+ * Get tour fallback for a specific pillar
+ */
+export function getTourFallback(pillarId: string): TourFallback {
+  return TOUR_FALLBACKS[pillarId] || DEFAULT_TOUR_FALLBACK;
+}
+
+/**
+ * Get pillar description for RAG context
+ */
+export function getPillarDescription(pillarId: string): PillarDescription | undefined {
+  return PILLAR_DESCRIPTIONS[pillarId];
+}
+
 // ==================== SYSTEM PROMPT ====================
 
 export const SENDELL_SYSTEM_PROMPT = `Eres Sendell, un robot de caracteres binarios (0s y 1s) que existe en la web de Daniel Castiblanco, consultor de inteligencia artificial.

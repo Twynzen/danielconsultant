@@ -41,7 +41,7 @@ import { SendellAIService } from '../../services/sendell-ai.service';
 import { TourService, TourStep } from '../../services/tour.service';
 import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG } from '../../config/onboarding.config';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
-import { SendellResponse, RobotAction } from '../../config/sendell-ai.config';
+import { SendellResponse, RobotAction, getTourFallback, getPillarDescription } from '../../config/sendell-ai.config';
 
 @Component({
   selector: 'app-sendell-dialog',
@@ -724,30 +724,26 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       console.log('[Tour] Dialogue:', response.dialogue);
       console.log('[Tour] Actions:', JSON.stringify(response.actions));
 
-      // Detect generic/loading response and use fallback
+      // v5.4.0: Enhanced detection of bad LLM responses
+      const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
+      const fallback = getTourFallback(currentPillar);
       let dialogueToShow = response.dialogue;
-      const isGenericResponse =
-        dialogueToShow.toLowerCase().includes('ayudarte') ||
-        dialogueToShow.toLowerCase().includes('en qué puedo') ||
-        dialogueToShow.toLowerCase().includes('cargando mi inteligencia') ||
-        dialogueToShow.length < 30;
+
+      // Detect generic, third-person, or malformed responses
+      const isGenericResponse = this.isResponseGeneric(dialogueToShow, 'intro');
 
       if (isGenericResponse) {
-        console.log('[Tour] WARNING: Generic/loading response, using fallback');
-        const pillarId = this.tourService.currentPillarId();
-        dialogueToShow = `¡Sígueme! Te mostraré ${pillarId === 'about-daniel' ? 'quién es Daniel' : 'este servicio'}.`;
+        console.log('[Tour] WARNING: Generic/third-person response detected, using fallback');
+        dialogueToShow = fallback.intro.dialogue;
       }
 
       // Store pending action (will execute after typing)
       const walkAction = response.actions.find(a => a.type === 'walk_to_pillar');
-      if (walkAction) {
+      if (walkAction && !isGenericResponse) {
         this.tourService.setPendingAction(walkAction);
       } else {
-        // Fallback: walk to current pillar
-        const currentPillar = this.tourService.currentPillarId();
-        if (currentPillar) {
-          this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar });
-        }
+        // Use fallback action
+        this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar });
       }
 
       // Start typing animation (TourService will be notified when done)
@@ -756,11 +752,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
     } catch (error) {
       console.error('[Tour] INTRO ERROR:', error);
-      const currentPillar = this.tourService.currentPillarId();
-      const fallback = '¡Vamos! Sígueme.';
-      this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar || 'about-daniel' });
+      // v5.4.0: Use config fallback on error
+      const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
+      const fallback = getTourFallback(currentPillar);
+      this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar });
       this.tourService.onTypingStarted();
-      this.startAITypingAnimation(fallback);
+      this.startAITypingAnimation(fallback.intro.dialogue);
     } finally {
       // v5.4.0: Release processing lock
       this._isTourStepProcessing = false;
@@ -768,11 +765,67 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * v5.4.0: Detect if LLM response is generic, third-person, or malformed
+   * This helps decide when to use predefined fallbacks instead
+   */
+  private isResponseGeneric(dialogue: string, context: 'intro' | 'explain'): boolean {
+    const lowerDialogue = dialogue.toLowerCase();
+
+    // Third-person references to Sendell (LLM describing instead of acting)
+    const thirdPersonPatterns = [
+      'sendell es',
+      'sendell está',
+      'el asistente',
+      'un asistente',
+      'este robot',
+      'el robot es',
+      'está diseñado para',
+      'fue creado para',
+      'su función es'
+    ];
+
+    // Generic/loading responses
+    const genericPatterns = [
+      'en qué puedo ayudarte',
+      'cómo puedo ayudarte',
+      'ayudarte con',
+      'cargando mi inteligencia',
+      'procesando',
+      'un momento'
+    ];
+
+    // Check for third-person description
+    for (const pattern of thirdPersonPatterns) {
+      if (lowerDialogue.includes(pattern)) {
+        console.log('[Tour] Detected third-person pattern:', pattern);
+        return true;
+      }
+    }
+
+    // Check for generic responses
+    for (const pattern of genericPatterns) {
+      if (lowerDialogue.includes(pattern)) {
+        console.log('[Tour] Detected generic pattern:', pattern);
+        return true;
+      }
+    }
+
+    // Too short for meaningful content
+    if (dialogue.length < 25) {
+      console.log('[Tour] Response too short:', dialogue.length, 'chars');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * v5.3.0: Handle TOUR_PILLAR_INFO step - LLM explains current pillar
+   * v5.4.0: Uses enhanced fallback detection
    */
   private async handleTourPillarInfo(): Promise<void> {
     const tourPrompt = this.tourService.getTourPrompt();
-    const currentPillar = this.tourService.currentPillarId();
+    const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
     console.log('[Tour] ====== PILLAR_INFO - LLM REQUEST ======');
     console.log('[Tour] Current pillar:', currentPillar);
     console.log('[Tour] Prompt:', tourPrompt);
@@ -789,28 +842,26 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       console.log('[Tour] ====== PILLAR_INFO - LLM RESPONSE ======');
       console.log('[Tour] Dialogue:', response.dialogue);
 
+      // v5.4.0: Use fallback if response is generic/third-person
+      const fallback = getTourFallback(currentPillar);
+      let dialogueToShow = response.dialogue;
+
+      if (this.isResponseGeneric(dialogueToShow, 'explain')) {
+        console.log('[Tour] WARNING: Generic/third-person response, using fallback');
+        dialogueToShow = fallback.explain.dialogue;
+      }
+
       // Start typing animation
       this.tourService.onTypingStarted();
-      this.startAITypingAnimation(response.dialogue);
+      this.startAITypingAnimation(dialogueToShow);
 
     } catch (error) {
       console.error('[Tour] PILLAR_INFO ERROR:', error);
-      const fallback = this.getPillarFallbackInfo(currentPillar);
+      // v5.4.0: Use config fallback on error
+      const fallback = getTourFallback(currentPillar);
       this.tourService.onTypingStarted();
-      this.startAITypingAnimation(fallback);
+      this.startAITypingAnimation(fallback.explain.dialogue);
     }
-  }
-
-  /**
-   * v5.3.0: Get fallback info for a pillar if LLM fails
-   */
-  private getPillarFallbackInfo(pillarId: string | null): string {
-    const fallbacks: Record<string, string> = {
-      'about-daniel': 'Daniel es un consultor de IA con más de 5 años de experiencia en desarrollo.',
-      'local-llms': 'LLMs locales te permiten ejecutar modelos de IA en tu propia infraestructura.',
-      'calendly': 'Aquí puedes agendar una sesión gratuita de 30 minutos con Daniel.'
-    };
-    return fallbacks[pillarId || ''] || 'Este es uno de los servicios de consultoría de IA.';
   }
 
   /**

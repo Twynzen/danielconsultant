@@ -15,7 +15,7 @@ import { PhysicsService } from '../core/services/physics.service';
 import { InputService } from '../core/services/input.service';
 import { PILLARS } from '../config/pillar.config';
 import { ActionExecutorService } from './action-executor.service';
-import { RobotAction } from '../config/sendell-ai.config';
+import { RobotAction, getPillarDescription, PILLAR_DESCRIPTIONS } from '../config/sendell-ai.config';
 
 // Tour step states
 export enum TourStep {
@@ -345,6 +345,7 @@ export class TourService {
 
   /**
    * Get tour prompt for LLM based on current step
+   * v5.4.0: Now includes rich pillar context for better responses
    */
   getTourPrompt(): string {
     const state = this._state();
@@ -353,19 +354,36 @@ export class TourService {
     const isFirstPillar = state.currentPillarIndex === 0;
     const isLastPillar = state.currentPillarIndex === state.pillarSequence.length - 1;
 
+    // v5.4.0: Get pillar description for RAG context
+    const pillarInfo = getPillarDescription(currentPillar);
+    const pillarContext = pillarInfo
+      ? `[PILAR: ${pillarInfo.name} - ${pillarInfo.shortDesc}]`
+      : `[PILAR: ${currentPillar}]`;
+
     switch (state.step) {
       case TourStep.INTRO:
         if (isFirstPillar) {
-          return `[TOUR_INTRO]${robotContext} Ya saludaste al usuario. Invítalo a seguirte al primer pilar (${currentPillar}). Sé breve y amigable. Usa walk_to_pillar con target "${currentPillar}".`;
+          // v5.4.0: More explicit instruction with example
+          return `[TOUR_INTRO]${robotContext}${pillarContext}
+INSTRUCCIÓN: Di UNA frase invitando al usuario a seguirte. Ejemplo: "${pillarInfo?.tourIntro || '¡Sígueme!'}"
+ACCIÓN REQUERIDA: walk_to_pillar con target "${currentPillar}"
+HABLA EN PRIMERA PERSONA como Sendell.`;
         } else {
-          return `[TOUR_NEXT]${robotContext} Invita al usuario al siguiente pilar (${currentPillar}). Di algo como "Vamos al siguiente" o "Sígueme". Usa walk_to_pillar con target "${currentPillar}".`;
+          return `[TOUR_NEXT]${robotContext}${pillarContext}
+INSTRUCCIÓN: Invita al siguiente pilar con UNA frase. Ejemplo: "${pillarInfo?.tourIntro || '¡Vamos al siguiente!'}"
+ACCIÓN REQUERIDA: walk_to_pillar con target "${currentPillar}"`;
         }
 
       case TourStep.PILLAR_INFO:
-        return `[TOUR_PILLAR_INFO]${robotContext} Estás frente al pilar ${currentPillar}. Explica brevemente qué es este servicio/sección en 2 oraciones máximo. No uses acciones, solo explica.`;
+        // v5.4.0: Provide the explanation content for the LLM to use
+        return `[TOUR_PILLAR_INFO]${robotContext}${pillarContext}
+INSTRUCCIÓN: Explica este pilar en 2 oraciones. Usa esta info: "${pillarInfo?.tourExplain || 'Servicio de IA de Daniel.'}"
+NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
 
       case TourStep.COMPLETE:
-        return `[TOUR_END]${robotContext} El tour terminó. Despídete amablemente e invita al usuario a explorar libremente o agendar una sesión. No uses acciones.`;
+        return `[TOUR_END]${robotContext}
+INSTRUCCIÓN: Despídete en 1-2 oraciones. Invita a explorar o agendar sesión.
+NO incluyas acciones. HABLA EN PRIMERA PERSONA como Sendell.`;
 
       default:
         return '';
