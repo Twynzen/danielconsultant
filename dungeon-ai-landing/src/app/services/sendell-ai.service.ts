@@ -31,6 +31,23 @@ import {
   getAllPillarContent
 } from '../config/pillar-knowledge.config';
 
+// v3.0: Sendell identity context - ALWAYS included to prevent identity confusion
+const SENDELL_IDENTITY_CONTEXT = [
+  '## Identidad de Sendell (Robot Guía)',
+  'Sendell es un robot guía digital hecho de caracteres binarios (0s y 1s).',
+  'Fue creado por Daniel Castiblanco como asistente virtual para esta página.',
+  '',
+  'IDENTIDAD DE SENDELL:',
+  '- Nombre: Sendell',
+  '- Naturaleza: Robot digital, asistente virtual, guía de la página',
+  '- Creador: Daniel Castiblanco (un humano, consultor de IA)',
+  '- Hogar: Esta página web de consultoría de IA',
+  '',
+  'IMPORTANTE: Sendell es el ROBOT GUÍA, Daniel es el HUMANO CONSULTOR.',
+  'Sendell ayuda a los visitantes a conocer los servicios de Daniel.',
+  'Cuando alguien pregunta "quién eres", Sendell responde como robot, no como Daniel.'
+].join('\n');
+
 export type SendellAIStatus = 'initializing' | 'loading_llm' | 'ready' | 'fallback_only' | 'generating';
 
 export interface SendellAIState {
@@ -214,7 +231,9 @@ export class SendellAIService {
       else if (this.llmService.isReady) {
         // Add context from pillar knowledge
         const contextualInput = this.addContext(trimmedInput);
+// v5.2.4: Detailed LLM logs        console.log('[SendellAI] ====== LLM REQUEST ======');        console.log('[SendellAI] Original input:', trimmedInput);        console.log('[SendellAI] With context (first 500 chars):', contextualInput.substring(0, 500));
         response = await this.llmService.processInput(contextualInput);
+// v5.2.4: Log LLM response        console.log('[SendellAI] ====== LLM RESPONSE ======');        console.log('[SendellAI] Dialogue:', response.dialogue);        console.log('[SendellAI] Emotion:', response.emotion);        console.log('[SendellAI] Actions:', JSON.stringify(response.actions));        console.log('[SendellAI] ==============================');
       }
       // Fallback to keyword matching
       else {
@@ -327,23 +346,25 @@ export class SendellAIService {
 
   /**
    * Add contextual information to user input based on keywords
+   * v3.0: ALWAYS includes Sendell identity context first
    */
   private addContext(input: string): string {
     const relevantPillars = searchPillarsByKeyword(input);
 
-    if (relevantPillars.length === 0) {
-      return input;
+    // v3.0: ALWAYS include Sendell identity first to prevent confusion
+    let context = SENDELL_IDENTITY_CONTEXT;
+
+    // Add relevant pillar context if found
+    if (relevantPillars.length > 0) {
+      const pillarContext = relevantPillars
+        .slice(0, 2) // Max 2 relevant sections
+        .map(p => `## ${p.title}\n${p.content.substring(0, 300)}...`)
+        .join('\n\n');
+      context += '\n\n' + pillarContext;
     }
 
-    // Add relevant context
-    const context = relevantPillars
-      .slice(0, 2) // Max 2 relevant sections
-      .map(p => `## ${p.title}\n${p.content.substring(0, 300)}...`)
-      .join('\n\n');
-
-    return `[Contexto relevante de la página]\n${context}\n\n[Pregunta del usuario]\n${input}`;
+    return `[Contexto de la página]\n${context}\n\n[Pregunta del usuario]\n${input}`;
   }
-
   /**
    * Execute robot actions from response
    */

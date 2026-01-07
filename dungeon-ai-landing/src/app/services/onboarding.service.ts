@@ -33,6 +33,8 @@ export enum OnboardingPhase {
   SPAWN_ANIMATION = 'spawn',
   PRESENTATION = 'presentation',
   CHOICE_PROMPT = 'choice',
+  TOUR_WAITING_LLM = 'tour-waiting',  // v3.0: User chose tour but LLM not ready
+  TOUR_ACTIVE = 'tour-active',        // v3.0: Tour mode with LLM active
   TOUR_MODE = 'tour',
   FREE_MODE = 'free',
   COMPLETE = 'complete'
@@ -117,6 +119,15 @@ export class OnboardingService {
   // v5.1: Loading phase checks
   readonly isLoading = computed(() => this.state().phase === OnboardingPhase.LOADING);
   readonly isWelcome = computed(() => this.state().phase === OnboardingPhase.WELCOME);
+  // v3.0: Tour phase checks
+  readonly isTourWaitingLLM = computed(() => this.state().phase === OnboardingPhase.TOUR_WAITING_LLM);
+  readonly isTourActive = computed(() => this.state().phase === OnboardingPhase.TOUR_ACTIVE);
+  
+  // v5.2.3: Combined tour in progress (blocks all user input)
+  readonly isTourInProgress = computed(() => 
+    this.state().phase === OnboardingPhase.TOUR_WAITING_LLM ||
+    this.state().phase === OnboardingPhase.TOUR_ACTIVE
+  );
 
   // Illumination convenience signals
   readonly groundOpacity = computed(() => this.state().illumination.ground);
@@ -209,32 +220,53 @@ export class OnboardingService {
   /**
    * v5.1: Animate loading bar from 0 to 100
    * v2.0: Also starts LLM preloading in background
+   * v3.0: Hybrid loading - minimum time + real LLM progress
    */
   private startLoadingAnimation(): void {
     const startTime = performance.now();
-    const duration = ONBOARDING_TIMING.LOADING_DURATION_MS;
+    const minDuration = ONBOARDING_TIMING.LOADING_DURATION_MS; // 3500ms minimum
 
     // v2.0: Start LLM preloading in background (non-blocking)
     this.startLLMPreloading();
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
-      const progress = Math.min((elapsed / duration) * 100, 100);
+      const timeProgress = Math.min((elapsed / minDuration) * 100, 100);
+      const llmProgress = this._llmPreloadProgress();
+
+      // v3.0: Hybrid progress calculation
+      // During first 3.5s: show time-based progress (smooth UX)
+      // After 3.5s: show real LLM progress if still loading
+      let displayProgress: number;
+
+      if (elapsed < minDuration) {
+        // First 3.5s: use time-based progress (faster visually)
+        displayProgress = timeProgress;
+      } else {
+        // After 3.5s: use real LLM progress if not complete
+        displayProgress = Math.max(timeProgress, llmProgress);
+      }
 
       this.state.update(s => ({
         ...s,
-        loadingProgress: progress
+        loadingProgress: displayProgress
       }));
 
-      if (progress < 100) {
-        this.loadingAnimationId = requestAnimationFrame(animate);
-      } else {
-        // Loading complete, show welcome
+      // v3.0: Exit condition - BOTH time AND LLM must be ready
+      const timeComplete = elapsed >= minDuration;
+      const llmComplete = this._llmPreloadProgress() >= 100 ||
+                          this._isWebGPUSupported() === false; // fallback mode OK
+
+      if (timeComplete && llmComplete) {
+        // Both conditions met, advance to welcome
         this.loadingAnimationId = null;
         this.state.update(s => ({
           ...s,
           phase: OnboardingPhase.WELCOME
         }));
+      } else {
+        // Keep animating
+        this.loadingAnimationId = requestAnimationFrame(animate);
       }
     };
 
@@ -384,17 +416,45 @@ export class OnboardingService {
 
   /**
    * Set user choice from Y/N input
+   * v3.0: Now checks LLM status for tour mode
    */
   setUserChoice(input: string): void {
     const normalized = input.toUpperCase().trim();
     const isTour = ['Y', 'S', 'SI', 'YES'].includes(normalized);
 
-    this.state.update(s => ({
-      ...s,
-      userChoice: isTour ? 'tour' : 'free',
-      phase: isTour ? OnboardingPhase.TOUR_MODE : OnboardingPhase.FREE_MODE,
-      currentDialogIndex: 0
-    }));
+    if (isTour) {
+      // v3.0: Check if LLM is ready for tour mode
+      const llmReady = this._llmPreloadProgress() >= 100 ||
+                       this._isWebGPUSupported() === false; // fallback OK
+
+      this.state.update(s => ({
+        ...s,
+        userChoice: 'tour',
+        phase: llmReady ? OnboardingPhase.TOUR_ACTIVE : OnboardingPhase.TOUR_WAITING_LLM,
+        currentDialogIndex: 0
+      }));
+    } else {
+      // FREE_MODE doesn't require LLM
+      this.state.update(s => ({
+        ...s,
+        userChoice: 'free',
+        phase: OnboardingPhase.FREE_MODE,
+        currentDialogIndex: 0
+      }));
+    }
+  }
+
+  /**
+   * v3.0: Advance from TOUR_WAITING_LLM to TOUR_ACTIVE
+   * Called when LLM becomes ready while waiting
+   */
+  advanceToTourActive(): void {
+    if (this.state().phase === OnboardingPhase.TOUR_WAITING_LLM) {
+      this.state.update(s => ({
+        ...s,
+        phase: OnboardingPhase.TOUR_ACTIVE
+      }));
+    }
   }
 
   /**

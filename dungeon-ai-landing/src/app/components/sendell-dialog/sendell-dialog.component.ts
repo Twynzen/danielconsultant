@@ -35,6 +35,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OnboardingService, OnboardingPhase } from '../../services/onboarding.service';
 import { PhysicsService } from '../../core/services/physics.service';
+import { InputService } from '../../core/services/input.service';
 import { CameraService } from '../../services/camera.service';
 import { SendellAIService } from '../../services/sendell-ai.service';
 import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG } from '../../config/onboarding.config';
@@ -56,6 +57,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private cdr = inject(ChangeDetectorRef);
   // v2.0: AI Service for post-onboarding chat
   readonly sendellAI = inject(SendellAIService);
+  // v5.2.3: Input service to pause movement while typing
+  private inputService = inject(InputService);
 
   // v1.1: Character dimensions for positioning
   private readonly CHARACTER_WIDTH = 180;
@@ -77,10 +80,10 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   // Choice input
   @ViewChild('choiceInput') choiceInputRef!: ElementRef<HTMLInputElement>;
   // v2.0: Chat input reference
-  @ViewChild('chatInput') chatInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('chatInputEl') chatInputRef!: ElementRef<HTMLInputElement>;
   userInput = '';
   // v2.0: Chat input separate from choice input
-  chatInput = '';
+  chatUserInput = '';
 
   // Internal state
   displayedText = signal('');
@@ -96,6 +99,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   showChatInput = signal(false);  // v2.1: Only shows when user double-clicks dialog
   isChatOpen = signal(false);  // v2.1: Tracks if chat mode is actively open
   private aiInitialized = false;
+  private tourStarted = false;  // v3.0: Track if guided tour has started
   private lastClickTime = 0;  // v2.1: For double-click detection
 
   // v2.0: LLM info tooltip state
@@ -132,6 +136,36 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       }
     }, { allowSignalWrites: true });
 
+    // v3.0: Effect to handle tour phases
+    effect(() => {
+      const phase = this.onboarding.phase();
+
+      // Handle TOUR_WAITING_LLM: Show waiting message with LLM progress
+      if (phase === OnboardingPhase.TOUR_WAITING_LLM) {
+        // v5.2.3: Clear previous text and show loading
+        this.displayedText.set('Preparando tour personalizado...');
+        this.isTyping.set(false);
+        this.isAITyping.set(true);
+        this.cdr.markForCheck();
+
+        // Check if LLM became ready
+        if (this.sendellAI.status() === 'ready' || this.sendellAI.status() === 'fallback_only') {
+          this.onboarding.advanceToTourActive();
+        }
+      }
+
+      // Handle TOUR_ACTIVE: Start guided tour with LLM
+      if (phase === OnboardingPhase.TOUR_ACTIVE && !this.tourStarted) {
+        this.tourStarted = true;
+        // v5.2.3: Clear text and show loading indicator before LLM responds
+        this.displayedText.set('...');
+        this.isTyping.set(false);
+        this.isAITyping.set(true);
+        this.cdr.markForCheck();
+        this.startGuidedTour();
+      }
+    }, { allowSignalWrites: true });
+
     // v2.0: Subscribe to AI actions
     this.sendellAI.action$.subscribe(action => {
       this.aiActionRequested.emit(action);
@@ -141,6 +175,18 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   // Computed from onboarding service or input
   readonly currentDialog = computed(() => {
     return this.dialog ?? this.onboarding.currentDialog();
+  });
+
+  // v5.2.3: Check if onboarding is complete (for showing double-click hint)
+  readonly isOnboardingComplete = computed(() => {
+    return this.onboarding.phase() === OnboardingPhase.COMPLETE;
+  });
+
+  // v5.2.4: Check if tour is in progress (blocks chat input)
+  readonly isTourInProgress = computed(() => {
+    const phase = this.onboarding.phase();
+    return phase === OnboardingPhase.TOUR_WAITING_LLM ||
+           phase === OnboardingPhase.TOUR_ACTIVE;
   });
 
   readonly isVisible = computed(() => {
@@ -163,7 +209,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     // v5.1: Always show during loading and welcome (they have their own content)
-    if (phase === OnboardingPhase.LOADING || phase === OnboardingPhase.WELCOME) {
+    if (phase === OnboardingPhase.LOADING || phase === OnboardingPhase.WELCOME || phase === OnboardingPhase.TOUR_WAITING_LLM || phase === OnboardingPhase.TOUR_ACTIVE) {
       return true;
     }
 
@@ -544,6 +590,102 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * v3.0: Start guided tour using LLM
+   * v5.2.3: Blocks user input during tour - Sendell has full control
+   */
+  private async startGuidedTour(): Promise<void> {
+    const tourStartTime = performance.now();
+    console.log('[Tour] ========== GUIDED TOUR STARTED ==========');
+    console.log('[Tour] Blocking user input - Sendell takes control');
+    
+    // v5.2.3: Block ALL user input during tour
+    this.inputService.blockForTour();
+    
+    // Enter chat mode first
+    this.isChatMode.set(true);
+
+    // Ensure AI is initialized
+    if (!this.aiInitialized) {
+      this.aiInitialized = true;
+      console.log('[Tour] Initializing AI service...');
+      await this.sendellAI.initialize().catch(error => {
+        console.error('[Tour] AI initialization error:', error);
+      });
+    }
+
+    // v5.2.4: Tour prompt - explicit and structured
+    const tourPrompt = '[TOUR] Inicia el tour. Preséntate como Sendell el robot guía y di que vas a mostrar los servicios de Daniel. Camina al pilar about-daniel.';
+
+    // Send system message to start tour
+    try {
+      console.log('[Tour] ====== LLM REQUEST ======');
+      console.log('[Tour] Prompt:', tourPrompt);
+      const llmStartTime = performance.now();
+      
+      const tourResponse = await this.sendellAI.processUserInput(tourPrompt);
+      
+      const llmDuration = performance.now() - llmStartTime;
+      console.log('[Tour] ====== LLM RESPONSE ======');
+      console.log('[Tour] Dialogue:', tourResponse.dialogue);
+      console.log('[Tour] Emotion:', tourResponse.emotion);
+      console.log('[Tour] Actions:', JSON.stringify(tourResponse.actions));
+      console.log('[Tour] Duration:', llmDuration.toFixed(0) + 'ms');
+      console.log('[Tour] ==========================');
+
+      // v5.2.4: Detect generic/unhelpful responses and use fallback
+      let dialogueToShow = tourResponse.dialogue;
+      const isGenericResponse = 
+        dialogueToShow.toLowerCase().includes('ayudarte') ||
+        dialogueToShow.toLowerCase().includes('en qué puedo') ||
+        dialogueToShow.length < 30;
+      
+      if (isGenericResponse) {
+        console.log('[Tour] WARNING: LLM gave generic response, using fallback');
+        dialogueToShow = '¡Hola! Soy Sendell, tu guía digital. Voy a mostrarte los servicios de consultoría de IA de Daniel. ¡Sígueme!';
+        // Emit walk action since LLM probably didn't
+        this.aiActionRequested.emit({ type: 'walk_to_pillar', target: 'about-daniel' });
+      }
+
+      // Show response with typing animation
+      this.startAITypingAnimation(dialogueToShow);
+
+      // v5.2.4: Calculate typing duration and wait before completing
+      const typingDuration = dialogueToShow.length * 30 + 2000; // 30ms per char + 2s buffer
+      console.log('[Tour] Typing duration:', typingDuration + 'ms');
+
+      // Illuminate pillars (visual effect)
+      this.onboarding.illuminatePillars();
+
+      // v5.2.4: Complete onboarding AFTER typing finishes
+      setTimeout(() => {
+        const totalDuration = performance.now() - tourStartTime;
+        console.log('[Tour] Tour intro completed in ' + totalDuration.toFixed(0) + 'ms');
+        console.log('[Tour] Unblocking user input - User takes control');
+        console.log('[Tour] ========== GUIDED TOUR ENDED ==========');
+        
+        // v5.2.3: Unblock user input after tour
+        this.inputService.unblockFromTour();
+        this.onboarding.completeOnboarding();
+      }, typingDuration);
+
+    } catch (error) {
+      console.error('[Tour] ERROR:', error);
+      // Fallback to standard greeting
+      const fallbackMessage = '¡Hola! Soy Sendell, tu guía. Te mostraré los servicios de Daniel.';
+      console.log('[Tour] Using fallback message:', fallbackMessage);
+      this.startAITypingAnimation(fallbackMessage);
+      this.aiActionRequested.emit({ type: 'walk_to_pillar', target: 'about-daniel' });
+      
+      // Still unblock after fallback typing finishes
+      setTimeout(() => {
+        console.log('[Tour] Fallback completed - Unblocking user input');
+        this.inputService.unblockFromTour();
+        this.onboarding.completeOnboarding();
+      }, 4000);
+    }
+  }
+
+  /**
    * v2.0: Start typing animation for AI response
    */
   private startAITypingAnimation(text: string): void {
@@ -602,11 +744,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
    * v2.0: Submit chat message to AI
    */
   async submitChat(): Promise<void> {
-    const input = this.chatInput.trim();
+    const input = this.chatUserInput.trim();
     if (!input) return;
 
     // Clear input immediately
-    this.chatInput = '';
+    this.chatUserInput = '';
+    this.isChatOpen.set(false);  // v3.0: Reset to prevent auto-show
     this.showChatInput.set(false);
 
     // Show processing state
@@ -643,6 +786,20 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
    */
   onChatInputClick(event: MouseEvent): void {
     event.stopPropagation();
+  }
+
+  /**
+   * v5.2.3: Pause robot movement when user focuses on input
+   */
+  onInputFocus(): void {
+    this.inputService.pause();
+  }
+
+  /**
+   * v5.2.3: Resume robot movement when user leaves input
+   */
+  onInputBlur(): void {
+    this.inputService.resume();
   }
 
   /**

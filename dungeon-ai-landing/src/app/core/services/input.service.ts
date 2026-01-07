@@ -14,6 +14,10 @@ export class InputService implements OnDestroy {
   private _isPaused = signal(false);
   readonly isPaused = this._isPaused.asReadonly();
 
+  // v5.2.3: Tour block state - completely blocks ALL input during guided tour
+  private _isTourBlocked = signal(false);
+  readonly isTourBlocked = this._isTourBlocked.asReadonly();
+
   readonly inputState = signal<InputState>({
     up: false,
     down: false,
@@ -65,6 +69,26 @@ export class InputService implements OnDestroy {
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
+    // v5.2.3: Skip if user is typing in an input field
+    const target = event.target as HTMLElement;
+    const isTypingInInput = target.tagName === 'INPUT' || 
+                            target.tagName === 'TEXTAREA' ||
+                            target.isContentEditable;
+    
+    if (isTypingInInput) {
+      return; // Let the input handle the key naturally
+    }
+
+    // v5.2.3: Block ALL input during guided tour (Sendell has control)
+    if (this._isTourBlocked()) {
+      // Only allow ESC to cancel tour
+      if (event.code !== 'Escape') {
+        event.preventDefault();
+        console.log('[InputService] Input blocked - tour in progress');
+        return;
+      }
+    }
+
     if (this.keyMap[event.code]) {
       event.preventDefault();
     }
@@ -162,6 +186,24 @@ export class InputService implements OnDestroy {
    */
   resume(): void {
     this._isPaused.set(false);
+  }
+
+  /**
+   * v5.2.3: Block all input for guided tour
+   * When blocked, user cannot control robot - Sendell has full control
+   */
+  blockForTour(): void {
+    this._isTourBlocked.set(true);
+    this.clearAllKeys(); // Clear any currently pressed keys
+    console.log('[InputService] Tour block ENABLED - Sendell has control');
+  }
+
+  /**
+   * v5.2.3: Unblock input after tour ends
+   */
+  unblockFromTour(): void {
+    this._isTourBlocked.set(false);
+    console.log('[InputService] Tour block DISABLED - User has control');
   }
 
   ngOnDestroy(): void {

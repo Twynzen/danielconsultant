@@ -709,3 +709,31 @@ $matrix-border: rgba(0, 255, 68, 0.5);
 .dialog-wrapper.chat-mode {
   // Slightly different positioning for chat mode if needed
 }
+
+// v5.2.3: Animated loading dots
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+  font-size: 24px;
+  color: $matrix-green;
+  
+  .dot {
+    animation: dotPulse 1.4s ease-in-out infinite;
+    text-shadow: 0 0 8px rgba(0, 255, 68, 0.6);
+    
+    &:nth-child(1) { animation-delay: 0s; }
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+}
+
+@keyframes dotPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}

@@ -87,9 +87,18 @@
         <!-- Dialog Text with Typing Effect -->
         @if (!isLoading() && !isWelcome() && (displayedText() || isTyping())) {
           <div class="dialog-text" [class.chat-response]="isChatMode()">
-            <span class="typing-effect">{{ displayedText() }}</span>
-            @if (isTyping()) {
-              <span class="cursor">_</span>
+            <!-- v5.2.3: Animated loading dots when waiting for LLM -->
+            @if (isAITyping() && !isTyping() && displayedText() === '...') {
+              <span class="loading-dots">
+                <span class="dot">.</span>
+                <span class="dot">.</span>
+                <span class="dot">.</span>
+              </span>
+            } @else {
+              <span class="typing-effect">{{ displayedText() }}</span>
+              @if (isTyping()) {
+                <span class="cursor">_</span>
+              }
             }
           </div>
         }
@@ -106,6 +115,8 @@
                 class="choice-input"
                 [(ngModel)]="userInput"
                 (keydown)="onChoiceKeydown($event)"
+                (focus)="onInputFocus()"
+                (blur)="onInputBlur()"
                 autocomplete="off"
                 spellcheck="false">
               <span class="input-cursor">_</span>
@@ -120,17 +131,19 @@
 
         <!-- v2.0: Chat Input (post-onboarding) -->
         <!-- v2.1: Only shown after double-click on dialog -->
-        @if (isChatMode() && showChatInput()) {
+        @if (isChatMode() && showChatInput() && isOnboardingComplete() && !isTourInProgress()) {
           <div class="chat-input-section">
             <div class="chat-input-wrapper">
               <span class="input-prompt">&gt; </span>
               <input
-                #chatInput
+                #chatInputEl
                 type="text"
                 class="chat-input"
-                [(ngModel)]="chatInput"
+                [(ngModel)]="chatUserInput"
                 (keydown)="onChatKeydown($event)"
                 (click)="onChatInputClick($event)"
+                (focus)="onInputFocus()"
+                (blur)="onInputBlur()"
                 placeholder="¿Algo que me quieras decir?"
                 autocomplete="off"
                 spellcheck="false">
@@ -141,8 +154,8 @@
           </div>
         }
 
-        <!-- v2.1: Double-click hint (only when chat is not open) -->
-        @if (isChatMode() && !showChatInput() && !isTyping()) {
+        <!-- v2.1: Double-click hint (only when onboarding complete and chat not open) -->
+        @if (isChatMode() && !showChatInput() && !isTyping() && !isAITyping() && isOnboardingComplete() && !isTourInProgress()) {
           <div class="chat-hint-double-click">
             <span class="blink-slow">[DOBLE CLICK PARA HABLAR]</span>
           </div>
