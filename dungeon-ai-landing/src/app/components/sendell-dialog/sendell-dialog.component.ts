@@ -39,7 +39,7 @@ import { InputService } from '../../core/services/input.service';
 import { CameraService } from '../../services/camera.service';
 import { SendellAIService } from '../../services/sendell-ai.service';
 import { TourService, TourStep } from '../../services/tour.service';
-import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG } from '../../config/onboarding.config';
+import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG, FREE_MODE_DIALOGS } from '../../config/onboarding.config';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { SendellResponse, RobotAction, getTourFallback, getPillarDescription, TOUR_FAREWELL } from '../../config/sendell-ai.config';
 
@@ -101,14 +101,24 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   isAITyping = signal(false);  // True when AI is generating response
   showChatInput = signal(false);  // v2.1: Only shows when user double-clicks dialog
   isChatOpen = signal(false);  // v2.1: Tracks if chat mode is actively open
+  // v5.5: Minimize system
+  isDialogMinimized = signal(false);  // True when dialog is minimized
+  hasUnsentText = signal(false);  // True if user has text in input (for smart restore)
   private aiInitialized = false;
   private tourStarted = false;  // v3.0: Track if guided tour has started
   private _lastHandledTourStep: TourStep | null = null;  // v5.4.0: Prevent duplicate step handling
   private _lastHandledPillarIndex = -1;  // v5.4.0: Track pillar index for composite key
   private _isTourStepProcessing = false;  // v5.4.0: Guard against concurrent processing
   private lastClickTime = 0;  // v2.1: For double-click detection
-  private _hideDialogAfterFarewell = signal(false);  // v5.4.3: Hide dialog after tour farewell
-  private _isFarewellTyping = false;  // v5.4.3: Track if we're typing the farewell message
+
+  // v5.4.4: Pre-fetch pillar info during ENERGIZING animation
+  private prefetchedPillarInfo: { pillarId: string; response: SendellResponse | null } | null = null;
+  // v5.4.4: Track farewell completion to show continue prompt
+  private isFarewellComplete = signal(false);
+  // v5.5: Track FREE_MODE completion to show continue prompt
+  private isFreeModeComplete = signal(false);
+  // v5.8: Track when chat response is complete (waiting for user to dismiss)
+  isChatResponseComplete = signal(false);
 
   // v2.0: LLM info tooltip state
   showLLMInfo = signal(false);
@@ -216,13 +226,52 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
         case TourStep.INTRO:
           this.handleTourIntro();
           break;
+        case TourStep.ENERGIZING:
+          // v5.4.4: Pre-fetch pillar info while energizing animation plays
+          this.prefetchPillarInfo();
+          break;
         case TourStep.PILLAR_INFO:
           this.handleTourPillarInfo();
           break;
         case TourStep.COMPLETE:
           this.handleTourComplete();
           break;
-        // TYPING, WALKING, ENERGIZING, WAIT_USER are handled elsewhere
+        // TYPING, WALKING, WAIT_USER are handled elsewhere
+      }
+    }, { allowSignalWrites: true });
+
+    // v5.5: Auto-minimize when robot moves
+    // v5.5.1: DON'T minimize while Sendell is typing a response
+    effect(() => {
+      const velocityX = this.physics.velocityX();
+      const isJumping = this.physics.isJumping();
+      const isMoving = Math.abs(velocityX) > 10;  // Movement threshold
+
+      // Never minimize while Sendell is typing or processing
+      if (this.isTyping() || this.isAITyping()) {
+        return;
+      }
+
+      // If chat is open and robot is moving/jumping
+      if (this.isChatMode() && !this.isDialogMinimized() && (isMoving || isJumping)) {
+        // Only minimize if no pending text or if jumping
+        if (!this.hasUnsentText() || isJumping) {
+          console.log('[SendellDialog] Auto-minimizing - robot is moving');
+          this.minimizeDialog();
+        }
+      }
+    }, { allowSignalWrites: true });
+
+    // v5.5: Auto-restore when robot stops (if had pending text)
+    effect(() => {
+      const velocityX = this.physics.velocityX();
+      const isJumping = this.physics.isJumping();
+      const isStopped = Math.abs(velocityX) < 5 && !isJumping;
+
+      // If minimized with pending text and robot stopped
+      if (this.isDialogMinimized() && this.hasUnsentText() && isStopped) {
+        console.log('[SendellDialog] Auto-restoring - had pending text');
+        this.restoreDialog();
       }
     }, { allowSignalWrites: true });
   }
@@ -244,27 +293,49 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
            phase === OnboardingPhase.TOUR_ACTIVE;
   });
 
+  // v5.5: Check if at last FREE_MODE dialog
+  readonly isAtLastFreeModeDialog = computed(() => {
+    const phase = this.onboarding.phase();
+    const dialogIndex = this.onboarding.currentDialogIndex();
+    return phase === OnboardingPhase.FREE_MODE &&
+           dialogIndex >= FREE_MODE_DIALOGS.length - 1;
+  });
+
   // v5.3.0: Show "[CUALQUIER TECLA PARA CONTINUAR]" during tour (from TourService)
   // v5.4.0: Also check that typing is not in progress
+  // v5.4.4: Also show after farewell message completes
+  // v5.5: Also show after FREE_MODE dialogs complete
   readonly showTourContinuePrompt = computed(() => {
+    const tourStep = this.tourService.step();
     const tourWantsPrompt = this.tourService.showContinuePrompt();
     const notTyping = !this.isTyping() && !this.isAITyping();
 
-    return tourWantsPrompt && notTyping;
+    // v5.4.4: Also show prompt after farewell message is typed
+    const isFarewellWaiting = tourStep === TourStep.COMPLETE &&
+                              this.isFarewellComplete() &&
+                              notTyping;
+
+    // v5.5: Also show after FREE_MODE last dialog is typed
+    const isFreeModeWaiting = this.isFreeModeComplete() && notTyping;
+
+    return (tourWantsPrompt || isFarewellWaiting || isFreeModeWaiting) && notTyping;
+  });
+
+  // v5.8: Show "[CUALQUIER TECLA]" after chat response completes (free chat mode)
+  readonly showChatContinuePrompt = computed(() => {
+    return this.isChatMode() &&
+           this.isChatResponseComplete() &&
+           !this.isTyping() &&
+           !this.isAITyping() &&
+           !this.tourService.isActive();
   });
 
   readonly isVisible = computed(() => {
     const phase = this.onboarding.phase();
 
-    // v5.4.3: Hide after farewell unless user opens chat
-    if (this._hideDialogAfterFarewell() && !this.isChatOpen()) {
-      return false;
-    }
-
-    // v2.0: Always show in chat mode (if chat is open or has content)
+    // v2.0: Always show in chat mode
     if (this.isChatMode()) {
-      // v5.4.3: Only show if chat is actively open or we're typing/have content
-      return this.isChatOpen() || this.isTyping() || this.isAITyping() || this.showChatInput();
+      return true;
     }
 
     // Never show during these phases (except COMPLETE which is now chat mode)
@@ -355,8 +426,32 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
+    // v5.4.4: Farewell acknowledgment - hide dialog after tour completes
+    if (this.isFarewellComplete() && this.tourService.step() === TourStep.COMPLETE) {
+      event.preventDefault();
+      console.log('[Tour] User acknowledged farewell, hiding dialog');
+      this.hideDialogAfterFarewell();
+      return;
+    }
+
+    // v5.5: FREE_MODE completion - hide dialog and complete onboarding
+    if (this.isFreeModeComplete()) {
+      event.preventDefault();
+      console.log('[FreeMode] User acknowledged last dialog, hiding dialog');
+      this.hideDialogAfterFreeMode();
+      return;
+    }
+
+    // v5.8: Chat response complete - dismiss dialog on any key
+    if (this.isChatResponseComplete()) {
+      event.preventDefault();
+      console.log('[Chat] User dismissed chat response');
+      this.dismissChatResponse();
+      return;
+    }
+
     // v5.3.0: Tour WAIT_USER - any key continues the tour
-    if (this.showTourContinuePrompt()) {
+    if (this.showTourContinuePrompt() && this.tourService.isActive()) {
       event.preventDefault();
       console.log('[Tour] User pressed key to continue');
       this.tourService.onUserContinue();
@@ -468,12 +563,96 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * v5.4.5: Open chat when user double-clicks on the robot
+   * v5.5: Toggle behavior - also restores from minimized or closes if open
+   * Called from landing-page when robot receives double-click
+   */
+  public openChatFromRobot(): void {
+    console.log('[SendellDialog] Robot double-click - isChatMode:', this.isChatMode(), 'isMinimized:', this.isDialogMinimized(), 'isChatOpen:', this.isChatOpen());
+
+    // v5.5: If minimized, restore
+    if (this.isDialogMinimized()) {
+      console.log('[SendellDialog] Restoring from minimized');
+      this.restoreDialog();
+      return;
+    }
+
+    // v5.5: If chat is open, close it (toggle behavior)
+    if (this.isChatMode() && this.isChatOpen()) {
+      console.log('[SendellDialog] Closing chat');
+      this.closeDialog();
+      return;
+    }
+
+    // Activate chat mode if not already active
+    if (!this.isChatMode()) {
+      this.isChatMode.set(true);
+    }
+
+    // Open the input
+    this.openChatInput();
+
+    // If dialog has no text, show a greeting
+    if (!this.displayedText() || this.displayedText().length === 0) {
+      this.startAITypingAnimation('¡Hola! ¿En qué puedo ayudarte?');
+    }
+  }
+
+  /**
    * v2.1: Close chat input (called when clicking outside or after sending)
    */
   closeChatInput(): void {
     this.isChatOpen.set(false);
     this.showChatInput.set(false);
     this.cdr.markForCheck();
+  }
+
+  /**
+   * v5.5: Minimize dialog (preserves state if there's text)
+   * Shows minimized indicator in corner
+   */
+  minimizeDialog(): void {
+    // Save if there's unsent text
+    this.hasUnsentText.set(this.chatUserInput.trim().length > 0);
+
+    this.isDialogMinimized.set(true);
+    this.showChatInput.set(false);
+    this.cdr.markForCheck();
+
+    console.log('[SendellDialog] Dialog minimized, hasUnsentText:', this.hasUnsentText());
+  }
+
+  /**
+   * v5.5: Restore dialog from minimized state
+   * Re-opens input if user had unsent text
+   */
+  restoreDialog(): void {
+    this.isDialogMinimized.set(false);
+
+    // If had text, reopen input and focus
+    if (this.hasUnsentText()) {
+      this.showChatInput.set(true);
+      setTimeout(() => this.chatInputRef?.nativeElement?.focus(), 100);
+    }
+
+    this.cdr.markForCheck();
+    console.log('[SendellDialog] Dialog restored');
+  }
+
+  /**
+   * v5.5: Close dialog completely (clears all state)
+   */
+  closeDialog(): void {
+    this.isChatMode.set(false);
+    this.isChatOpen.set(false);
+    this.isDialogMinimized.set(false);
+    this.showChatInput.set(false);
+    this.displayedText.set('');
+    this.chatUserInput = '';
+    this.hasUnsentText.set(false);
+    this.cdr.markForCheck();
+
+    console.log('[SendellDialog] Dialog closed completely');
   }
 
   /**
@@ -552,6 +731,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       setTimeout(() => {
         this.choiceInputRef?.nativeElement?.focus();
       }, 100);
+    }
+
+    // v5.5: Mark FREE_MODE complete when last dialog finishes typing
+    if (this.isAtLastFreeModeDialog()) {
+      console.log('[SendellDialog] FREE_MODE last dialog typed, waiting for user key');
+      this.isFreeModeComplete.set(true);
     }
   }
 
@@ -664,19 +849,26 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   /**
    * v2.0: Enter chat mode after onboarding completes
-   * Initializes AI service and shows initial greeting
+   * v5.5: NO muestra diálogo automáticamente - espera doble-clic en robot
+   * Initializes AI service in background only
    */
   private async enterChatMode(): Promise<void> {
-    this.isChatMode.set(true);
+    // v5.5: NO activar chat mode automáticamente
+    // Solo preparar el sistema para cuando usuario haga doble-clic
+    this.aiInitialized = true;
 
-    // Start AI initialization in background
+    // Inicializar AI en background
     this.sendellAI.initialize().catch(error => {
       console.error('AI initialization error:', error);
     });
 
-    // Show initial greeting with typing effect
-    const greeting = '¡Listo para ayudarte! Pregúntame sobre los servicios de Daniel.';
-    this.startAITypingAnimation(greeting);
+    // v5.5: NO mostrar diálogo ni greeting
+    // El diálogo se abrirá cuando usuario haga doble-clic en robot
+    this.isChatMode.set(false);
+    this.displayedText.set('');
+    this.cdr.markForCheck();
+
+    console.log('[SendellDialog] Chat mode ready - waiting for robot double-click');
   }
 
   /**
@@ -841,13 +1033,40 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * v5.3.0: Handle TOUR_PILLAR_INFO step - LLM explains current pillar
    * v5.4.0: Uses enhanced fallback detection
+   * v5.4.4: Uses pre-fetched response if available
    */
   private async handleTourPillarInfo(): Promise<void> {
-    const tourPrompt = this.tourService.getTourPrompt();
     const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
-    console.log('[Tour] ====== PILLAR_INFO - LLM REQUEST ======');
+    console.log('[Tour] ====== PILLAR_INFO ======');
     console.log('[Tour] Current pillar:', currentPillar);
-    console.log('[Tour] Prompt:', tourPrompt);
+
+    // v5.4.4: Check if we have a pre-fetched response
+    if (this.prefetchedPillarInfo &&
+        this.prefetchedPillarInfo.pillarId === currentPillar &&
+        this.prefetchedPillarInfo.response) {
+
+      console.log('[Tour] Using pre-fetched pillar info');
+      const response = this.prefetchedPillarInfo.response;
+      this.prefetchedPillarInfo = null;  // Clear after use
+
+      // v5.4.0: Use fallback if response is generic/third-person
+      const fallback = getTourFallback(currentPillar);
+      let dialogueToShow = response.dialogue;
+
+      if (this.isResponseGeneric(dialogueToShow, 'explain')) {
+        console.log('[Tour] WARNING: Pre-fetched response is generic, using fallback');
+        dialogueToShow = fallback.explain.dialogue;
+      }
+
+      // Start typing animation immediately - no loading indicator needed
+      this.tourService.onTypingStarted();
+      this.startAITypingAnimation(dialogueToShow);
+      return;
+    }
+
+    // Fallback: No pre-fetch available, make LLM request now
+    console.log('[Tour] No pre-fetch available, making LLM request');
+    const tourPrompt = this.buildPillarInfoPrompt(currentPillar);
 
     // Show loading indicator with descriptive message
     this.displayedText.set('Analizando pilar');
@@ -886,6 +1105,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * v5.3.0: Handle TOUR_COMPLETE step - farewell message and cleanup
    * v5.4.3: Now uses predefined TOUR_FAREWELL for reliable control instructions
+   * v5.4.4: Delay completeOnboarding until user acknowledges farewell
    */
   private async handleTourComplete(): Promise<void> {
     console.log('[Tour] ========== TOUR COMPLETE ==========');
@@ -898,14 +1118,123 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     const farewellMessage = TOUR_FAREWELL.dialogue;
     console.log('[Tour] Farewell message:', farewellMessage);
 
-    // v5.4.3: Mark that we're typing the farewell (to hide dialog after)
-    this._isFarewellTyping = true;
-
     // Start typing animation with farewell
+    // v5.4.4: Don't call completeOnboarding yet - wait for user to press key
     this.startAITypingAnimation(farewellMessage);
+  }
 
-    // Complete the onboarding
+  /**
+   * v5.4.4: Pre-fetch pillar info during ENERGIZING animation
+   * This allows the LLM response to be ready before user asks for it
+   */
+  private async prefetchPillarInfo(): Promise<void> {
+    const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
+    console.log('[Tour] Pre-fetching pillar info for:', currentPillar);
+
+    // Clear any previous pre-fetch
+    this.prefetchedPillarInfo = null;
+
+    // Build the prompt for pillar info
+    const tourPrompt = this.buildPillarInfoPrompt(currentPillar);
+
+    try {
+      const response = await this.sendellAI.processUserInput(tourPrompt);
+
+      // Store the pre-fetched response
+      this.prefetchedPillarInfo = { pillarId: currentPillar, response };
+      console.log('[Tour] Pre-fetched pillar info ready for:', currentPillar);
+
+    } catch (error) {
+      console.error('[Tour] Pre-fetch error:', error);
+      this.prefetchedPillarInfo = null;
+    }
+  }
+
+  /**
+   * v5.4.4: Build the prompt for pillar info (used by pre-fetch and fallback)
+   */
+  private buildPillarInfoPrompt(pillarId: string): string {
+    const pillarInfo = getPillarDescription(pillarId);
+    const robotContext = `[POSICIÓN: x=${Math.round(this.physics.state().x)}]`;
+    const pillarContext = pillarInfo
+      ? `[PILAR: ${pillarInfo.name} - ${pillarInfo.shortDesc}]`
+      : `[PILAR: ${pillarId}]`;
+
+    return `[TOUR_PILLAR_INFO]${robotContext}${pillarContext}
+INSTRUCCIÓN: Explica este pilar en 2 oraciones. Usa esta info: "${pillarInfo?.tourExplain || 'Servicio de IA de Daniel.'}"
+NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
+  }
+
+  /**
+   * v5.4.4: Hide dialog after farewell is acknowledged
+   */
+  private hideDialogAfterFarewell(): void {
+    console.log('[Tour] Farewell acknowledged, hiding dialog');
+
+    // Reset farewell state
+    this.isFarewellComplete.set(false);
+
+    // Clear dialog
+    this.displayedText.set('');
+
+    // Exit chat mode to hide dialog
+    this.isChatMode.set(false);
+    this.isChatOpen.set(false);
+    this.showChatInput.set(false);
+
+    // Now complete onboarding (allows doble-click to reopen chat)
     this.onboarding.completeOnboarding();
+
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * v5.8: Dismiss chat response and close/minimize dialog
+   * Called when user presses any key after Sendell responds in free chat
+   */
+  private dismissChatResponse(): void {
+    console.log('[Chat] Dismissing chat response');
+
+    // Reset the response complete flag
+    this.isChatResponseComplete.set(false);
+
+    // Clear the displayed text
+    this.displayedText.set('');
+
+    // Close/minimize the chat dialog
+    this.isChatMode.set(false);
+    this.isChatOpen.set(false);
+    this.showChatInput.set(false);
+
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * v5.5: Hide dialog after FREE_MODE dialogs complete
+   * Similar to farewell but for free exploration mode
+   */
+  private hideDialogAfterFreeMode(): void {
+    console.log('[FreeMode] User acknowledged, hiding dialog');
+
+    // Reset FREE_MODE completion state
+    this.isFreeModeComplete.set(false);
+
+    // Clear dialog
+    this.displayedText.set('');
+
+    // Initialize AI in background
+    this.aiInitialized = true;
+    this.sendellAI.initialize().catch(error => {
+      console.error('AI initialization error:', error);
+    });
+
+    // Illuminate pillars in background
+    this.onboarding.illuminatePillars();
+
+    // Complete onboarding immediately (allows double-click to open chat)
+    this.onboarding.completeOnboarding();
+
+    this.cdr.markForCheck();
   }
 
   /**
@@ -938,30 +1267,36 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
    * v2.0: Finish AI typing
    * v2.1: No longer auto-shows input - user must double-click to chat
    * v5.3.0: Notifies TourService when typing completes
-   * v5.4.3: Hides dialog after farewell message completes
+   * v5.4.4: Detects farewell completion to show continue prompt
+   * v5.8: Shows continue prompt in free chat mode
    */
   private finishAITyping(): void {
     this.clearTypingInterval();
     this.isTyping.set(false);
     this.isAITyping.set(false);
 
-    // v5.4.3: If this was the farewell, hide dialog after a delay
-    if (this._isFarewellTyping) {
-      this._isFarewellTyping = false;
-      console.log('[Tour] Farewell complete, will hide dialog in 3 seconds');
-      setTimeout(() => {
-        this._hideDialogAfterFarewell.set(true);
-        this.displayedText.set(''); // Clear the text
-        this.cdr.markForCheck();
-        console.log('[Tour] Dialog hidden after farewell');
-      }, 3000); // Give user 3 seconds to read the farewell
-      return; // Don't notify TourService for farewell (tour is already complete)
+    // v5.4.4: Check if this is the farewell message completing
+    if (this.tourService.step() === TourStep.COMPLETE) {
+      console.log('[Tour] Farewell typing complete, waiting for user acknowledgment');
+      this.isFarewellComplete.set(true);
+      this.cdr.markForCheck();
+      return;  // Don't proceed to chat mode - wait for user to press key
     }
 
     // v5.3.0: Notify TourService when typing completes (triggers next step)
     if (this.tourService.isActive()) {
       console.log('[Tour] Typing complete, notifying TourService');
       this.tourService.onTypingComplete();
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // v5.8: In free chat mode, show continue prompt after response
+    if (this.isChatMode() && !this.tourService.isActive()) {
+      console.log('[Chat] Response complete, waiting for user to dismiss');
+      this.isChatResponseComplete.set(true);
+      this.cdr.markForCheck();
+      return;
     }
 
     // v2.1: Don't auto-show input - only show if chat is already open

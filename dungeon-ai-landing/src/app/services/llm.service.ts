@@ -15,6 +15,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import {
   LLM_CONFIG,
   SENDELL_SYSTEM_PROMPT,
+  SENDELL_RESPONSE_SCHEMA,
   SendellResponse,
   getLoadingMessage
 } from '../config/sendell-ai.config';
@@ -203,15 +204,24 @@ export class LLMService {
       // Add user message to history
       this.conversationHistory.push({ role: 'user', content: userMessage });
 
-      // Generate response with JSON mode
+      // v5.8: Generate response with JSON Schema (strict structure)
       const response = await this.engine.chat.completions.create({
         messages: this.conversationHistory,
-        response_format: { type: 'json_object' },
+        response_format: {
+          type: 'json_object',
+          schema: SENDELL_RESPONSE_SCHEMA
+        },
         temperature: LLM_CONFIG.TEMPERATURE,
         max_tokens: LLM_CONFIG.MAX_TOKENS
       });
 
       const content = response.choices[0]?.message?.content || '';
+
+      // v5.6: LOG RAW LLM OUTPUT - CRÍTICO PARA DEBUG
+      console.log('[LLM] ====== RAW OUTPUT ======');
+      console.log('[LLM] Content:', content);
+      console.log('[LLM] Length:', content.length);
+      console.log('[LLM] ===========================');
 
       // Add assistant response to history
       this.conversationHistory.push({ role: 'assistant', content });
@@ -250,9 +260,13 @@ export class LLMService {
     this.updateState({ ...this.stateSubject.value, status: 'generating' });
 
     try {
+      // v5.8: Use JSON Schema for streaming too
       const stream = await this.engine.chat.completions.create({
         messages: this.conversationHistory,
-        response_format: { type: 'json_object' },
+        response_format: {
+          type: 'json_object',
+          schema: SENDELL_RESPONSE_SCHEMA
+        },
         temperature: LLM_CONFIG.TEMPERATURE,
         max_tokens: LLM_CONFIG.MAX_TOKENS,
         stream: true
@@ -291,6 +305,10 @@ export class LLMService {
    * Handles malformed JSON gracefully
    */
   private parseResponse(jsonString: string): SendellResponse {
+    // v5.6: Log input to parsing
+    console.log('[LLM] ====== PARSING ======');
+    console.log('[LLM] Input string (first 300 chars):', jsonString.substring(0, 300));
+
     try {
       // Try to extract JSON from the response (in case of extra text)
       const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
@@ -298,8 +316,20 @@ export class LLMService {
 
       const parsed = JSON.parse(cleanJson);
 
-      // Validate and normalize actions
-      const validActionTypes = ['walk_to_pillar', 'jump', 'energize_pillar', 'wave', 'crash', 'idle', 'point_at'];
+      // v5.6: Log parsed fields
+      console.log('[LLM] Parsed object keys:', Object.keys(parsed));
+      console.log('[LLM] parsed.dialogue:', parsed.dialogue);
+      console.log('[LLM] parsed.message:', parsed.message);
+      console.log('[LLM] parsed.response:', parsed.response);
+      console.log('[LLM] parsed.actions:', JSON.stringify(parsed.actions));
+      console.log('[LLM] parsed.emotion:', parsed.emotion);
+
+      // v5.8: Validate and normalize actions (all types from schema)
+      const validActionTypes = [
+        'walk_to_pillar', 'walk_right', 'walk_left', 'stop', 'jump',
+        'energize_pillar', 'activate_pillar', 'exit_pillar',
+        'wave', 'crash', 'idle', 'point_at'
+      ];
       const actions = (parsed.actions || [])
         .filter((a: any) => a && validActionTypes.includes(a.type))
         .map((a: any) => ({
@@ -312,22 +342,33 @@ export class LLMService {
       const validEmotions = ['friendly', 'helpful', 'excited', 'curious', 'frustrated', 'existential', 'reset'];
       const emotion = validEmotions.includes(parsed.emotion) ? parsed.emotion : 'friendly';
 
+      const finalDialogue = parsed.dialogue || parsed.message || parsed.response || '¿En qué puedo ayudarte?';
+
+      // v5.6: Log final result
+      console.log('[LLM] Final dialogue:', finalDialogue);
+      console.log('[LLM] ===========================');
+
       return {
         actions: actions.length > 0 ? actions : [{ type: 'idle' }],
-        dialogue: parsed.dialogue || parsed.message || parsed.response || '¿En qué puedo ayudarte?',
+        dialogue: finalDialogue,
         emotion
       };
 
     } catch (parseError) {
-      console.warn('JSON parse error, attempting regex extraction:', parseError);
+      console.warn('[LLM] JSON parse error:', parseError);
+      console.warn('[LLM] Raw string was:', jsonString);
 
       // Regex fallback for extracting dialogue from malformed JSON
       const dialogueMatch = jsonString.match(/"dialogue"\s*:\s*"([^"]+)"/);
       const messageMatch = jsonString.match(/"message"\s*:\s*"([^"]+)"/);
 
+      const fallbackDialogue = dialogueMatch?.[1] || messageMatch?.[1] || 'Disculpa, ¿podrías repetirlo?';
+      console.log('[LLM] Fallback dialogue:', fallbackDialogue);
+      console.log('[LLM] ===========================');
+
       return {
         actions: [{ type: 'idle' }],
-        dialogue: dialogueMatch?.[1] || messageMatch?.[1] || 'Disculpa, ¿podrías repetirlo?',
+        dialogue: fallbackDialogue,
         emotion: 'friendly'
       };
     }

@@ -31,6 +31,7 @@
                 <span class="status-text">MODO BÁSICO</span>
               }
             </span>
+            <!-- v5.5: Minimize controlled by double-click on Sendell robot -->
           }
         </div>
 
@@ -110,20 +111,19 @@
             <button
               class="choice-button tour-button"
               (click)="selectTourChoice(true)">
-              <span class="button-icon">🗺️</span>
-              <span class="button-text">Sí, guíame</span>
+              Sí, guíame
             </button>
             <button
               class="choice-button free-button"
               (click)="selectTourChoice(false)">
-              <span class="button-icon">🚀</span>
-              <span class="button-text">Explorar solo</span>
+              Explorar solo
             </button>
           </div>
         }
 
         <!-- v2.0: Chat Input (post-onboarding) -->
         <!-- v2.1: Only shown after double-click on dialog -->
+        <!-- v5.5: Improved with maxlength, counter, and send button -->
         @if (isChatMode() && showChatInput() && isOnboardingComplete() && !isTourInProgress()) {
           <div class="chat-input-section">
             <div class="chat-input-wrapper">
@@ -137,12 +137,23 @@
                 (click)="onChatInputClick($event)"
                 (focus)="onInputFocus()"
                 (blur)="onInputBlur()"
-                placeholder="¿Algo que me quieras decir?"
+                placeholder="Pregúntame algo..."
                 autocomplete="off"
-                spellcheck="false">
+                spellcheck="false"
+                maxlength="200">
+              <button
+                class="send-btn"
+                (click)="submitChat()"
+                [disabled]="!chatUserInput.trim()"
+                title="Enviar">
+                ▶
+              </button>
             </div>
-            <div class="chat-hint">
-              Pregunta sobre servicios de IA de Daniel
+            <div class="chat-footer">
+              <span class="char-counter" [class.near-limit]="chatUserInput.length > 180">
+                {{ chatUserInput.length }}/200
+              </span>
+              <span class="chat-hint">ENTER para enviar</span>
             </div>
           </div>
         }
@@ -154,6 +165,13 @@
         @if (showTourContinuePrompt()) {
           <div class="dialog-prompt">
             <span class="blink">[CUALQUIER TECLA PARA CONTINUAR]</span>
+          </div>
+        }
+
+        <!-- v5.8: Chat Continue Prompt (after AI responds in free chat) -->
+        @if (showChatContinuePrompt()) {
+          <div class="dialog-prompt">
+            <span class="blink">[CUALQUIER TECLA]</span>
           </div>
         }
 
@@ -172,3 +190,5 @@
     </div>
   </div>
 }
+
+<!-- v5.5: Minimized state - controlled by double-click on Sendell robot -->

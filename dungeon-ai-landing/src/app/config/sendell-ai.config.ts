@@ -10,13 +10,14 @@
 // ==================== MODEL CONFIGURATION ====================
 
 export const LLM_CONFIG = {
-  // Primary model - Qwen2.5-1.5B has excellent Spanish and JSON support
-  MODEL_ID: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',
+  // v5.8: Primary model - Phi-3.5-mini (best JSON accuracy: 60.1%, 128K context)
+  MODEL_ID: 'Phi-3.5-mini-instruct-q4f16_1-MLC',
 
   // Fallback models in order of preference
   FALLBACK_MODELS: [
-    'SmolLM2-1.7B-Instruct-q4f16_1-MLC',
-    'Llama-3.2-1B-Instruct-q4f16_1-MLC'
+    'Qwen2.5-3B-Instruct-q4f16_1-MLC',      // Best Spanish support
+    'Llama-3.2-3B-Instruct-q4f16_1-MLC',    // Good instruction following
+    'SmolLM2-1.7B-Instruct-q4f16_1-MLC'     // Last resort (small)
   ],
 
   // Generation parameters
@@ -26,6 +27,41 @@ export const LLM_CONFIG = {
   // Conversation history limit (system prompt + N turns)
   MAX_HISTORY_TURNS: 10
 };
+
+// ==================== JSON SCHEMA FOR STRUCTURED OUTPUT ====================
+// v5.8: Strict schema forces model to output exact structure
+
+export const SENDELL_RESPONSE_SCHEMA = JSON.stringify({
+  type: "object",
+  properties: {
+    actions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            enum: ["walk_to_pillar", "walk_right", "walk_left", "stop", "jump",
+                   "energize_pillar", "activate_pillar", "exit_pillar",
+                   "wave", "crash", "idle", "point_at"]
+          },
+          target: { type: "string" },
+          duration: { type: "number" }
+        },
+        required: ["type"]
+      }
+    },
+    dialogue: {
+      type: "string",
+      description: "Respuesta de Sendell al usuario en español"
+    },
+    emotion: {
+      type: "string",
+      enum: ["friendly", "helpful", "excited", "curious", "frustrated", "existential", "reset"]
+    }
+  },
+  required: ["actions", "dialogue", "emotion"]
+});
 
 // ==================== LOADING MESSAGES ====================
 
@@ -285,11 +321,12 @@ export const DEFAULT_TOUR_FALLBACK: TourFallback = {
 
 /**
  * v5.4.3: Tour farewell message when tour completes
+ * v5.5: Added double-tap instruction for chat
  * Gives user control instructions and invites to explore
  */
 export const TOUR_FAREWELL: SendellResponse = {
   actions: [{ type: 'idle' }],
-  dialogue: '¡Eso es todo por ahora! Estaré aquí si me necesitas. Puedes controlarme con A para ir a la izquierda y D para ir a la derecha. ¡Explora libremente!',
+  dialogue: '¡Eso es todo! Puedes controlarme con A y D. Si quieres hablar conmigo, hazme doble-tap. ¡Explora libremente!',
   emotion: 'friendly'
 };
 

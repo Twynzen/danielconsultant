@@ -103,6 +103,7 @@ $matrix-border: rgba(0, 255, 68, 0.5);
 }
 
 // v5.1: Loading Section
+// v5.9: Enhanced Matrix-style loading animation
 .loading-section {
   display: flex;
   flex-direction: column;
@@ -118,30 +119,39 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   letter-spacing: 0.1em;
 }
 
+// v5.9: Enhanced loading bar with segments and data stream effect
 .loading-bar-container {
   width: 100%;
-  height: 12px;
-  background: rgba(0, 255, 68, 0.1);
-  border: 1px solid $matrix-border;
-  border-radius: 4px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0, 255, 68, 0.4);
+  border-radius: 3px;
   overflow: hidden;
   position: relative;
-}
+  box-shadow:
+    inset 0 0 10px rgba(0, 0, 0, 0.8),
+    0 0 8px rgba(0, 255, 68, 0.15);
 
-.loading-bar {
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 255, 68, 0.3) 0%,
-    $matrix-green 50%,
-    rgba(0, 255, 68, 0.3) 100%
-  );
-  box-shadow: 0 0 15px $matrix-green-glow;
-  border-radius: 3px;
-  transition: width 0.1s linear;
-  position: relative;
+  // Segment grid overlay
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 9px,
+      rgba(0, 0, 0, 0.4) 9px,
+      rgba(0, 0, 0, 0.4) 10px
+    );
+    z-index: 3;
+    pointer-events: none;
+  }
 
-  // Animated glow effect
+  // Scanline effect
   &::after {
     content: '';
     position: absolute;
@@ -149,22 +159,119 @@ $matrix-border: rgba(0, 255, 68, 0.5);
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.3) 50%,
-      transparent 100%
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 1px,
+      rgba(0, 0, 0, 0.15) 1px,
+      rgba(0, 0, 0, 0.15) 2px
     );
-    animation: loadingShine 1.5s ease-in-out infinite;
+    z-index: 4;
+    pointer-events: none;
   }
 }
 
+.loading-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.15s ease-out;
+  position: relative;
+  z-index: 1;
+
+  // Multi-layer gradient for depth
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 255, 68, 0.9) 0%,
+      rgba(0, 200, 55, 0.7) 40%,
+      rgba(0, 150, 40, 0.8) 60%,
+      rgba(0, 255, 68, 0.6) 100%
+    );
+
+  // Outer glow
+  box-shadow:
+    0 0 10px rgba(0, 255, 68, 0.6),
+    0 0 20px rgba(0, 255, 68, 0.3),
+    0 0 30px rgba(0, 255, 68, 0.15);
+
+  // Leading edge glow pulse
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    width: 8px;
+    height: calc(100% + 4px);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 255, 68, 0.8) 40%,
+      $matrix-green 70%,
+      rgba(255, 255, 255, 0.9) 100%
+    );
+    border-radius: 0 2px 2px 0;
+    box-shadow:
+      0 0 15px $matrix-green,
+      0 0 30px rgba(0, 255, 68, 0.6),
+      0 0 45px rgba(0, 255, 68, 0.3);
+    animation: edgePulse 0.8s ease-in-out infinite;
+    z-index: 2;
+  }
+
+  // Data stream effect (flowing binary)
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 4px,
+        rgba(255, 255, 255, 0.15) 4px,
+        rgba(255, 255, 255, 0.15) 6px,
+        transparent 6px,
+        transparent 12px
+      );
+    animation: dataStream 0.4s linear infinite;
+    z-index: 1;
+  }
+}
+
+// Leading edge pulse animation
+@keyframes edgePulse {
+  0%, 100% {
+    opacity: 0.7;
+    box-shadow:
+      0 0 10px $matrix-green,
+      0 0 20px rgba(0, 255, 68, 0.5);
+  }
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 20px $matrix-green,
+      0 0 35px rgba(0, 255, 68, 0.7),
+      0 0 50px rgba(0, 255, 68, 0.4);
+  }
+}
+
+// Data stream flowing effect
+@keyframes dataStream {
+  0% { transform: translateX(-12px); }
+  100% { transform: translateX(0px); }
+}
+
+// Legacy shine animation (kept for compatibility)
 @keyframes loadingShine {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
 
 // v2.0: Loading footer with percent and info icon
+// v5.9: Enhanced with animated percent display
 .loading-footer {
   display: flex;
   align-items: center;
@@ -175,10 +282,33 @@ $matrix-border: rgba(0, 255, 68, 0.5);
 
 .loading-percent {
   font-family: 'Courier New', monospace;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   color: $matrix-green;
-  text-shadow: 0 0 10px $matrix-green-glow;
+  text-shadow:
+    0 0 10px $matrix-green-glow,
+    0 0 20px rgba(0, 255, 68, 0.3);
+  letter-spacing: 0.05em;
+  min-width: 60px;
+  text-align: center;
+  animation: percentGlow 1.5s ease-in-out infinite;
+
+  // Monospace digit alignment
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes percentGlow {
+  0%, 100% {
+    text-shadow:
+      0 0 10px $matrix-green-glow,
+      0 0 20px rgba(0, 255, 68, 0.3);
+  }
+  50% {
+    text-shadow:
+      0 0 15px $matrix-green,
+      0 0 30px rgba(0, 255, 68, 0.5),
+      0 0 40px rgba(0, 255, 68, 0.2);
+  }
 }
 
 // v2.0: LLM Info icon and tooltip
@@ -365,8 +495,9 @@ $matrix-border: rgba(0, 255, 68, 0.5);
 // v5.4.3: Choice Buttons Section (replaced Y/N input)
 .dialog-choice-section {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 12px;
   margin-top: 16px;
 }
 
@@ -374,59 +505,46 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 20px;
-  background: rgba(0, 255, 68, 0.08);
-  border: 1px solid rgba(0, 255, 68, 0.4);
-  border-radius: 6px;
+  padding: 10px 16px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.03em;
 
   &:hover {
-    background: rgba(0, 255, 68, 0.15);
-    border-color: $matrix-green;
-    box-shadow: 0 0 15px $matrix-green-glow;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 
   &:active {
     transform: translateY(0);
-    box-shadow: 0 0 8px $matrix-green-glow;
   }
 
-  .button-icon {
-    font-size: 18px;
-  }
-
-  .button-text {
-    font-size: 14px;
-    font-weight: bold;
-    color: $matrix-green;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
+  // Tour button - verde claro (light green, primary action)
   &.tour-button {
-    border-color: rgba(0, 255, 68, 0.6);
+    background: rgba(0, 255, 68, 0.2);
+    border: 1px solid $matrix-green;
+    color: $matrix-green;
+    text-shadow: 0 0 8px $matrix-green-glow;
 
     &:hover {
-      background: rgba(0, 255, 68, 0.2);
+      background: rgba(0, 255, 68, 0.3);
+      box-shadow: 0 0 12px $matrix-green-glow;
     }
   }
 
+  // Free button - tono oscuro (dark tone, secondary action)
   &.free-button {
-    border-color: rgba(0, 255, 68, 0.3);
-
-    .button-text {
-      color: $matrix-green-dim;
-    }
+    background: rgba(0, 255, 68, 0.05);
+    border: 1px solid rgba(0, 255, 68, 0.3);
+    color: rgba(0, 255, 68, 0.6);
 
     &:hover {
-      .button-text {
-        color: $matrix-green;
-      }
+      background: rgba(0, 255, 68, 0.1);
+      border-color: rgba(0, 255, 68, 0.5);
+      color: $matrix-green-dim;
     }
   }
 }
@@ -682,8 +800,30 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   letter-spacing: 0.05em;
 }
 
+// v5.9: Small loading bar variant (chat mode)
 .loading-bar-container.small {
-  height: 6px;
+  height: 8px;
+
+  // Smaller segments for compact view
+  &::before {
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 5px,
+      rgba(0, 0, 0, 0.3) 5px,
+      rgba(0, 0, 0, 0.3) 6px
+    );
+  }
+
+  .loading-bar {
+    // Smaller edge glow
+    &::before {
+      width: 6px;
+      top: -1px;
+      right: -3px;
+      height: calc(100% + 2px);
+    }
+  }
 }
 
 // Chat response text
@@ -812,5 +952,155 @@ $matrix-border: rgba(0, 255, 68, 0.5);
   40% {
     opacity: 1;
     transform: scale(1.2);
+  }
+}
+
+// ==================== v5.5: MINIMIZE SYSTEM STYLES ====================
+
+// Minimize button in header
+.minimize-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 68, 0.3);
+  border-radius: 3px;
+  color: $matrix-green-dim;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 255, 68, 0.2);
+    border-color: $matrix-green;
+    color: $matrix-green;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Send button in chat input
+.send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  margin-left: 8px;
+  background: transparent;
+  border: 1px solid $matrix-green;
+  border-radius: 3px;
+  color: $matrix-green;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 255, 68, 0.2);
+    box-shadow: 0 0 10px $matrix-green-glow;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: rgba(0, 255, 68, 0.3);
+    color: rgba(0, 255, 68, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+}
+
+// Chat footer with counter and hint
+.chat-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+// Character counter
+.char-counter {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: rgba(0, 255, 68, 0.4);
+
+  &.near-limit {
+    color: #ff6600;
+    text-shadow: 0 0 5px rgba(255, 102, 0, 0.4);
+  }
+}
+
+// Minimized indicator (bottom right corner)
+.minimized-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid $matrix-green;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 0 15px $matrix-green-glow;
+  animation: minimizedAppear 0.3s ease-out;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 255, 68, 0.15);
+    box-shadow: 0 0 20px $matrix-green-glow, 0 0 30px rgba(0, 255, 68, 0.2);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  .minimized-icon {
+    font-size: 18px;
+    filter: drop-shadow(0 0 5px $matrix-green-glow);
+  }
+
+  // Pending text indicator (orange dot)
+  .pending-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff6600;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 102, 0, 0.6);
+    animation: pendingPulse 1s ease-in-out infinite;
+  }
+}
+
+@keyframes minimizedAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pendingPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
   }
 }
