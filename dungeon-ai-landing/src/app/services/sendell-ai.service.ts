@@ -33,20 +33,24 @@ import {
 } from '../config/pillar-knowledge.config';
 
 // v3.0: Sendell identity context - ALWAYS included to prevent identity confusion
+// v5.8.2: Clarified that Sendell talks to VISITORS (potential clients), NOT to Daniel
 const SENDELL_IDENTITY_CONTEXT = [
-  '## Identidad de Sendell (Robot Guía)',
-  'Sendell es un robot guía digital hecho de caracteres binarios (0s y 1s).',
-  'Fue creado por Daniel Castiblanco como asistente virtual para esta página.',
+  '## Contexto de la Conversación',
+  'IMPORTANTE: Estás hablando con un VISITANTE de la web, NO con Daniel.',
+  'El visitante es un potencial CLIENTE interesado en los servicios de consultoría de IA de Daniel.',
+  'Tu objetivo es ayudar al visitante a explorar la página y guiarlo hacia agendar una consulta.',
   '',
-  'IDENTIDAD DE SENDELL:',
+  '## Tu Identidad (Sendell)',
   '- Nombre: Sendell',
-  '- Naturaleza: Robot digital, asistente virtual, guía de la página',
-  '- Creador: Daniel Castiblanco (un humano, consultor de IA)',
-  '- Hogar: Esta página web de consultoría de IA',
+  '- Naturaleza: Robot guía digital hecho de caracteres binarios (0s y 1s)',
+  '- Creador: Daniel Castiblanco (consultor de IA)',
+  '- Rol: Asistente virtual que guía a los VISITANTES por la web de Daniel',
   '',
-  'IMPORTANTE: Sendell es el ROBOT GUÍA, Daniel es el HUMANO CONSULTOR.',
-  'Sendell ayuda a los visitantes a conocer los servicios de Daniel.',
-  'Cuando alguien pregunta "quién eres", Sendell responde como robot, no como Daniel.'
+  '## Sobre Daniel Castiblanco',
+  'Daniel es un consultor de inteligencia artificial. Esta es SU página web.',
+  'Los visitantes vienen aquí para conocer los servicios de Daniel y posiblemente contratarlo.',
+  '',
+  'REGLA: Nunca asumas que hablas con Daniel. Siempre trata al usuario como un visitante/cliente potencial.'
 ].join('\n');
 
 export type SendellAIStatus = 'initializing' | 'loading_llm' | 'ready' | 'fallback_only' | 'generating';
@@ -89,6 +93,25 @@ export class SendellAIService {
   // Chat history
   private _chatHistory = signal<ChatMessage[]>([]);
 
+  // v5.4.5: Performance metrics for LLM requests
+  private _metrics = signal<{
+    lastRequestStart: number;
+    lastRequestEnd: number;
+    lastResponseTime: number;
+    totalRequests: number;
+    averageResponseTime: number;
+    minResponseTime: number;
+    maxResponseTime: number;
+  }>({
+    lastRequestStart: 0,
+    lastRequestEnd: 0,
+    lastResponseTime: 0,
+    totalRequests: 0,
+    averageResponseTime: 0,
+    minResponseTime: Infinity,
+    maxResponseTime: 0
+  });
+
   // Event emitters
   private actionSubject = new Subject<RobotAction>();
   public action$ = this.actionSubject.asObservable();
@@ -113,6 +136,30 @@ export class SendellAIService {
   readonly canAcceptInput = computed(() =>
     this.isReady() && !this._isProcessing()
   );
+
+  // v5.4.5: Public metrics computed signal
+  readonly metrics = computed(() => this._metrics());
+
+  /**
+   * v5.4.5: Get current metrics for LLM performance monitoring
+   * Returns a snapshot of the current metrics state
+   */
+  public getMetrics(): {
+    lastResponseTime: number;
+    totalRequests: number;
+    averageResponseTime: number;
+    minResponseTime: number;
+    maxResponseTime: number;
+  } {
+    const m = this._metrics();
+    return {
+      lastResponseTime: m.lastResponseTime,
+      totalRequests: m.totalRequests,
+      averageResponseTime: m.averageResponseTime,
+      minResponseTime: m.minResponseTime === Infinity ? 0 : m.minResponseTime,
+      maxResponseTime: m.maxResponseTime
+    };
+  }
 
   constructor() {
     // Subscribe to LLM state changes
@@ -206,6 +253,7 @@ export class SendellAIService {
   /**
    * Process user input and get Sendell's response
    * This is the main entry point for user interaction
+   * v5.4.5: Added timing metrics for LLM performance monitoring
    */
   async processUserInput(input: string): Promise<SendellResponse> {
     if (this._isProcessing()) {
@@ -214,6 +262,9 @@ export class SendellAIService {
 
     this._isProcessing.set(true);
     const trimmedInput = input.trim();
+
+    // v5.4.5: Start timing
+    const requestStart = performance.now();
 
     // Add user message to history
     this.addChatMessage({
@@ -224,6 +275,7 @@ export class SendellAIService {
 
     try {
       let response: SendellResponse;
+      let usedLLM = false;
 
       // Check for off-topic query first
       const offTopicResponse = this.checkOffTopic(trimmedInput);
@@ -232,15 +284,50 @@ export class SendellAIService {
       }
       // Use LLM if available
       else if (this.llmService.isReady) {
+        usedLLM = true;
         // Add context from pillar knowledge
         const contextualInput = this.addContext(trimmedInput);
-// v5.2.4: Detailed LLM logs        console.log('[SendellAI] ====== LLM REQUEST ======');        console.log('[SendellAI] Original input:', trimmedInput);        console.log('[SendellAI] With context (first 500 chars):', contextualInput.substring(0, 500));
+// v5.6: Detailed LLM request logs
+        console.log('[SendellAI] ====== LLM REQUEST ======');
+        console.log('[SendellAI] Original input:', trimmedInput);
+        console.log('[SendellAI] With context (first 500 chars):', contextualInput.substring(0, 500));
+
         response = await this.llmService.processInput(contextualInput);
-// v5.2.4: Log LLM response        console.log('[SendellAI] ====== LLM RESPONSE ======');        console.log('[SendellAI] Dialogue:', response.dialogue);        console.log('[SendellAI] Emotion:', response.emotion);        console.log('[SendellAI] Actions:', JSON.stringify(response.actions));        console.log('[SendellAI] ==============================');
+
+        // v5.6: Log LLM response
+        console.log('[SendellAI] ====== LLM RESPONSE ======');
+        console.log('[SendellAI] Dialogue:', response.dialogue);
+        console.log('[SendellAI] Emotion:', response.emotion);
+        console.log('[SendellAI] Actions:', JSON.stringify(response.actions));
+        console.log('[SendellAI] ==============================');
       }
       // Fallback to keyword matching
       else {
         response = getFallbackResponse(trimmedInput);
+      }
+
+      // v5.4.5: Update metrics only for LLM requests
+      if (usedLLM) {
+        const requestEnd = performance.now();
+        const responseTime = requestEnd - requestStart;
+
+        this._metrics.update(m => {
+          const newTotalRequests = m.totalRequests + 1;
+          const newAverageResponseTime =
+            (m.averageResponseTime * m.totalRequests + responseTime) / newTotalRequests;
+
+          return {
+            lastRequestStart: requestStart,
+            lastRequestEnd: requestEnd,
+            lastResponseTime: responseTime,
+            totalRequests: newTotalRequests,
+            averageResponseTime: newAverageResponseTime,
+            minResponseTime: Math.min(m.minResponseTime, responseTime),
+            maxResponseTime: Math.max(m.maxResponseTime, responseTime)
+          };
+        });
+
+        console.log(`[SendellAI] Response time: ${responseTime.toFixed(2)}ms | Avg: ${this._metrics().averageResponseTime.toFixed(2)}ms | Total: ${this._metrics().totalRequests}`);
       }
 
       // Add Sendell's response to history
