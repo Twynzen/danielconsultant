@@ -89,6 +89,7 @@ export const TOUR_MODE_DIALOGS: DialogMessage[] = [
 
 /**
  * Phase 5B: Free Mode Dialogs
+ * v5.5: Added double-tap instruction for chat
  */
 export const FREE_MODE_DIALOGS: DialogMessage[] = [
   {
@@ -103,7 +104,12 @@ export const FREE_MODE_DIALOGS: DialogMessage[] = [
   },
   {
     id: 'interact',
-    text: 'Acércate a los pilares y presiona ENTER para descubrir más.',
+    text: 'Acércate a los pilares y presiona E para descubrir más.',
+    inputType: 'continue'
+  },
+  {
+    id: 'double-tap',
+    text: 'Si quieres hablar conmigo, hazme doble-tap. ¡Explora libremente!',
     inputType: 'continue'
   }
 ];

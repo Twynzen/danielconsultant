@@ -90,6 +90,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   // Reference to character component
   @ViewChild(FlameHeadCharacterComponent) characterComponent!: FlameHeadCharacterComponent;
 
+  // v5.4.5: Reference to sendell dialog for opening chat from robot double-click
+  @ViewChild(SendellDialogComponent) sendellDialog!: SendellDialogComponent;
+
   // Modal state (legacy - keeping for fallback)
   isModalOpen = false;
   selectedServiceId: string | null = null;
@@ -326,6 +329,21 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   onPillarExitRequested(): void {
     if (this.characterComponent) {
       this.characterComponent.exitPillar();
+    }
+  }
+
+  /**
+   * v5.4.5: Handle double-click on robot to open chat
+   * Called when user double-clicks on the robot character
+   */
+  onRobotDoubleClicked(): void {
+    console.log('[LandingPage] Robot double-clicked, opening chat');
+
+    // Only open chat if onboarding is complete
+    if (this.sendellDialog && this.onboarding.phase() === OnboardingPhase.COMPLETE) {
+      this.sendellDialog.openChatFromRobot();
+    } else {
+      console.log('[LandingPage] Cannot open chat - onboarding not complete or dialog not ready');
     }
   }
 

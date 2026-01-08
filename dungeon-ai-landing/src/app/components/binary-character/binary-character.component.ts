@@ -161,6 +161,8 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   @Input() targetPillarPosition: { x: number; y: number } | null = null;
   @Output() energizationComplete = new EventEmitter<void>();
   @Output() exitPillarComplete = new EventEmitter<void>();
+  // v5.4.5: Double-click to open chat
+  @Output() robotDoubleClicked = new EventEmitter<void>();
   isCrashing = signal(false);  // Public for template
   private crashStartTime = 0;
   private crashPhase: 'exploding' | 'falling' | 'settling' | 'reassembling' = 'exploding';
@@ -256,6 +258,13 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   @HostListener('click')
   onClick(): void {
     this.triggerStartled();
+  }
+
+  // v5.4.5: Double-click to open chat
+  @HostListener('dblclick')
+  onDoubleClick(): void {
+    console.log('[BinaryCharacter] Double-click detected on robot');
+    this.robotDoubleClicked.emit();
   }
 
   ngOnInit(): void {

@@ -102,6 +102,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   @Output() energizationFinished = new EventEmitter<{ config: PillarConfig }>();
   @Output() pillarExitStarted = new EventEmitter<void>();
   @Output() pillarExitFinished = new EventEmitter<void>();
+  // v5.4.5: Double-click on robot to open chat
+  @Output() robotDoubleClicked = new EventEmitter<void>();
 
   // Reference to binary character for crash trigger
   @ViewChild(BinaryCharacterComponent) binaryCharacter!: BinaryCharacterComponent;
@@ -160,6 +162,12 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
     // Show angry dialog
     this.showCrashDialog();
+  }
+
+  // v5.4.5: Called when user double-clicks on the robot
+  onRobotDoubleClicked(): void {
+    console.log('[FlameHead] Propagating double-click event');
+    this.robotDoubleClicked.emit();
   }
 
   private showCrashDialog(): void {

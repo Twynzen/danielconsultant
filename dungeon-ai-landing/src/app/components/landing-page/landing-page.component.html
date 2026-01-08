@@ -13,7 +13,7 @@
     <div class="fixed-title"
          [class.visible]="titleOpacity() > 0"
          [style.opacity]="titleOpacity()">
-      <span class="main-title">CONSULTOR IA</span>
+      <span class="main-title">DESARROLLADOR IA</span>
       <span class="subtitle">DANIEL CASTIBLANCO</span>
     </div>
 
@@ -66,12 +66,14 @@
   <!-- Character - Fixed X (centered), Y moves with jump -->
   <!-- v5.0: Only show after onboarding spawn phase -->
   <!-- v5.2: Added energization event handlers -->
+  <!-- v5.4.5: Added robotDoubleClicked to open chat -->
   @if (shouldShowCharacter()) {
     <app-flame-head-character
       (energizationStarted)="onEnergizationStarted($event)"
       (energizationFinished)="onEnergizationFinished($event)"
       (pillarExitStarted)="onPillarExitStarted()"
-      (pillarExitFinished)="onPillarExitFinished()">
+      (pillarExitFinished)="onPillarExitFinished()"
+      (robotDoubleClicked)="onRobotDoubleClicked()">
     </app-flame-head-character>
   }
 
