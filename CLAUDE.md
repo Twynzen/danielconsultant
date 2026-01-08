@@ -1,5 +1,25 @@
 # 🏰 CLAUDE.md - Dungeon AI Landing Angular - v6.0 GAME UPDATE
 
+## 🚨 **REGLAS CRÍTICAS DE GIT - LEER SIEMPRE**
+
+### **NUNCA hacer sin preguntar:**
+1. **`git push`** - El usuario SIEMPRE hace el push manualmente
+2. **`git merge ... main`** - SIEMPRE preguntar antes de mergear a main
+3. **Merge a main sin que el usuario pruebe** - El usuario DEBE probar los cambios primero
+
+### **Flujo correcto:**
+1. Hacer commits en la rama de trabajo ✅
+2. **PREGUNTAR**: "¿Quieres que mergee a main?" ❓
+3. Esperar confirmación del usuario ⏳
+4. Si confirma, hacer merge
+5. **NUNCA** hacer push - el usuario lo hace
+
+### **Recordatorio:**
+> "Los cambios están listos para probar. Cuando confirmes que funcionan,
+> puedo mergear a main y tú haces el push."
+
+---
+
 ## 🎮 **NUEVO: VAMPIRE SURVIVORS GAME - COMPLETAMENTE INTEGRADO**
 **Fecha**: Noviembre 13, 2025
 **Status**: ✅ JUEGO FUNCIONAL + LANDING PAGE INTACTA
