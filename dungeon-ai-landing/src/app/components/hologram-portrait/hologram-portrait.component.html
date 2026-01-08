@@ -1,6 +1,7 @@
-<!-- HologramPortraitComponent - v4.8 -->
-<!-- Animated Matrix portrait with 30 PNG frames -->
+<!-- HologramPortraitComponent - v6.0 -->
+<!-- Generic animated Matrix hologram with PNG frames -->
 <!-- v5.2: Added low-energy and fully-energized states for robot energization -->
+<!-- v6.0: Made generic with configurable frame source + click support for modals -->
 
 <div class="hologram-portrait"
      [class.active]="isVisible && illumination >= 0.7"
@@ -9,12 +10,15 @@
      [class.low-energy]="isLowEnergy"
      [class.fully-energized]="isFullyEnergized"
      [style.--portrait-color]="color"
-     [style.--illumination]="illumination">
+     [style.--illumination]="illumination"
+     [style.--hologram-width.px]="hologramWidth">
 
-  <!-- Frame container -->
-  <div class="frame-container">
+  <!-- Frame container - clickeable when showInfoButton is true -->
+  <div class="frame-container"
+       [class.clickable]="showInfoButton"
+       (click)="onFrameClick()">
     <img [src]="currentFrame"
-         alt="Daniel Castiblanco - Consultor de IA"
+         [alt]="showLegend ? 'Daniel Castiblanco - Consultor de IA' : 'Hologram Animation'"
          class="portrait-frame"
          loading="eager">
 
@@ -24,17 +28,29 @@
     <!-- Hologram flicker overlay -->
     <div class="hologram-overlay"></div>
 
-    <!-- Corner brackets -->
-    <div class="corner-bracket top-left"></div>
-    <div class="corner-bracket top-right"></div>
-    <div class="corner-bracket bottom-left"></div>
-    <div class="corner-bracket bottom-right"></div>
+    <!-- Corner brackets (only for Daniel portrait, not generic holograms) -->
+    @if (showLegend) {
+      <div class="corner-bracket top-left"></div>
+      <div class="corner-bracket top-right"></div>
+      <div class="corner-bracket bottom-left"></div>
+      <div class="corner-bracket bottom-right"></div>
+    }
   </div>
 
-  <!-- Legend below portrait -->
-  <div class="portrait-legend">
-    <h3 class="legend-name">DANIEL CASTIBLANCO</h3>
-    <p class="legend-title">Consultor de Inteligencia Artificial</p>
-    <p class="legend-subtitle">Transformando negocios con IA</p>
-  </div>
+  <!-- v6.0: Click hint OUTSIDE frame container (below the image) -->
+  <!-- Also clickable to open modal -->
+  @if (showInfoButton) {
+    <div class="click-hint" (click)="onFrameClick()">
+      <span class="hint-text">CLICK PARA VER MAS</span>
+    </div>
+  }
+
+  <!-- Legend below portrait (only for Daniel - backwards compat) -->
+  @if (showLegend) {
+    <div class="portrait-legend">
+      <h3 class="legend-name">DANIEL CASTIBLANCO</h3>
+      <p class="legend-title">Consultor de Inteligencia Artificial</p>
+      <p class="legend-subtitle">Transformando negocios con IA</p>
+    </div>
+  }
 </div>

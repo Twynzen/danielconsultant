@@ -1,9 +1,10 @@
 /**
- * HieroglyphicWallComponent v1.2
+ * HieroglyphicWallComponent v1.3
  * Background wall with service inscriptions
  * Illuminates based on proximity to pillars
  * v4.7.1: Added dynamic colors and external pillar support
  * v4.8: Added 'about' type with animated portrait hologram
+ * v6.0: Added 'hologram' type for generic animated holograms with modal support
  */
 import {
   Component,
@@ -15,13 +16,13 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ServicesDataService, ServiceDetail } from '../../services/services-data.service';
-import { PILLARS, PillarConfig } from '../../config/pillar.config';
+import { PILLARS, PillarConfig, HologramConfig } from '../../config/pillar.config';
 import { HologramPortraitComponent } from '../hologram-portrait/hologram-portrait.component';
 
 // Extended inscription data combining service + pillar info
 interface InscriptionData {
   id: string;
-  type: 'modal' | 'external' | 'about';  // v4.8: Added 'about' type
+  type: 'modal' | 'external' | 'about' | 'hologram';  // v6.0: Added 'hologram' type
   title: string;
   description: string;
   color: string;
@@ -35,6 +36,8 @@ interface InscriptionData {
   // External-specific
   url?: string;
   urlDisplay?: string;
+  // v6.0: Hologram-specific
+  hologramConfig?: HologramConfig;
 }
 
 @Component({
@@ -65,6 +68,7 @@ export class HieroglyphicWallComponent {
    * v4.7.1: Build inscription data from pillars and services
    * Uses pillar.id as key for illumination matching
    * v4.8: Added 'about' type support for portrait hologram
+   * v6.0: Added 'hologram' type support for generic animated holograms
    */
   private buildInscriptions(): InscriptionData[] {
     return PILLARS.map(pillar => {
@@ -83,6 +87,17 @@ export class HieroglyphicWallComponent {
           ...baseData,
           title: pillar.label,
           description: pillar.description ?? ''
+        } as InscriptionData;
+      }
+
+      // v6.0: Handle 'hologram' type for generic animated holograms
+      if (pillar.type === 'hologram') {
+        return {
+          ...baseData,
+          title: pillar.label,
+          description: pillar.description ?? '',
+          serviceId: pillar.destination, // For opening modal on click
+          hologramConfig: pillar.hologramConfig
         } as InscriptionData;
       }
 
@@ -127,11 +142,15 @@ export class HieroglyphicWallComponent {
    * External pillars: centered above pillar
    * Modal pillars: offset to the left
    * v4.8: About type centered above pillar
+   * v6.0: Hologram type centered above pillar
    */
   private getPositionX(pillar: PillarConfig): number {
     if (pillar.type === 'about') {
       // About: Center above pillar (portrait is 280px wide)
       return pillar.worldX - 140;
+    } else if (pillar.type === 'hologram') {
+      // v6.0: Hologram: Center above pillar (hologram is 450px wide)
+      return pillar.worldX - 225;
     } else if (pillar.type === 'external') {
       // External: Center above pillar (inscription is 280px wide)
       return pillar.worldX - 140;
@@ -145,6 +164,7 @@ export class HieroglyphicWallComponent {
    * v4.7.2: Get bottom position for inscription (distance from bottom)
    * This positions inscriptions relative to the ground where pillars stand
    * v4.8: Added 'about' type positioning
+   * v6.0: Added 'hologram' type positioning
    *
    * Layout from bottom:
    * - Ground: 60px (v4.8.2: halved from 120)
@@ -162,6 +182,10 @@ export class HieroglyphicWallComponent {
     if (pillar.type === 'about') {
       // About: Portrait hologram (~450px height), position above pillar
       return baseFromBottom + 20;
+    } else if (pillar.type === 'hologram') {
+      // v6.0: Hologram: Position higher to use more vertical space
+      // +120px to raise it above the pillar
+      return baseFromBottom + 120;
     } else if (pillar.type === 'external') {
       // External: Compact inscription (~250px height), position just above pillar
       // Small gap of 30px above the glyph
@@ -235,6 +259,19 @@ export class HieroglyphicWallComponent {
       this.serviceClicked.emit(inscription.serviceId);
     }
     // External types use the <a> tag directly, no need to emit
+  }
+
+  /**
+   * v6.0: Handle click on hologram (for opening modal)
+   * Emits serviceClicked event to open the service modal
+   */
+  onHologramInfoClick(inscription: InscriptionData): void {
+    // Only clickable when illuminated enough
+    if (!this.isClickable(inscription.id)) return;
+
+    if (inscription.serviceId) {
+      this.serviceClicked.emit(inscription.serviceId);
+    }
   }
 
   // For CSS custom property binding

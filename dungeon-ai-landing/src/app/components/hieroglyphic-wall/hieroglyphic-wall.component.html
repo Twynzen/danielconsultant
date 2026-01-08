@@ -1,11 +1,12 @@
-<!-- Hieroglyphic Wall v1.2 - Background inscriptions that illuminate -->
+<!-- Hieroglyphic Wall v1.3 - Background inscriptions that illuminate -->
 <!-- v4.7.1: Added dynamic colors and external pillar support -->
 <!-- v4.8: Added 'about' type with animated portrait hologram -->
+<!-- v6.0: Added 'hologram' type for generic animated holograms with click-to-modal -->
 <div class="hieroglyphic-wall">
   <!-- One inscription per pillar -->
   @for (inscription of inscriptions; track trackById($index, inscription)) {
 
-    <!-- v4.8: ABOUT TYPE - Animated portrait hologram -->
+    <!-- v4.8: ABOUT TYPE - Animated portrait hologram (Daniel) -->
     <!-- v5.0: Invisible when illumination=0 (onboarding darkness) -->
     <!-- v5.2: Added low-energy and fully-energized states -->
     @if (inscription.type === 'about') {
@@ -15,6 +16,26 @@
         [illumination]="getIllumination(inscription.id)"
         [isLowEnergy]="isLowEnergy(inscription.id)"
         [isFullyEnergized]="isFullyEnergized(inscription.id)"
+        [style.left.px]="inscription.x"
+        [style.bottom.px]="inscription.bottom"
+        [style.opacity]="getIllumination(inscription.id) > 0 ? 1 : 0">
+      </app-hologram-portrait>
+    } @else if (inscription.type === 'hologram') {
+      <!-- v6.0: HOLOGRAM TYPE - Generic animated hologram with click-to-modal -->
+      <!-- Larger size (450px) for better visibility -->
+      <app-hologram-portrait
+        [isVisible]="(isActive(inscription.id) || isAwakening(inscription.id)) && getIllumination(inscription.id) > 0"
+        [color]="inscription.color"
+        [illumination]="getIllumination(inscription.id)"
+        [isLowEnergy]="isLowEnergy(inscription.id)"
+        [isFullyEnergized]="isFullyEnergized(inscription.id)"
+        [frameFolder]="inscription.hologramConfig?.frameFolder ?? 'gifDaniel'"
+        [framePrefix]="inscription.hologramConfig?.framePrefix ?? 'yo'"
+        [frameCount]="inscription.hologramConfig?.frameCount ?? 30"
+        [showLegend]="false"
+        [showInfoButton]="inscription.hologramConfig?.hasModal ?? false"
+        [hologramWidth]="450"
+        (infoClicked)="onHologramInfoClick(inscription)"
         [style.left.px]="inscription.x"
         [style.bottom.px]="inscription.bottom"
         [style.opacity]="getIllumination(inscription.id) > 0 ? 1 : 0">

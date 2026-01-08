@@ -13,7 +13,8 @@
 }
 
 .hologram-portrait {
-  width: 280px;
+  // v6.0: Increased base size for better visibility
+  width: var(--hologram-width, 280px);
 
   // Default state variables
   --portrait-color: #00ff44;
@@ -28,7 +29,7 @@
   // Awakening state (approaching)
   &.awakening {
     opacity: 0.6;
-    transform: scale(0.98);
+    transform: scale(1.0);  // v6.0: Slightly larger when awakening
     filter: grayscale(50%) blur(1px);
 
     .scan-line {
@@ -45,9 +46,10 @@
   }
 
   // Active state (fully visible)
+  // v6.0: Slightly larger when active for better visibility
   &.active {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1.05);
     filter: grayscale(0%) blur(0);
 
     .frame-container {
@@ -326,10 +328,11 @@
 }
 
 // Fully energized state: Robot inside pillar (full color/stable/glowing)
+// v6.0: Increased scale for more dramatic effect
 .hologram-portrait.fully-energized {
   filter: none;
   opacity: 1;
-  transform: scale(1.02);
+  transform: scale(1.15);  // Much larger when fully energized
 
   .frame-container {
     animation: fullyEnergizedPulse 2s ease-in-out infinite;
@@ -466,5 +469,57 @@
       0 0 120px color-mix(in srgb, var(--portrait-color) 50%, transparent),
       0 0 180px color-mix(in srgb, var(--portrait-color) 30%, transparent),
       inset 0 0 50px color-mix(in srgb, var(--portrait-color) 35%, transparent);
+  }
+}
+
+// ========== v6.0: Clickable Hologram for Modal ==========
+
+// Frame container clickeable
+.frame-container.clickable {
+  cursor: pointer;
+  pointer-events: auto;  // Override :host pointer-events: none
+
+  &:hover {
+    .portrait-frame {
+      filter: brightness(1.2) contrast(1.05);
+    }
+
+    box-shadow:
+      0 0 40px color-mix(in srgb, var(--portrait-color) 60%, transparent),
+      0 0 80px color-mix(in srgb, var(--portrait-color) 35%, transparent),
+      inset 0 0 30px color-mix(in srgb, var(--portrait-color) 20%, transparent);
+  }
+}
+
+// Indicador de click - BELOW the frame container (not inside)
+// v6.0: Simple text without border, just the phrase
+.click-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+
+  background: transparent;
+  border: none;
+  padding: 8px 0;
+
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--portrait-color);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  white-space: nowrap;
+
+  opacity: 0.8;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  pointer-events: auto;
+
+  text-shadow: 0 0 8px var(--portrait-color);
+
+  &:hover {
+    opacity: 1;
+    text-shadow: 0 0 15px var(--portrait-color), 0 0 30px var(--portrait-color);
+    transform: scale(1.05);
   }
 }

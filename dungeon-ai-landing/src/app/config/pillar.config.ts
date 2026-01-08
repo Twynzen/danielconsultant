@@ -5,15 +5,26 @@
 
 import { SIDESCROLLER_CONFIG, SIDESCROLLER_PILLAR_POSITIONS, getPillarY } from './sidescroller.config';
 
+/**
+ * v6.0: Configuration for hologram-type pillars with animated frames
+ */
+export interface HologramConfig {
+  frameFolder: string;    // Folder in assets/ (e.g., 'gifllmlocal')
+  framePrefix: string;    // File prefix (e.g., 'llmlocal' for llmlocal-001.png)
+  frameCount?: number;    // Number of frames (default: 30)
+  hasModal?: boolean;     // If true, clicking hologram opens modal with service info
+}
+
 export interface PillarConfig {
   id: string;
   label: string;
   icon: string;
-  type: 'external' | 'modal' | 'about' | 'internal';  // v5.1: Added 'internal' for Angular routes
+  type: 'external' | 'modal' | 'about' | 'internal' | 'hologram';  // v6.0: Added 'hologram' for animated holograms
   destination: string;
   color: string;
   worldX: number;           // Horizontal position in world
   description?: string;
+  hologramConfig?: HologramConfig;  // v6.0: Config for hologram-type pillars
 }
 
 /**
@@ -116,15 +127,22 @@ export const PILLARS: PillarConfig[] = [
     worldX: 1000,
     description: 'Consultor de Inteligencia Artificial'
   },
+  // v6.0: LOCAL LLMS with animated hologram (city isometric animation)
   {
     id: 'local-llms',
     label: 'LOCAL LLMS',
     icon: 'brain',
-    type: 'modal',
+    type: 'hologram',  // Changed from 'modal' to show animated hologram
     destination: 'local-llms',
     color: '#00ccff',
     worldX: 1600,
-    description: 'Modelos de Lenguaje Locales'
+    description: 'Modelos de Lenguaje Locales',
+    hologramConfig: {
+      frameFolder: 'gifllmlocal',
+      framePrefix: 'llmlocal',
+      frameCount: 30,
+      hasModal: true  // Clicking hologram opens modal with service info
+    }
   },
   {
     id: 'rag-systems',

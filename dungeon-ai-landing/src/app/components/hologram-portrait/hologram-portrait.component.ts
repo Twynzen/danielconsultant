@@ -1,11 +1,12 @@
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
- * HologramPortraitComponent - v4.8
- * Displays animated portrait using 30 PNG frames
+ * HologramPortraitComponent - v6.0
+ * Generic animated hologram component using PNG frames
  * Matrix-style hologram effect with scan lines and glow
  * v5.2: Added energy states for robot energization feature
+ * v6.0: Made generic with configurable frame source + click support for modals
  */
 @Component({
   selector: 'app-hologram-portrait',
@@ -23,7 +24,21 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
   @Input() isLowEnergy = false;      // Robot nearby but NOT energizing (glitched/grayscale)
   @Input() isFullyEnergized = false; // Robot inside pillar (full color/stable)
 
-  private readonly FRAME_COUNT = 30;
+  // v6.0: Configurable frame source
+  @Input() frameFolder = 'gifDaniel';   // Folder in assets/
+  @Input() framePrefix = 'yo';          // File prefix (e.g., 'yo' for yo-001.png)
+  @Input() frameCount = 30;             // Number of frames
+
+  // v6.0: Legend and click behavior
+  @Input() showLegend = true;           // Show Daniel's legend (default for backwards compat)
+  @Input() showInfoButton = false;      // Show click hint and make clickable
+
+  // v6.0: Size control for different hologram types
+  @Input() hologramWidth = 280;         // Base width in px (280 for Daniel, larger for others)
+
+  // v6.0: Event when hologram is clicked (for opening modal)
+  @Output() infoClicked = new EventEmitter<void>();
+
   private readonly FRAME_RATE = 100; // 10fps = 100ms per frame
   private frames: string[] = [];
   private currentFrameIndex = 0;
@@ -52,12 +67,14 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Build array of frame paths
+   * Build array of frame paths using configurable folder/prefix
+   * v6.0: Now uses @Input() frameFolder, framePrefix, frameCount
    */
   private buildFramePaths(): void {
-    for (let i = 1; i <= this.FRAME_COUNT; i++) {
+    this.frames = [];
+    for (let i = 1; i <= this.frameCount; i++) {
       const num = i.toString().padStart(3, '0');
-      this.frames.push(`assets/gifDaniel/yo-${num}.png`);
+      this.frames.push(`assets/${this.frameFolder}/${this.framePrefix}-${num}.png`);
     }
     // Set initial frame
     this.currentFrame = this.frames[0];
@@ -86,9 +103,18 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
     if (this.animationInterval) return; // Already running
 
     this.animationInterval = setInterval(() => {
-      this.currentFrameIndex = (this.currentFrameIndex + 1) % this.FRAME_COUNT;
+      this.currentFrameIndex = (this.currentFrameIndex + 1) % this.frameCount;
       this.currentFrame = this.frames[this.currentFrameIndex];
     }, this.FRAME_RATE);
+  }
+
+  /**
+   * v6.0: Handle click on frame container (for opening modal)
+   */
+  onFrameClick(): void {
+    if (this.showInfoButton) {
+      this.infoClicked.emit();
+    }
   }
 
   /**
