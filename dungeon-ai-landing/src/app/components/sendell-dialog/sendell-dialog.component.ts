@@ -119,6 +119,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private isFreeModeComplete = signal(false);
   // v5.8: Track when chat response is complete (waiting for user to dismiss)
   isChatResponseComplete = signal(false);
+  // v5.8.1: Flag to track if we're waiting for an LLM response (not greeting)
+  private _isLLMResponsePending = false;
 
   // v2.0: LLM info tooltip state
   showLLMInfo = signal(false);
@@ -1291,9 +1293,10 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
       return;
     }
 
-    // v5.8: In free chat mode, show continue prompt after response
-    if (this.isChatMode() && !this.tourService.isActive()) {
-      console.log('[Chat] Response complete, waiting for user to dismiss');
+    // v5.8.1: In free chat mode, show continue prompt ONLY after LLM response (not greeting)
+    if (this.isChatMode() && !this.tourService.isActive() && this._isLLMResponsePending) {
+      console.log('[Chat] LLM response complete, waiting for user to dismiss');
+      this._isLLMResponsePending = false;  // Reset flag
       this.isChatResponseComplete.set(true);
       this.cdr.markForCheck();
       return;
@@ -1322,6 +1325,7 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
 
   /**
    * v2.0: Submit chat message to AI
+   * v5.8.1: Set _isLLMResponsePending flag to show continue prompt after response
    */
   async submitChat(): Promise<void> {
     const input = this.chatUserInput.trim();
@@ -1331,6 +1335,9 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
     this.chatUserInput = '';
     this.isChatOpen.set(false);  // v3.0: Reset to prevent auto-show
     this.showChatInput.set(false);
+
+    // v5.8.1: Mark that we're expecting an LLM response (not a greeting)
+    this._isLLMResponsePending = true;
 
     // Show processing state with descriptive message
     this.isAITyping.set(true);
