@@ -5,6 +5,7 @@ import { CameraService } from '../../services/camera.service';
 import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
 import { OnboardingService } from '../../services/onboarding.service';
+import { SendellStateService, SendellState } from '../../services/sendell-state.service';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { BinaryCharacterComponent } from '../binary-character/binary-character.component';
 import { FacingDirection } from '../../config/character-matrix.config';
@@ -29,6 +30,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   // v5.0: Onboarding service for first-time visitor experience
   // v5.1: Made public for template access to isSendellTalking()
   readonly onboarding = inject(OnboardingService);
+  // v5.9: Central state service for guardrails
+  private readonly stateService = inject(SendellStateService);
 
   // Character dimensions (v3.0 - clarity & separation)
   private readonly CHARACTER_WIDTH = 180;
@@ -243,6 +246,25 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     if (this.binaryCharacter?.isCrashing?.()) return;  // v5.1: No grab during crash
     if (this.isCooldown()) return;  // v5.1: No grab during cooldown
 
+    // v5.9: Guardrail - No drag if pillar action in progress
+    if (this.isActivatingPillar() || this.isRobotInsidePillar()) {
+      console.log('%c[Guardrail] Drag blocked - pillar action in progress', 'color: #ff6b6b');
+      return;
+    }
+
+    // v5.9: Guardrail - No drag if energizing
+    if (this.binaryCharacter?.isEnergizing?.()) {
+      console.log('%c[Guardrail] Drag blocked - energizing in progress', 'color: #ff6b6b');
+      return;
+    }
+
+    // v5.9: Check state service for additional blocking conditions
+    const canDrag = this.stateService.canExecuteAction('drag');
+    if (!canDrag.allowed) {
+      console.log(`%c[Guardrail] Drag blocked - ${canDrag.reason}`, 'color: #ff6b6b');
+      return;
+    }
+
     // Check if click is on character
     const charScreenX = this.screenX();
     const charScreenY = this.screenY();
@@ -259,6 +281,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
       this.dragOffsetX = event.clientX - charScreenX;
       this.dragOffsetY = event.clientY - charScreenY;
       this.inputService.pause();
+      // v5.9: Register drag action with state service
+      this.stateService.startAction('drag');
+      this.stateService.requestTransition(SendellState.BEING_DRAGGED, 'mouse_drag_start');
     }
   }
 
@@ -293,6 +318,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
     this.isDragging.set(false);
     this.inputService.resume();
+    // v5.9: End drag action with state service
+    this.stateService.endAction('drag');
+    this.stateService.requestTransition(SendellState.IDLE, 'mouse_drag_end');
 
     // Store the release Y position for crash detection on landing
     const state = this.physicsService.state();

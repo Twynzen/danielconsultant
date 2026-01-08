@@ -32,6 +32,7 @@ import { SIDESCROLLER_CONFIG, getPillarY } from '../../config/sidescroller.confi
 import { PhysicsService } from '../../core/services/physics.service';
 import { ViewportCullingService } from '../../core/services/viewport-culling.service';
 import { InputService } from '../../core/services/input.service';
+import { SendellStateService, SendellState } from '../../services/sendell-state.service';
 
 interface PillarState {
   config: PillarConfig;
@@ -63,6 +64,8 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   private physicsService = inject(PhysicsService);
   private cullingService = inject(ViewportCullingService);
   private inputService = inject(InputService);
+  // v5.9: State service for guardrails
+  private stateService = inject(SendellStateService);
 
   // v4.6.2: Event with WORLD coordinates (not screen) for proper hologram anchoring
   @Output() pillarActivated = new EventEmitter<{
@@ -237,6 +240,21 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
   // v5.2: Also handles exiting pillar when robot is inside
   @HostListener('window:keydown.e', ['$event'])
   onActivate(event: KeyboardEvent): void {
+    // v5.9: Guardrail - No pillar action if being dragged
+    if (this.stateService.isBeingDragged()) {
+      console.log('%c[Guardrail] E key blocked - robot being dragged', 'color: #ff6b6b');
+      event.preventDefault();
+      return;
+    }
+
+    // v5.9: Guardrail - Check state service for blocking conditions
+    const canActivate = this.stateService.canExecuteAction('pillar_activate');
+    if (!canActivate.allowed) {
+      console.log(`%c[Guardrail] E key blocked - ${canActivate.reason}`, 'color: #ff6b6b');
+      event.preventDefault();
+      return;
+    }
+
     // v5.2: If robot is inside a pillar, E key triggers exit
     if (this.energizedPillarId) {
       event.preventDefault();

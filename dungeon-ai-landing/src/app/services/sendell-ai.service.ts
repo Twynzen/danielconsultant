@@ -90,6 +90,40 @@ export class SendellAIService {
   private _lastResponse = signal<SendellResponse | null>(null);
   private _isProcessing = signal<boolean>(false);
 
+  // v5.9: LLM Query Progress System
+  private _llmQueryProgress = signal<number>(0);
+  private _llmQueryStage = signal<string>('');
+  private _progressInterval: ReturnType<typeof setInterval> | null = null;
+  private _cachedQueryStages: Array<{ at: number; text: string }> | null = null; // v5.9.3: Cache for current query
+
+  // v5.9.3: Varied "finishing thought" messages for more natural feel
+  private readonly FINISHING_PHRASES = [
+    'Lo tengo en la punta de la lengua...',
+    'Ya casi termino de pensar...',
+    'Un momento más...',
+    'Casi lo tengo...',
+    'Dame un segundo...',
+    'Últimos detalles...'
+  ];
+
+  // v5.9.3: Get random finishing phrase
+  private getRandomFinishingPhrase(): string {
+    const index = Math.floor(Math.random() * this.FINISHING_PHRASES.length);
+    return this.FINISHING_PHRASES[index];
+  }
+
+  // v5.9.3: Query progress stages (method to support dynamic last stage)
+  private getQueryStages(): Array<{ at: number; text: string }> {
+    return [
+      { at: 0, text: 'Leyendo pregunta...' },
+      { at: 15, text: 'Buscando contexto RAG...' },
+      { at: 30, text: 'Procesando con IA local...' },
+      { at: 50, text: 'Generando respuesta...' },
+      { at: 75, text: 'Refinando texto...' },
+      { at: 90, text: this.getRandomFinishingPhrase() }  // Random phrase
+    ];
+  }
+
   // Chat history
   private _chatHistory = signal<ChatMessage[]>([]);
 
@@ -139,6 +173,10 @@ export class SendellAIService {
 
   // v5.4.5: Public metrics computed signal
   readonly metrics = computed(() => this._metrics());
+
+  // v5.9: Public signals for LLM query progress
+  readonly llmQueryProgress = this._llmQueryProgress.asReadonly();
+  readonly llmQueryStage = this._llmQueryStage.asReadonly();
 
   /**
    * v5.4.5: Get current metrics for LLM performance monitoring
@@ -285,6 +323,9 @@ export class SendellAIService {
       // Use LLM if available
       else if (this.llmService.isReady) {
         usedLLM = true;
+        // v5.9: Start progress indicator
+        this.startQueryProgress();
+
         // Add context from pillar knowledge
         const contextualInput = this.addContext(trimmedInput);
 // v5.6: Detailed LLM request logs
@@ -293,6 +334,9 @@ export class SendellAIService {
         console.log('[SendellAI] With context (first 500 chars):', contextualInput.substring(0, 500));
 
         response = await this.llmService.processInput(contextualInput);
+
+        // v5.9: Complete progress indicator
+        this.completeQueryProgress();
 
         // v5.6: Log LLM response
         console.log('[SendellAI] ====== LLM RESPONSE ======');
@@ -350,6 +394,8 @@ export class SendellAIService {
 
     } catch (error) {
       console.error('Error processing input:', error);
+      // v5.9: Clean up progress on error
+      this.completeQueryProgress();
       const fallback = getFallbackResponse(trimmedInput);
       this._lastResponse.set(fallback);
       return fallback;
@@ -513,10 +559,94 @@ export class SendellAIService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // ========== v5.9: LLM Query Progress Methods ==========
+
+  /**
+   * Start showing query progress with simulated stages
+   * Progress accelerates at start, slows near the end
+   * v5.9.3: Uses cached stages to avoid generating new random phrases during progress
+   */
+  private startQueryProgress(): void {
+    // v5.9.3: Generate stages once per query (includes random finishing phrase)
+    this._cachedQueryStages = this.getQueryStages();
+
+    this._llmQueryProgress.set(0);
+    this._llmQueryStage.set(this._cachedQueryStages[0].text);
+
+    // Clear any existing interval
+    if (this._progressInterval) {
+      clearInterval(this._progressInterval);
+    }
+
+    let progress = 0;
+    const stages = this._cachedQueryStages; // Capture for closure
+    this._progressInterval = setInterval(() => {
+      // Variable speed: fast at start, slow near 90%
+      const speed = progress < 30 ? 6 : (progress < 60 ? 4 : (progress < 85 ? 2 : 0.5));
+      progress = Math.min(92, progress + Math.random() * speed);
+
+      this._llmQueryProgress.set(Math.round(progress));
+
+      // Update stage text based on progress (using cached stages)
+      for (let i = stages.length - 1; i >= 0; i--) {
+        if (progress >= stages[i].at) {
+          this._llmQueryStage.set(stages[i].text);
+          break;
+        }
+      }
+    }, 150);
+
+    console.log('%c[SendellAI] Query progress started', 'color: #00ff44');
+  }
+
+  /**
+   * Complete the query progress (set to 100%)
+   */
+  private completeQueryProgress(): void {
+    if (this._progressInterval) {
+      clearInterval(this._progressInterval);
+      this._progressInterval = null;
+    }
+    this._llmQueryProgress.set(100);
+    this._llmQueryStage.set('¡Listo!');
+    console.log('%c[SendellAI] Query progress complete', 'color: #00ff44');
+
+    // Reset after a short delay so the UI can show the completion
+    setTimeout(() => {
+      this._llmQueryProgress.set(0);
+      this._llmQueryStage.set('');
+    }, 500);
+  }
+
+  /**
+   * v5.9.4: Cancel any pending LLM query
+   * Stops progress animation and resets query state
+   * Call this when cancelling tour or aborting operations
+   */
+  cancelPendingQuery(): void {
+    console.log('[SendellAI] Cancelling pending query');
+
+    // Stop progress interval
+    if (this._progressInterval) {
+      clearInterval(this._progressInterval);
+      this._progressInterval = null;
+    }
+
+    // Reset progress state
+    this._llmQueryProgress.set(0);
+    this._llmQueryStage.set('');
+    this._cachedQueryStages = null;
+  }
+
   /**
    * Clean up resources
    */
   async terminate(): Promise<void> {
+    // v5.9: Clean up progress interval
+    if (this._progressInterval) {
+      clearInterval(this._progressInterval);
+      this._progressInterval = null;
+    }
     await this.llmService.terminate();
     this._status.set('initializing');
     this._chatHistory.set([]);

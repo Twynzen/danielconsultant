@@ -141,8 +141,15 @@ export class TourService {
 
   /**
    * Called when typing animation starts
+   * v5.9.4: Only act if tour is active
    */
   onTypingStarted(): void {
+    // v5.9.4: Guard - only process if tour is actually in progress
+    if (!this.isActive()) {
+      console.log('[TourService] Typing started ignored - tour not active');
+      return;
+    }
+
     console.log('[TourService] Typing started');
     this._state.update(s => ({
       ...s,
@@ -153,8 +160,15 @@ export class TourService {
   /**
    * Called when typing animation completes
    * v5.4.0: Uses ActionExecutor for organic walking
+   * v5.9.4: Only act if tour is active
    */
   onTypingComplete(): void {
+    // v5.9.4: Guard - only process if tour is actually in progress
+    if (!this.isActive()) {
+      console.log('[TourService] Typing complete ignored - tour not active');
+      return;
+    }
+
     const state = this._state();
     console.log('[TourService] Typing complete, step was:', state.step);
 
@@ -185,8 +199,15 @@ export class TourService {
 
   /**
    * Called when robot finishes walking to pillar
+   * v5.9.4: Only act if tour is active (prevents free-mode walks from activating tour)
    */
   onWalkComplete(): void {
+    // v5.9.4: Guard - only process if tour is actually in progress
+    if (!this.isActive()) {
+      console.log('[TourService] Walk complete ignored - tour not active');
+      return;
+    }
+
     console.log('[TourService] Walk complete');
     this._state.update(s => ({
       ...s,
@@ -197,8 +218,15 @@ export class TourService {
 
   /**
    * Called when robot finishes energizing pillar (hologram appears)
+   * v5.9.4: Only act if tour is active
    */
   onEnergizeComplete(): void {
+    // v5.9.4: Guard - only process if tour is actually in progress
+    if (!this.isActive()) {
+      console.log('[TourService] Energize complete ignored - tour not active');
+      return;
+    }
+
     console.log('[TourService] Energize complete, waiting for user input');
     this._state.update(s => ({
       ...s,

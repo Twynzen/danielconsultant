@@ -121,9 +121,17 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   isChatResponseComplete = signal(false);
   // v5.8.1: Flag to track if we're waiting for an LLM response (not greeting)
   private _isLLMResponsePending = false;
+  // v5.9.2: Flag to track if current message is a greeting (not LLM response)
+  private _isGreetingMessage = false;
+  // v5.9.4: Flag to track if tour was cancelled by ESC
+  private _tourCancelled = false;
 
   // v2.0: LLM info tooltip state
   showLLMInfo = signal(false);
+
+  // v5.9: Dialog stuck detection
+  private dialogStuckTimeout: ReturnType<typeof setTimeout> | null = null;
+  private readonly STUCK_THRESHOLD_MS = 30000;  // 30 seconds
 
   constructor() {
     // v1.1: Effect to detect dialog changes from onboarding service
@@ -392,6 +400,24 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   readonly llmLoadingProgress = computed(() => this.sendellAI.llmProgress());
   readonly llmLoadingText = computed(() => this.sendellAI.llmProgressText());
 
+  // v5.9.1: Computed to determine if dialog should be on LEFT of character (arrow points right)
+  // This is computed based on whether the dialog would overflow the right viewport edge
+  readonly isDialogOnLeft = computed(() => {
+    if (this.isCentered) return false;
+
+    const state = this.physics.state();
+    const cameraX = this.camera.cameraX();
+    const screenX = state.x - cameraX - this.CHARACTER_WIDTH / 2;
+    const dialogLeft = screenX + this.CHARACTER_WIDTH + 20;
+
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    const estimatedDialogWidth = 380;
+    const margin = 20;
+
+    // If dialog would overflow right edge, it should be on left
+    return dialogLeft + estimatedDialogWidth > viewportWidth - margin;
+  });
+
   ngOnInit(): void {
     // v1.1: Effect handles automatic typing start now
   }
@@ -406,6 +432,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnDestroy(): void {
     this.clearTypingInterval();
+    // v5.9: Clean up stuck detection
+    this.clearStuckDetection();
   }
 
   /**
@@ -449,6 +477,23 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       event.preventDefault();
       console.log('[Chat] User dismissed chat response');
       this.dismissChatResponse();
+      return;
+    }
+
+    // v5.9.4: ESC cancel during tour DISABLED - causes LLM corruption
+    // TODO: Re-enable when LLM interrupt is properly implemented
+    // if (event.code === 'Escape' && this.tourService.isActive()) {
+    //   event.preventDefault();
+    //   console.log('[Tour] User pressed ESC to cancel tour');
+    //   this.cancelTourWithMessage();
+    //   return;
+    // }
+
+    // v5.9.2: ESC key closes dialog in chat mode (emergency escape)
+    if (event.code === 'Escape' && this.isChatMode()) {
+      event.preventDefault();
+      console.log('[Chat] ESC pressed, closing dialog');
+      this.closeDialog();
       return;
     }
 
@@ -596,6 +641,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
     // If dialog has no text, show a greeting
     if (!this.displayedText() || this.displayedText().length === 0) {
+      this._isGreetingMessage = true;  // v5.9.2: Mark as greeting (not LLM response)
       this.startAITypingAnimation('¡Hola! ¿En qué puedo ayudarte?');
     }
   }
@@ -643,8 +689,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   /**
    * v5.5: Close dialog completely (clears all state)
+   * v5.9.3: Resume input to prevent character from getting stuck
    */
   closeDialog(): void {
+    // v5.9.3: Resume input in case it was paused during chat input focus
+    this.inputService.resume();
+
     this.isChatMode.set(false);
     this.isChatOpen.set(false);
     this.isDialogMinimized.set(false);
@@ -652,6 +702,10 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     this.displayedText.set('');
     this.chatUserInput = '';
     this.hasUnsentText.set(false);
+    // v5.9.2: Reset all state flags to prevent stuck states
+    this._isGreetingMessage = false;
+    this._isLLMResponsePending = false;
+    this.isChatResponseComplete.set(false);
     this.cdr.markForCheck();
 
     console.log('[SendellDialog] Dialog closed completely');
@@ -722,6 +776,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * Finish typing animation
    * v1.2: Added markForCheck() for OnPush
+   * v5.9: Start stuck detection after typing finishes
    */
   private finishTyping(): void {
     this.clearTypingInterval();
@@ -740,6 +795,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       console.log('[SendellDialog] FREE_MODE last dialog typed, waiting for user key');
       this.isFreeModeComplete.set(true);
     }
+
+    // v5.9: Start stuck detection
+    this.startStuckDetection();
   }
 
   /**
@@ -819,6 +877,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * Get dialog position style
    * v1.1: Now calculates character position internally using physics/camera services
+   * v5.9.1: Dynamic positioning that never overflows viewport
    */
   getPositionStyle(): Record<string, string> {
     if (this.isCentered) {
@@ -838,11 +897,40 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       // Screen Y = character Y position - character height
       const screenY = state.y - this.CHARACTER_HEIGHT;
 
-      // Position dialog to the right of character
+      // v5.9.1: Calculate ideal position to the right of character
+      let dialogLeft = screenX + this.CHARACTER_WIDTH + 20;
+      let dialogTop = screenY + 20;
+
+      // v5.9.1: Get viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Estimated dialog size (will be clamped by CSS, but we want smart positioning)
+      const estimatedDialogWidth = 380;
+      const estimatedDialogHeight = 300;
+      const margin = 20;
+
+      // v5.9.1: If dialog would overflow right edge, position to the LEFT of character
+      if (dialogLeft + estimatedDialogWidth > viewportWidth - margin) {
+        dialogLeft = screenX - estimatedDialogWidth - 20;
+        // If that still overflows (character on left edge), clamp to viewport
+        if (dialogLeft < margin) {
+          dialogLeft = margin;
+        }
+      }
+
+      // v5.9.1: Clamp vertical position to viewport
+      if (dialogTop < margin) {
+        dialogTop = margin;
+      }
+      if (dialogTop + estimatedDialogHeight > viewportHeight - margin) {
+        dialogTop = viewportHeight - estimatedDialogHeight - margin;
+      }
+
       return {
         position: 'fixed',
-        left: `${screenX + this.CHARACTER_WIDTH + 20}px`,
-        top: `${screenY + 20}px`
+        left: `${dialogLeft}px`,
+        top: `${Math.max(margin, dialogTop)}px`
       };
     }
   }
@@ -913,6 +1001,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
    * v5.4.0: Added processing guard to prevent duplicate execution
    */
   private async handleTourIntro(): Promise<void> {
+    // v5.9.4: Guard - only process if tour is actually in progress
+    if (!this.tourService.isActive() || this._tourCancelled) {
+      console.log('[Tour] INTRO skipped - tour not active or cancelled');
+      return;
+    }
+
     // v5.4.0: Guard against duplicate/concurrent execution
     if (this._isTourStepProcessing) {
       console.log('[Tour] INTRO already processing, skipping');
@@ -932,6 +1026,13 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
     try {
       const response = await this.sendellAI.processUserInput(tourPrompt);
+
+      // v5.9.4: Check if tour was cancelled during LLM request
+      if (!this.tourService.isActive() || this._tourCancelled) {
+        console.log('[Tour] INTRO aborted - tour cancelled during LLM request');
+        this._isTourStepProcessing = false;
+        return;
+      }
 
       console.log('[Tour] ====== INTRO - LLM RESPONSE ======');
       console.log('[Tour] Dialogue:', response.dialogue);
@@ -964,6 +1065,13 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       this.startAITypingAnimation(dialogueToShow);
 
     } catch (error) {
+      // v5.9.4: Check if tour was cancelled
+      if (!this.tourService.isActive() || this._tourCancelled) {
+        console.log('[Tour] INTRO aborted after error - tour cancelled');
+        this._isTourStepProcessing = false;
+        return;
+      }
+
       console.error('[Tour] INTRO ERROR:', error);
       // v5.4.0: Use config fallback on error
       const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
@@ -1042,6 +1150,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     console.log('[Tour] ====== PILLAR_INFO ======');
     console.log('[Tour] Current pillar:', currentPillar);
 
+    // v5.9.4: Check if tour was cancelled
+    if (!this.tourService.isActive() || this._tourCancelled) {
+      console.log('[Tour] PILLAR_INFO aborted - tour cancelled');
+      return;
+    }
+
     // v5.4.4: Check if we have a pre-fetched response
     if (this.prefetchedPillarInfo &&
         this.prefetchedPillarInfo.pillarId === currentPillar &&
@@ -1079,6 +1193,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     try {
       const response = await this.sendellAI.processUserInput(tourPrompt);
 
+      // v5.9.4: Check if tour was cancelled during LLM request
+      if (!this.tourService.isActive() || this._tourCancelled) {
+        console.log('[Tour] PILLAR_INFO aborted - tour cancelled during LLM request');
+        return;
+      }
+
       console.log('[Tour] ====== PILLAR_INFO - LLM RESPONSE ======');
       console.log('[Tour] Dialogue:', response.dialogue);
 
@@ -1096,6 +1216,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       this.startAITypingAnimation(dialogueToShow);
 
     } catch (error) {
+      // v5.9.4: Check if tour was cancelled
+      if (!this.tourService.isActive() || this._tourCancelled) {
+        console.log('[Tour] PILLAR_INFO aborted after error - tour cancelled');
+        return;
+      }
+
       console.error('[Tour] PILLAR_INFO ERROR:', error);
       // v5.4.0: Use config fallback on error
       const fallback = getTourFallback(currentPillar);
@@ -1128,8 +1254,15 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * v5.4.4: Pre-fetch pillar info during ENERGIZING animation
    * This allows the LLM response to be ready before user asks for it
+   * v5.9.4: Added cancellation check
    */
   private async prefetchPillarInfo(): Promise<void> {
+    // v5.9.4: Guard - only pre-fetch if tour is active
+    if (!this.tourService.isActive() || this._tourCancelled) {
+      console.log('[Tour] Pre-fetch skipped - tour not active or cancelled');
+      return;
+    }
+
     const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
     console.log('[Tour] Pre-fetching pillar info for:', currentPillar);
 
@@ -1141,6 +1274,13 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
     try {
       const response = await this.sendellAI.processUserInput(tourPrompt);
+
+      // v5.9.4: Check if tour was cancelled during LLM request
+      if (!this.tourService.isActive() || this._tourCancelled) {
+        console.log('[Tour] Pre-fetch result discarded - tour cancelled');
+        this.prefetchedPillarInfo = null;
+        return;
+      }
 
       // Store the pre-fetched response
       this.prefetchedPillarInfo = { pillarId: currentPillar, response };
@@ -1169,9 +1309,14 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
 
   /**
    * v5.4.4: Hide dialog after farewell is acknowledged
+   * v5.9.3: Resume input to prevent character from getting stuck
+   * v5.9.3: Initialize AI for free chat mode (same as hideDialogAfterFreeMode)
    */
   private hideDialogAfterFarewell(): void {
     console.log('[Tour] Farewell acknowledged, hiding dialog');
+
+    // v5.9.3: Ensure input is resumed (in case chat input had focus)
+    this.inputService.resume();
 
     // Reset farewell state
     this.isFarewellComplete.set(false);
@@ -1184,7 +1329,80 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
     this.isChatOpen.set(false);
     this.showChatInput.set(false);
 
+    // v5.9.4: CRITICAL - Clear LLM history to free context window
+    // Tour uses ~6+ LLM calls, filling the 4096 token context
+    this.sendellAI.clearHistory();
+    // v5.9.4: Cancel any pending LLM query (stops progress animation)
+    this.sendellAI.cancelPendingQuery();
+    console.log('[Tour] LLM history cleared for free chat mode');
+
+    // v5.9.3: Initialize AI for free chat (same as free mode)
+    // This ensures LLM is ready when user opens chat after tour
+    this.aiInitialized = true;
+    this.sendellAI.initialize().catch(error => {
+      console.error('[Tour] AI initialization error:', error);
+    });
+
+    // v5.9.2: Reset tour service to clear step and showContinuePrompt
+    // This prevents showTourContinuePrompt from being TRUE after tour ends
+    this.tourService.reset();
+
     // Now complete onboarding (allows doble-click to reopen chat)
+    this.onboarding.completeOnboarding();
+
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * v5.9.4: Cancel tour when user presses ESC
+   * Shows a farewell message and transitions to free mode
+   */
+  private cancelTourWithMessage(): void {
+    console.log('[Tour] ====== TOUR CANCELLED BY USER ======');
+
+    // v5.9.4: Mark as cancelled FIRST (prevents pending async operations from continuing)
+    this._tourCancelled = true;
+
+    // Stop any ongoing tour actions
+    this.tourService.reset();
+    this.inputService.unblockFromTour();
+
+    // Clear LLM history (tour filled the context)
+    this.sendellAI.clearHistory();
+    // v5.9.4: Cancel any pending LLM query (stops progress animation)
+    this.sendellAI.cancelPendingQuery();
+    console.log('[Tour] LLM history cleared after cancel');
+
+    // v5.9.4: Clear all tour-related state
+    this._isTourStepProcessing = false;
+    this._lastHandledTourStep = null;
+    this._lastHandledPillarIndex = -1;
+    this.prefetchedPillarInfo = null;
+    this._isLLMResponsePending = false;
+    this._isGreetingMessage = false;
+
+    // Reset dialog state
+    this.isFarewellComplete.set(false);
+    this.isFreeModeComplete.set(false);
+    this.isChatResponseComplete.set(false);
+    this.isTyping.set(false);
+    this.isAITyping.set(false);
+    this.displayedText.set('');
+
+    // Show cancellation message
+    const cancelMessage = '¡Entendido! Paramos el tour por ahora. Puedes explorar libremente y hacer doble clic en mí si necesitas ayuda.';
+
+    // Show the cancellation message with typing animation
+    this.isChatMode.set(true);
+    this.startAITypingAnimation(cancelMessage);
+
+    // Initialize AI for free mode
+    this.aiInitialized = true;
+    this.sendellAI.initialize().catch(error => {
+      console.error('[Tour] AI initialization error:', error);
+    });
+
+    // Complete onboarding to enable free mode
     this.onboarding.completeOnboarding();
 
     this.cdr.markForCheck();
@@ -1193,9 +1411,13 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
   /**
    * v5.8: Dismiss chat response and close/minimize dialog
    * Called when user presses any key after Sendell responds in free chat
+   * v5.9.3: Resume input to prevent character from getting stuck
    */
   private dismissChatResponse(): void {
     console.log('[Chat] Dismissing chat response');
+
+    // v5.9.3: Ensure input is resumed
+    this.inputService.resume();
 
     // Reset the response complete flag
     this.isChatResponseComplete.set(false);
@@ -1214,9 +1436,13 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
   /**
    * v5.5: Hide dialog after FREE_MODE dialogs complete
    * Similar to farewell but for free exploration mode
+   * v5.9.3: Resume input to prevent character from getting stuck
    */
   private hideDialogAfterFreeMode(): void {
     console.log('[FreeMode] User acknowledged, hiding dialog');
+
+    // v5.9.3: Ensure input is resumed
+    this.inputService.resume();
 
     // Reset FREE_MODE completion state
     this.isFreeModeComplete.set(false);
@@ -1293,6 +1519,25 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
       return;
     }
 
+    // v5.9.2: Greeting message - show input immediately, no continue prompt
+    if (this._isGreetingMessage) {
+      console.log('[Chat] Greeting complete, showing input');
+      this._isGreetingMessage = false;  // Reset flag
+      this.showChatInput.set(true);
+      setTimeout(() => this.chatInputRef?.nativeElement?.focus(), 100);
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // v5.9.4: Tour cancelled message - show continue prompt then close
+    if (this._tourCancelled) {
+      console.log('[Tour] Cancellation message complete');
+      this._tourCancelled = false;
+      this.isChatResponseComplete.set(true);  // Show "[CUALQUIER TECLA]"
+      this.cdr.markForCheck();
+      return;
+    }
+
     // v5.8.1: In free chat mode, show continue prompt ONLY after LLM response (not greeting)
     if (this.isChatMode() && !this.tourService.isActive() && this._isLLMResponsePending) {
       console.log('[Chat] LLM response complete, waiting for user to dismiss');
@@ -1302,15 +1547,17 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
       return;
     }
 
-    // v2.1: Don't auto-show input - only show if chat is already open
+    // v2.1: Fallback - show input if chat is already open
     if (this.isChatOpen()) {
       this.showChatInput.set(true);
-      // Focus chat input after a small delay
       setTimeout(() => {
         this.chatInputRef?.nativeElement?.focus();
       }, 100);
     }
     this.cdr.markForCheck();
+
+    // v5.9: Start stuck detection
+    this.startStuckDetection();
   }
 
   /**
@@ -1346,8 +1593,17 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
     this.cdr.markForCheck();
 
     try {
+      // v5.9.3: Debug log to verify LLM is being called
+      console.log('[Chat] ====== SUBMITTING TO LLM ======');
+      console.log('[Chat] User input:', input);
+
       // Process with AI service
       const response = await this.sendellAI.processUserInput(input);
+
+      // v5.9.3: Debug log to verify response
+      console.log('[Chat] Response received from AI');
+      console.log('[Chat] Dialogue preview:', response.dialogue.substring(0, 100) + '...');
+      console.log('[Chat] ================================');
 
       // Show response with typing animation
       this.startAITypingAnimation(response.dialogue);
@@ -1394,5 +1650,77 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
    */
   toggleLLMInfo(): void {
     this.showLLMInfo.update(v => !v);
+  }
+
+  // ==================== v5.9: DIALOG STUCK DETECTION ====================
+
+  /**
+   * v5.9: Start detecting if dialog gets stuck (no valid exit path)
+   * Called after typing finishes to monitor for stuck states
+   */
+  private startStuckDetection(): void {
+    this.clearStuckDetection();
+
+    this.dialogStuckTimeout = setTimeout(() => {
+      this.detectStuckDialog();
+    }, this.STUCK_THRESHOLD_MS);
+  }
+
+  /**
+   * v5.9: Clear the stuck detection timeout
+   * Called when dialog state changes or user interacts
+   */
+  private clearStuckDetection(): void {
+    if (this.dialogStuckTimeout) {
+      clearTimeout(this.dialogStuckTimeout);
+      this.dialogStuckTimeout = null;
+    }
+  }
+
+  /**
+   * v5.9: Analyze current dialog state and report if stuck
+   * Logs detailed state info for debugging
+   */
+  private detectStuckDialog(): void {
+    const state = {
+      isVisible: this.isVisible(),
+      isChatMode: this.isChatMode(),
+      isTyping: this.isTyping(),
+      isAITyping: this.isAITyping(),
+      showTourPrompt: this.showTourContinuePrompt(),
+      showChatPrompt: this.showChatContinuePrompt(),
+      showContinue: this.showContinuePrompt(),
+      tourStep: this.tourService.step(),
+      phase: this.onboarding.phase(),
+      displayedText: this.displayedText().substring(0, 50) + '...',
+      isChatOpen: this.isChatOpen(),
+      isDialogMinimized: this.isDialogMinimized(),
+      isFarewellComplete: this.isFarewellComplete(),
+      isFreeModeComplete: this.isFreeModeComplete()
+    };
+
+    // Check if there's a valid exit path
+    const hasExitPath =
+      state.showTourPrompt ||
+      state.showChatPrompt ||
+      state.showContinue ||
+      !state.isVisible ||
+      state.isDialogMinimized ||
+      (state.isChatMode && state.isChatOpen) ||
+      state.isFarewellComplete ||
+      state.isFreeModeComplete;
+
+    if (!hasExitPath && state.isVisible) {
+      console.error('%c[DIALOG STUCK DETECTED]', 'color: #ff0000; font-size: 16px; font-weight: bold');
+      console.log('%c30 seconds passed with no valid exit path', 'color: #ff6b6b');
+      console.table(state);
+      console.log('%cPossible fixes:', 'color: #ffaa00');
+      console.log('- Check keyboard handler conditions');
+      console.log('- Verify tour/chat state transitions');
+      console.log('- Ensure isTyping/isAITyping properly reset');
+    } else if (state.isVisible) {
+      // Still visible but has exit path - just log for monitoring
+      console.log('%c[Dialog Monitor] 30s check - exit path available', 'color: #00ff44');
+    }
   }
 }

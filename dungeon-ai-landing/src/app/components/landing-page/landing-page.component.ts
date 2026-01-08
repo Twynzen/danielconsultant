@@ -67,6 +67,8 @@ export class LandingPageComponent implements OnInit, OnDestroy {
       // When entering ENERGIZING state, activate pillar visuals
       if (step === TourStep.ENERGIZING && pillarId) {
         console.log('[LandingPage] Tour ENERGIZING state - energizing pillar:', pillarId);
+        // v5.4.3: Cancel any pending actions to ensure robot is completely stopped
+        this.actionExecutor.cancelCurrentAction();
         const pillar = PILLARS.find(p => p.id === pillarId);
         if (pillar) {
           // v5.4.2: Delay to allow walking animation to fully stop

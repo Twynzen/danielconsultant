@@ -22,6 +22,13 @@ interface ActionExecution {
   keyCode?: string;
 }
 
+// v5.9: Active action tracking for concurrency detection
+interface ActiveAction {
+  id: string;
+  action: RobotAction;
+  startTime: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ActionExecutorService {
   private inputService = inject(InputService);
@@ -31,6 +38,9 @@ export class ActionExecutorService {
   // Estado de acción en progreso
   private _currentAction = signal<ActionExecution | null>(null);
   private _walkAnimationId: number | null = null;
+
+  // v5.9: Track all active actions for concurrency detection
+  private _activeActions = new Map<string, ActiveAction>();
 
   // Callbacks para notificar completación
   private _onWalkComplete: (() => void) | null = null;
@@ -46,11 +56,47 @@ export class ActionExecutorService {
   /**
    * Ejecuta una acción del catálogo
    * Retorna una Promise que se resuelve cuando la acción completa
+   * v5.9: Added concurrent action detection and logging
    */
   async executeAction(action: RobotAction): Promise<void> {
+    const actionId = `${action.type}_${Date.now()}`;
+    const startTime = performance.now();
+
+    // v5.9: Log concurrent actions
+    if (this._activeActions.size > 0) {
+      const activeIds = [...this._activeActions.keys()];
+      console.warn(
+        '%c[ActionExecutor] CONCURRENT ACTIONS DETECTED',
+        'color: #ffaa00; font-weight: bold'
+      );
+      console.warn('[ActionExecutor] Active actions:', activeIds);
+      console.warn('[ActionExecutor] New action:', action.type);
+    }
+
+    // Register this action as active
+    this._activeActions.set(actionId, { id: actionId, action, startTime });
+
     console.log('[ActionExecutor] ========== EXECUTING ACTION ==========');
     console.log('[ActionExecutor] Action:', action);
+    console.log('[ActionExecutor] Action ID:', actionId);
 
+    try {
+      await this._executeActionInternal(action);
+    } finally {
+      // v5.9: Clean up and log completion time
+      this._activeActions.delete(actionId);
+      const duration = performance.now() - startTime;
+      console.log(
+        `%c[ActionExecutor] ${action.type} completed in ${duration.toFixed(2)}ms`,
+        'color: #00ff44'
+      );
+    }
+  }
+
+  /**
+   * v5.9: Internal action execution (separated for cleanup handling)
+   */
+  private async _executeActionInternal(action: RobotAction): Promise<void> {
     switch (action.type) {
       case 'walk_to_pillar':
         if (action.target) {
