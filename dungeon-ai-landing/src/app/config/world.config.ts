@@ -43,7 +43,7 @@ export const WORLD_CONFIG = {
     { id: 'area-0-1', row: 0, col: 1, theme: 'integrations', name: 'INTEGRATIONS' },
     { id: 'area-0-2', row: 0, col: 2, theme: 'rag', name: 'RAG SYSTEMS' },
     { id: 'area-1-0', row: 1, col: 0, theme: 'automation', name: 'AUTOMATION' },
-    { id: 'area-1-1', row: 1, col: 1, theme: 'central', name: 'CONSULTOR IA' },
+    { id: 'area-1-1', row: 1, col: 1, theme: 'central', name: 'DESARROLLADOR IA' },
     { id: 'area-1-2', row: 1, col: 2, theme: 'agents', name: 'AGENTS' },
     { id: 'area-2-0', row: 2, col: 0, theme: 'finops', name: 'FINOPS AI' },
     { id: 'area-2-1', row: 2, col: 1, theme: 'llms', name: 'LOCAL LLMS' },

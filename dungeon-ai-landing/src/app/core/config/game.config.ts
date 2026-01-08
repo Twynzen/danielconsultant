@@ -93,7 +93,7 @@ export const GAME_CONFIG = {
   // === PROFILE DATA ===
   profile: {
     name: 'Daniel Castiblanco',
-    title: 'Consultor IA',
+    title: 'Desarrollador IA',
     subtitle: 'Orquestación inteligente y automatización',
     calendlyUrl: 'https://calendly.com/darmcastiblanco/30min',
   },

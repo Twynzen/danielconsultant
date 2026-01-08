@@ -9,5 +9,5 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'Daniel Castiblanco - Consultor de IA';
+  title = 'Daniel Castiblanco - Desarrollador de IA';
 }
