@@ -19,13 +19,17 @@ export class ModalServiceComponent implements OnInit, OnDestroy, OnChanges, Afte
   @Input() isOpen: boolean = false;
   @Input() serviceColor: string = '#00ff44'; // v4.7.2: Dynamic color from pillar
   @Output() closeModal = new EventEmitter<void>();
-  
+
   serviceDetail: ServiceDetail | undefined;
   matrixRain: string[] = [];
   glitchState = 'inactive';
   typingTitle = '';
   currentTitleIndex = 0;
   typingInterval: any;
+
+  // v6.1: Bound handlers para poder removerlos correctamente (fix memory leak)
+  private boundBackdropHandler = this.handleBackdropClick.bind(this);
+  private boundGreenDotHandler = this.handleGreenDotClick.bind(this);
   
   constructor(
     private servicesData: ServicesDataService,
@@ -59,35 +63,48 @@ export class ModalServiceComponent implements OnInit, OnDestroy, OnChanges, Afte
   }
   
   private attachNativeEventListeners(): void {
-    // console.log('🚨 Attaching NATIVE event listeners...');
-    
+    // v6.1: Primero remover listeners existentes para evitar memory leak
+    this.removeNativeEventListeners();
+
     // Attach native click to backdrop
     setTimeout(() => {
       const backdrop = document.querySelector('.modal-backdrop');
       if (backdrop) {
-        // console.log('🚨 Found backdrop, attaching listener...');
-        // console.log('🚨 Backdrop z-index:', getComputedStyle(backdrop).zIndex);
-        backdrop.addEventListener('click', (event: any) => {
-          // console.log('🚨 NATIVE backdrop click!', event.target.className);
-          if (event.target.classList.contains('modal-backdrop')) {
-            // console.log('🚨 Calling onClose from NATIVE listener...');
-            this.onClose();
-            this.cdr.detectChanges();
-          }
-        });
+        backdrop.addEventListener('click', this.boundBackdropHandler);
       }
-      
+
       // Attach native click to green dot
       const greenDot = document.querySelector('.dot.green');
       if (greenDot) {
-        // console.log('🚨 Found green dot, attaching listener...');
-        greenDot.addEventListener('click', () => {
-          // console.log('🚨 NATIVE green dot click!');
-          this.onClose();
-          this.cdr.detectChanges();
-        });
+        greenDot.addEventListener('click', this.boundGreenDotHandler);
       }
     }, 200);
+  }
+
+  // v6.1: Handler separado para poder removerlo
+  private handleBackdropClick(event: Event): void {
+    if ((event.target as Element).classList.contains('modal-backdrop')) {
+      this.onClose();
+      this.cdr.detectChanges();
+    }
+  }
+
+  // v6.1: Handler separado para poder removerlo
+  private handleGreenDotClick(): void {
+    this.onClose();
+    this.cdr.detectChanges();
+  }
+
+  // v6.1: Remover listeners para evitar memory leaks
+  private removeNativeEventListeners(): void {
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.removeEventListener('click', this.boundBackdropHandler);
+    }
+    const greenDot = document.querySelector('.dot.green');
+    if (greenDot) {
+      greenDot.removeEventListener('click', this.boundGreenDotHandler);
+    }
   }
   
   private loadServiceData(): void {
@@ -118,6 +135,8 @@ export class ModalServiceComponent implements OnInit, OnDestroy, OnChanges, Afte
     if (this.typingInterval) {
       clearInterval(this.typingInterval);
     }
+    // v6.1: Remover listeners al destruir componente
+    this.removeNativeEventListeners();
   }
   
   private initializeMatrixRain(): void {

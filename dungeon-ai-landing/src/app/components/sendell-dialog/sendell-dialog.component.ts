@@ -33,6 +33,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { OnboardingService, OnboardingPhase } from '../../services/onboarding.service';
 import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
@@ -95,6 +97,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private currentCharIndex = 0;
   private hasTriggeredWord = false;
   private lastDialogId: string | null = null;  // v1.1: Track dialog changes
+
+  // v6.1: Subject para cleanup de subscriptions (fix memory leak)
+  private destroy$ = new Subject<void>();
 
   // v2.0: Chat mode state
   isChatMode = signal(false);  // True when onboarding is complete and chat is active
@@ -188,13 +193,16 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
     // v2.0: Subscribe to AI actions
     // v5.4.0: Skip during tour - TourService handles actions via pendingAction
-    this.sendellAI.action$.subscribe(action => {
-      if (!this.tourService.isActive()) {
-        this.aiActionRequested.emit(action);
-      } else {
-        console.log('[SendellDialog] Skipping AI action emit during tour (handled by TourService)');
-      }
-    });
+    // v6.1: Added takeUntil for proper cleanup (fix memory leak)
+    this.sendellAI.action$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(action => {
+        if (!this.tourService.isActive()) {
+          this.aiActionRequested.emit(action);
+        } else {
+          console.log('[SendellDialog] Skipping AI action emit during tour (handled by TourService)');
+        }
+      });
 
     // v5.3.0: Effect to handle TourService step changes
     // v5.4.0: Added guards against duplicate/concurrent processing
@@ -406,6 +414,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnDestroy(): void {
     this.clearTypingInterval();
+    // v6.1: Complete destroy$ para cleanup de subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**

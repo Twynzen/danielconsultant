@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { LandingPageComponent } from './components/landing-page/landing-page.component';
-import { VampireSurvivorsGameComponent } from './components/vampire-survivors-game/vampire-survivors-game.component';
 
 export const routes: Routes = [
   {
@@ -9,7 +8,8 @@ export const routes: Routes = [
   },
   {
     path: 'game',
-    component: VampireSurvivorsGameComponent
+    loadComponent: () => import('./components/vampire-survivors-game/vampire-survivors-game.component')
+      .then(m => m.VampireSurvivorsGameComponent)
   },
   {
     path: 'multidesktopflow',
