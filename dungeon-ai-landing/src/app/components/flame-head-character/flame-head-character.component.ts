@@ -254,7 +254,7 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     const charBottom = charScreenY + this.CHARACTER_HEIGHT;
 
     if (event.clientX >= charLeft && event.clientX <= charRight &&
-        event.clientY >= charTop && event.clientY <= charBottom) {
+      event.clientY >= charTop && event.clientY <= charBottom) {
       this.isDragging.set(true);
       this.dragOffsetX = event.clientX - charScreenX;
       this.dragOffsetY = event.clientY - charScreenY;
@@ -329,6 +329,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     if (this.isDragging()) return;  // v5.0: Skip physics while dragging
     if (this.binaryCharacter?.isCrashing?.()) return;  // v5.1: Block during crash
     if (this.isCooldown()) return;  // v5.1: Block during 2-second cooldown after crash
+    // v5.4.3: Block movement during energization or while inside pillar
+    if (this.binaryCharacter?.isEnergizing?.() || this.isRobotInsidePillar()) return;
     // v5.2.3: Block user movement during onboarding
     // v5.4.0: BUT allow Sendell to move when executing simulated actions
     if (this.onboarding.isOnboardingActive() && !this.inputService.isSendellExecuting()) return;
@@ -421,7 +423,13 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
 
     this.isActivatingPillar.set(true);
     this.activePillarConfig.set(pillar);
+    // v5.4.3: Clear ALL inputs (including simulated) before energizing
+    this.inputService.clearSimulatedInputs();
     this.inputService.pause(); // Block movement during energization
+
+    // v5.8.3: Reset movement state immediately to stop walking animation
+    // The update() loop exits early during energizing, so isMoving never gets reset
+    this.isMoving.set(false);
 
     // Store pillar position for exit animation
     this.currentPillarScreenX = pillarScreenX;
