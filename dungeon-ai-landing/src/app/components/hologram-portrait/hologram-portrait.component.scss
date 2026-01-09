@@ -523,3 +523,233 @@
     transform: scale(1.05);
   }
 }
+
+// ========== v6.1: SVG Hologram Styles ==========
+
+.svg-hologram {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--portrait-color);
+
+  svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 10px var(--portrait-color));
+  }
+}
+
+// === Calendar SVG Animations ===
+.calendar-hologram {
+  .calendar-svg {
+    animation: calendarPulse 3s ease-in-out infinite;
+  }
+
+  .calendar-highlight {
+    animation: highlightPulse 2s ease-in-out infinite;
+  }
+
+  .calendar-check {
+    animation: checkDraw 2s ease-in-out infinite;
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+  }
+
+  .calendar-ring {
+    animation: ringBounce 1s ease-in-out infinite;
+  }
+
+  .selected-day {
+    animation: dayGlow 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes calendarPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px var(--portrait-color));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px var(--portrait-color)) drop-shadow(0 0 40px var(--portrait-color));
+  }
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes checkDraw {
+  0%, 40% {
+    stroke-dashoffset: 30;
+  }
+  60%, 100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ringBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes dayGlow {
+  0%, 100% {
+    opacity: 1;
+    filter: none;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+}
+
+// === Planet SVG Animations ===
+.planet-hologram {
+  .planet-svg {
+    animation: planetFloat 6s ease-in-out infinite;
+  }
+
+  .planet-body {
+    animation: planetGlow 4s ease-in-out infinite;
+  }
+
+  .planet-ring {
+    animation: ringRotate 20s linear infinite;
+    transform-origin: center;
+  }
+
+  .planet-glow {
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+
+  .star {
+    animation: starTwinkle 2s ease-in-out infinite;
+
+    &:nth-child(2) { animation-delay: 0.3s; }
+    &:nth-child(3) { animation-delay: 0.6s; }
+    &:nth-child(4) { animation-delay: 0.9s; }
+    &:nth-child(5) { animation-delay: 1.2s; }
+  }
+
+  .volcano {
+    filter: drop-shadow(0 0 3px var(--portrait-color));
+  }
+
+  .volcano-crater {
+    animation: craterGlow 2s ease-in-out infinite;
+  }
+
+  // Lava bubble animations
+  .lava-bubble {
+    animation: lavaBubble 2s ease-in-out infinite;
+  }
+
+  .lava-1 { animation-delay: 0s; }
+  .lava-2 { animation-delay: 0.3s; }
+  .lava-3 { animation-delay: 0.6s; }
+  .lava-4 { animation-delay: 0.1s; }
+  .lava-5 { animation-delay: 0.4s; }
+  .lava-6 { animation-delay: 0.7s; }
+  .lava-7 { animation-delay: 1s; }
+
+  .planet-label {
+    animation: labelGlow 3s ease-in-out infinite;
+  }
+}
+
+@keyframes planetFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes planetGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px var(--portrait-color));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px var(--portrait-color)) drop-shadow(0 0 30px var(--portrait-color));
+  }
+}
+
+@keyframes ringRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.15;
+    r: 70;
+  }
+  50% {
+    opacity: 0.3;
+    r: 75;
+  }
+}
+
+@keyframes starTwinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes craterGlow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 5px var(--portrait-color));
+  }
+}
+
+@keyframes lavaBubble {
+  0% {
+    opacity: 0.9;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-8px) scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.5);
+  }
+}
+
+@keyframes labelGlow {
+  0%, 100% {
+    opacity: 0.8;
+    filter: none;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+}

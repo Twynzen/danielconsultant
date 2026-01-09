@@ -22,13 +22,13 @@ export const GAME_CONFIG = {
   doors: [
     {
       id: 'nuvaris',
-      label: 'NUVARIS',
+      label: 'NÚVARIZ',
       position: { x: 100, y: 150 },
       size: { width: 80, height: 120 },
       type: 'external' as const,
-      destination: 'https://nuvaris.com',
+      destination: 'https://nuvariz.com',
       color: '#00ff88',
-      description: 'Visita Nuvaris - Plataforma de soluciones IA',
+      description: 'Universo Núvariz - Próximamente',
     },
     {
       id: 'multidesktopflow',
@@ -101,7 +101,7 @@ export const GAME_CONFIG = {
 
 // URLs externas como constantes separadas para fácil modificación
 export const EXTERNAL_URLS = {
-  nuvaris: 'https://nuvaris.com',
+  nuvariz: 'https://nuvariz.com',
   calendly: 'https://calendly.com/darmcastiblanco/30min',
 } as const;
 

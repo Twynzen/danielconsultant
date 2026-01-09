@@ -7,12 +7,15 @@ import { SIDESCROLLER_CONFIG, SIDESCROLLER_PILLAR_POSITIONS, getPillarY } from '
 
 /**
  * v6.0: Configuration for hologram-type pillars with animated frames
+ * v6.1: Added svgType for CSS-animated SVG holograms
  */
 export interface HologramConfig {
-  frameFolder: string;    // Folder in assets/ (e.g., 'gifllmlocal')
-  framePrefix: string;    // File prefix (e.g., 'llmlocal' for llmlocal-001.png)
+  frameFolder?: string;   // Folder in assets/ (e.g., 'gifllmlocal') - optional if using svgType
+  framePrefix?: string;   // File prefix (e.g., 'llmlocal' for llmlocal-001.png) - optional if using svgType
   frameCount?: number;    // Number of frames (default: 30)
   hasModal?: boolean;     // If true, clicking hologram opens modal with service info
+  svgType?: 'calendar' | 'planet';  // v6.1: Use CSS-animated SVG instead of PNG frames
+  externalUrl?: string;   // v6.1: If set, clicking opens this URL instead of modal
 }
 
 export interface PillarConfig {
@@ -110,9 +113,9 @@ export const PILLAR_ICONS: Record<string, string> = {
 
 /**
  * 9 Pillars distributed horizontally across the side-scroller level
- * v5.2.3: Added GitHub pillar, marked Nuvaris & MultiDesktopFlow as "Próximamente"
+ * v5.2.3: Added GitHub pillar, marked Núvariz & MultiDesktopFlow as "Próximamente"
  * Layout:
- * |--spawn--|--QUIÉN SOY--|--LOCAL LLMS--|--RAG--|--AGENTS--|--INTEGRATIONS--|--CALENDLY--|--GITHUB--|--NUVARIS--|--MDF--|
+ * |--spawn--|--QUIÉN SOY--|--LOCAL LLMS--|--RAG--|--AGENTS--|--INTEGRATIONS--|--CALENDLY--|--GITHUB--|--NÚVARIZ--|--MDF--|
  *    400px      1000px        1600px      2200px    2800px       3400px          4000px      4600px     5200px     5800px
  */
 export const PILLARS: PillarConfig[] = [
@@ -195,37 +198,54 @@ export const PILLARS: PillarConfig[] = [
       hasModal: true
     }
   },
+  // v6.1: Calendly with animated SVG calendar hologram (green theme)
   {
     id: 'calendly',
     label: 'AGENDAR',
     icon: 'calendar',
-    type: 'external',
+    type: 'hologram',
     destination: 'https://calendly.com/darmcastiblanco/30min',
-    color: '#ff6b00',
+    color: '#00ffaa',  // Turquoise (distinct from Quién Soy green)
     worldX: 4000,
-    description: 'Agenda una sesión de consultoría'
+    description: 'Agenda una sesión de consultoría',
+    hologramConfig: {
+      svgType: 'calendar',
+      hasModal: false,
+      externalUrl: 'https://calendly.com/darmcastiblanco/30min'
+    }
   },
-  // v5.2.3: GitHub pillar - link to Twynzen profile
+  // v6.1: GitHub pillar with animated hologram - opens external URL
   {
     id: 'github',
     label: 'GITHUB',
     icon: 'github',
-    type: 'external',
+    type: 'hologram',
     destination: 'https://github.com/Twynzen',
     color: '#ffffff',  // White for GitHub
     worldX: 4600,
-    description: 'Mis proyectos en GitHub'
+    description: 'Mis proyectos en GitHub',
+    hologramConfig: {
+      frameFolder: 'gifgithub',
+      framePrefix: 'github',
+      frameCount: 30,
+      hasModal: false,
+      externalUrl: 'https://github.com/Twynzen'
+    }
   },
-  // v5.2.3: Nuvaris - Próximamente
+  // v6.1: Núvariz - Universo próximamente with planet SVG hologram
   {
     id: 'nuvaris',
-    label: 'PRÓXIMAMENTE',
+    label: 'NÚVARIZ',
     icon: 'globe',
-    type: 'modal',  // Changed from 'external' to prevent navigation
+    type: 'hologram',
     destination: 'nuvaris',
     color: '#00ff88',
     worldX: 5200,
-    description: 'Nuvaris - Próximamente'
+    description: 'Universo Núvariz - Próximamente',
+    hologramConfig: {
+      svgType: 'planet',
+      hasModal: true
+    }
   },
   // v5.2.3: MultiDesktopFlow - Próximamente
   {

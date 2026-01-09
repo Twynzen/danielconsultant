@@ -1,7 +1,8 @@
-<!-- HologramPortraitComponent - v6.0 -->
-<!-- Generic animated Matrix hologram with PNG frames -->
+<!-- HologramPortraitComponent - v6.1 -->
+<!-- Generic animated Matrix hologram with PNG frames or SVG animations -->
 <!-- v5.2: Added low-energy and fully-energized states for robot energization -->
 <!-- v6.0: Made generic with configurable frame source + click support for modals -->
+<!-- v6.1: Added SVG hologram mode for calendar and planet animations -->
 
 <div class="hologram-portrait"
      [class.active]="isVisible && illumination >= 0.7"
@@ -9,6 +10,7 @@
      [class.dormant]="!isVisible || illumination <= 0.1"
      [class.low-energy]="isLowEnergy"
      [class.fully-energized]="isFullyEnergized"
+     [class.svg-mode]="svgType"
      [style.--portrait-color]="color"
      [style.--illumination]="illumination"
      [style.--hologram-width.px]="hologramWidth">
@@ -17,10 +19,111 @@
   <div class="frame-container"
        [class.clickable]="showInfoButton"
        (click)="onFrameClick()">
-    <img [src]="currentFrame"
-         [alt]="showLegend ? 'Daniel Castiblanco - Consultor de IA' : 'Hologram Animation'"
-         class="portrait-frame"
-         loading="eager">
+
+    <!-- v6.1: SVG Calendar Hologram -->
+    @if (svgType === 'calendar') {
+      <div class="svg-hologram calendar-hologram">
+        <svg viewBox="0 0 200 200" class="calendar-svg">
+          <!-- Calendar base -->
+          <rect x="30" y="40" width="140" height="130" rx="8"
+                class="calendar-body" fill="none" stroke="currentColor" stroke-width="2"/>
+
+          <!-- Calendar header -->
+          <rect x="30" y="40" width="140" height="35" rx="8"
+                class="calendar-header" fill="currentColor" opacity="0.3"/>
+
+          <!-- Calendar rings -->
+          <circle cx="60" cy="40" r="5" class="calendar-ring" fill="currentColor"/>
+          <circle cx="140" cy="40" r="5" class="calendar-ring" fill="currentColor"/>
+
+          <!-- Month text -->
+          <text x="100" y="62" text-anchor="middle" class="calendar-month"
+                fill="currentColor" font-size="14" font-family="monospace">AGENDAR</text>
+
+          <!-- Calendar grid lines -->
+          <line x1="30" y1="85" x2="170" y2="85" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+          <line x1="70" y1="75" x2="70" y2="170" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+          <line x1="110" y1="75" x2="110" y2="170" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+          <line x1="150" y1="75" x2="150" y2="170" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+          <line x1="30" y1="110" x2="170" y2="110" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+          <line x1="30" y1="140" x2="170" y2="140" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+
+          <!-- Animated day highlight -->
+          <rect x="75" y="115" width="30" height="22" rx="4"
+                class="calendar-highlight" fill="currentColor" opacity="0.6"/>
+
+          <!-- Day numbers -->
+          <text x="50" y="102" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">1</text>
+          <text x="90" y="102" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">2</text>
+          <text x="130" y="102" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">3</text>
+          <text x="50" y="130" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">4</text>
+          <text x="90" y="130" text-anchor="middle" fill="currentColor" font-size="14" class="selected-day">5</text>
+          <text x="130" y="130" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">6</text>
+          <text x="50" y="158" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">7</text>
+          <text x="90" y="158" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">8</text>
+          <text x="130" y="158" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.7">9</text>
+
+          <!-- Checkmark on selected day -->
+          <path d="M82 128 L88 134 L98 122" stroke="currentColor" stroke-width="2" fill="none"
+                class="calendar-check" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    } @else if (svgType === 'planet') {
+      <!-- v6.1: SVG Planet with Volcanoes Hologram -->
+      <div class="svg-hologram planet-hologram">
+        <svg viewBox="0 0 200 200" class="planet-svg">
+          <!-- Stars background -->
+          <circle cx="20" cy="30" r="1" fill="currentColor" class="star" opacity="0.5"/>
+          <circle cx="180" cy="45" r="1.5" fill="currentColor" class="star" opacity="0.6"/>
+          <circle cx="35" cy="170" r="1" fill="currentColor" class="star" opacity="0.4"/>
+          <circle cx="165" cy="160" r="1" fill="currentColor" class="star" opacity="0.5"/>
+          <circle cx="150" cy="25" r="1" fill="currentColor" class="star" opacity="0.3"/>
+
+          <!-- Planet body -->
+          <circle cx="100" cy="100" r="60" class="planet-body"
+                  fill="none" stroke="currentColor" stroke-width="2"/>
+
+          <!-- Planet surface details -->
+          <ellipse cx="100" cy="100" rx="60" ry="20"
+                   fill="none" stroke="currentColor" stroke-width="1" opacity="0.3" class="planet-ring"/>
+
+          <!-- Craters -->
+          <circle cx="75" cy="85" r="8" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+          <circle cx="120" cy="110" r="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+
+          <!-- Volcano 1 (left) -->
+          <path d="M60 130 L70 95 L80 130 Z" fill="none" stroke="currentColor" stroke-width="1.5" class="volcano"/>
+          <ellipse cx="70" cy="95" rx="6" ry="3" fill="currentColor" opacity="0.5" class="volcano-crater"/>
+          <!-- Lava/smoke from volcano 1 -->
+          <circle cx="70" cy="88" r="3" fill="currentColor" class="lava-bubble lava-1" opacity="0.8"/>
+          <circle cx="67" cy="82" r="2" fill="currentColor" class="lava-bubble lava-2" opacity="0.6"/>
+          <circle cx="73" cy="78" r="2" fill="currentColor" class="lava-bubble lava-3" opacity="0.4"/>
+
+          <!-- Volcano 2 (right, larger) -->
+          <path d="M110 135 L125 90 L140 135 Z" fill="none" stroke="currentColor" stroke-width="1.5" class="volcano"/>
+          <ellipse cx="125" cy="90" rx="8" ry="4" fill="currentColor" opacity="0.5" class="volcano-crater"/>
+          <!-- Lava/smoke from volcano 2 -->
+          <circle cx="125" cy="82" r="4" fill="currentColor" class="lava-bubble lava-4" opacity="0.9"/>
+          <circle cx="121" cy="74" r="3" fill="currentColor" class="lava-bubble lava-5" opacity="0.7"/>
+          <circle cx="129" cy="68" r="2" fill="currentColor" class="lava-bubble lava-6" opacity="0.5"/>
+          <circle cx="125" cy="62" r="2" fill="currentColor" class="lava-bubble lava-7" opacity="0.3"/>
+
+          <!-- Planet glow ring -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="currentColor"
+                  stroke-width="1" opacity="0.2" class="planet-glow"/>
+
+          <!-- Text label -->
+          <text x="100" y="180" text-anchor="middle" fill="currentColor"
+                font-size="12" font-family="monospace" class="planet-label">NÚVARIZ</text>
+        </svg>
+      </div>
+    } @else {
+      <!-- PNG Frame mode (default) -->
+      <img [src]="currentFrame"
+           [alt]="showLegend ? 'Daniel Castiblanco - Consultor de IA' : 'Hologram Animation'"
+           class="portrait-frame"
+           loading="eager">
+    }
 
     <!-- Scan line effect -->
     <div class="scan-line"></div>

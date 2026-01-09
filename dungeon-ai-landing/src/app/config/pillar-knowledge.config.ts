@@ -162,15 +162,12 @@ Es una forma de ver el trabajo técnico de Daniel antes de contactarlo.
 
   'nuvaris': {
     id: 'nuvaris',
-    title: 'Nuvaris (Próximamente)',
+    title: 'Universo Núvariz',
     content: `
-Nuvaris es una plataforma innovadora de IA empresarial que está en desarrollo.
-Próximamente estará disponible con más información.
-
-Si te interesa ser de los primeros en conocer Nuvaris,
-agenda una sesión con Daniel para estar en la lista de espera.
+Universo Núvariz - Próximamente.
+Un nuevo mundo está por revelarse.
     `.trim(),
-    keywords: ['nuvaris', 'próximamente', 'plataforma', 'desarrollo']
+    keywords: ['núvariz', 'universo', 'próximamente']
   },
 
   'multidesktopflow': {

@@ -39,7 +39,7 @@ export const WORLD_CONFIG = {
 
   // Area definitions (0-indexed from top-left)
   areas: [
-    { id: 'area-0-0', row: 0, col: 0, theme: 'nuvaris', name: 'NUVARIS' },
+    { id: 'area-0-0', row: 0, col: 0, theme: 'nuvaris', name: 'NÚVARIZ' },
     { id: 'area-0-1', row: 0, col: 1, theme: 'integrations', name: 'INTEGRATIONS' },
     { id: 'area-0-2', row: 0, col: 2, theme: 'rag', name: 'RAG SYSTEMS' },
     { id: 'area-1-0', row: 1, col: 0, theme: 'automation', name: 'AUTOMATION' },

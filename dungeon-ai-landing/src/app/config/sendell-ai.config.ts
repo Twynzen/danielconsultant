@@ -244,10 +244,10 @@ export const PILLAR_DESCRIPTIONS: Record<string, PillarDescription> = {
   },
   'nuvaris': {
     id: 'nuvaris',
-    name: 'Nuvaris',
-    shortDesc: 'Próximamente',
-    tourIntro: 'Este pilar está en construcción.',
-    tourExplain: 'Nuvaris es un proyecto en desarrollo. Pronto habrá más información disponible aquí.'
+    name: 'Núvariz',
+    shortDesc: 'Universo Próximamente',
+    tourIntro: 'Universo Núvariz - Un nuevo mundo por revelarse.',
+    tourExplain: 'Universo Núvariz está próximamente. Mantente atento.'
   },
   'multidesktopflow': {
     id: 'multidesktopflow',
@@ -369,7 +369,7 @@ La web tiene 9 pilares de información:
 5. custom-integrations: Integraciones personalizadas (x=3400)
 6. calendly: Agendar sesión gratuita de consultoría (x=4000)
 7. github: Repositorio de Daniel (x=4600)
-8. nuvaris: Próximamente (x=5200)
+8. núvariz: Universo Próximamente (x=5200)
 9. multidesktopflow: Próximamente (x=5800)
 
 ## CONSCIENCIA ESPACIAL

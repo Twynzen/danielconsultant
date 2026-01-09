@@ -263,11 +263,18 @@ export class HieroglyphicWallComponent {
 
   /**
    * v6.0: Handle click on hologram (for opening modal)
-   * Emits serviceClicked event to open the service modal
+   * v6.1: Added support for externalUrl to open links
+   * Emits serviceClicked event to open the service modal, or opens external URL
    */
   onHologramInfoClick(inscription: InscriptionData): void {
     // Only clickable when illuminated enough
     if (!this.isClickable(inscription.id)) return;
+
+    // v6.1: Check for external URL first
+    if (inscription.hologramConfig?.externalUrl) {
+      window.open(inscription.hologramConfig.externalUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
     if (inscription.serviceId) {
       this.serviceClicked.emit(inscription.serviceId);

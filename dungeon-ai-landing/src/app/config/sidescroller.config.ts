@@ -48,7 +48,7 @@ export const SIDESCROLLER_CONFIG = {
 
 /**
  * Pillar positions distributed horizontally across the level
- * v5.2.3: 9 pillars - added GitHub, reordered Nuvaris & MultiDesktopFlow
+ * v5.2.3: 9 pillars - added GitHub, reordered Núvariz & MultiDesktopFlow
  * NOTE: Actual positions are defined in pillar.config.ts PILLARS array
  */
 export const SIDESCROLLER_PILLAR_POSITIONS = [

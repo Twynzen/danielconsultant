@@ -29,6 +29,9 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
   @Input() framePrefix = 'yo';          // File prefix (e.g., 'yo' for yo-001.png)
   @Input() frameCount = 30;             // Number of frames
 
+  // v6.1: SVG hologram mode (alternative to PNG frames)
+  @Input() svgType: 'calendar' | 'planet' | null = null;
+
   // v6.0: Legend and click behavior
   @Input() showLegend = true;           // Show Daniel's legend (default for backwards compat)
   @Input() showInfoButton = false;      // Show click hint and make clickable
@@ -48,11 +51,19 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
   currentFrame = '';
 
   ngOnInit(): void {
-    this.buildFramePaths();
-    this.preloadFrames();
+    // v6.1: Skip frame loading if using SVG mode
+    if (!this.svgType) {
+      this.buildFramePaths();
+      this.preloadFrames();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    // v6.1: Skip frame handling if using SVG mode
+    if (this.svgType) {
+      return;
+    }
+
     // v6.1: Rebuild frames if source config changes
     if (changes['frameFolder'] || changes['framePrefix'] || changes['frameCount']) {
       this.framesPreloaded = false;

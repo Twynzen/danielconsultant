@@ -22,6 +22,7 @@
       </app-hologram-portrait>
     } @else if (inscription.type === 'hologram') {
       <!-- v6.0: HOLOGRAM TYPE - Generic animated hologram with click-to-modal -->
+      <!-- v6.1: Added svgType support for CSS-animated SVG holograms -->
       <!-- Larger size (450px) for better visibility -->
       <app-hologram-portrait
         [isVisible]="(isActive(inscription.id) || isAwakening(inscription.id)) && getIllumination(inscription.id) > 0"
@@ -32,8 +33,9 @@
         [frameFolder]="inscription.hologramConfig?.frameFolder ?? 'gifDaniel'"
         [framePrefix]="inscription.hologramConfig?.framePrefix ?? 'yo'"
         [frameCount]="inscription.hologramConfig?.frameCount ?? 30"
+        [svgType]="inscription.hologramConfig?.svgType ?? null"
         [showLegend]="false"
-        [showInfoButton]="inscription.hologramConfig?.hasModal ?? false"
+        [showInfoButton]="(inscription.hologramConfig?.hasModal ?? false) || !!inscription.hologramConfig?.externalUrl"
         [hologramWidth]="450"
         (infoClicked)="onHologramInfoClick(inscription)"
         [style.left.px]="inscription.x"

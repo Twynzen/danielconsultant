@@ -193,8 +193,8 @@ export const PILLAR_POSITIONS_RAG: Record<string, PillarInfo> = {
   },
   'nuvaris': {
     x: 5200,
-    name: 'Nuvaris',
-    description: 'Próximamente - Proyecto en desarrollo'
+    name: 'Núvariz',
+    description: 'Universo Núvariz - Próximamente'
   },
   'multidesktopflow': {
     x: 5800,

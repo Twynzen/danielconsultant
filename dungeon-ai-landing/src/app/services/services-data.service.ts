@@ -352,11 +352,11 @@ export class ServicesDataService {
       ],
       technologies: ['FastAPI', 'Apache Kafka', 'Redis', 'RabbitMQ', 'Airbyte', 'Mulesoft', 'Custom Python/Node.js']
     },
-    // v5.2.3: Nuvaris - Próximamente
+    // v6.1: Núvariz - Universo próximamente
     {
       id: 'nuvaris',
-      title: 'NUVARIS',
-      description: 'Próximamente - Plataforma innovadora de IA empresarial en desarrollo. Mantente atento para más información.',
+      title: 'NÚVARIZ',
+      description: 'Universo Núvariz - Próximamente. Un nuevo mundo está por revelarse.',
       features: [
         {
           icon: 'clock',
