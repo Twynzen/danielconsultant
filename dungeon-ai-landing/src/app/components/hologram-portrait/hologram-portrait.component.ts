@@ -53,6 +53,13 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    // v6.1: Rebuild frames if source config changes
+    if (changes['frameFolder'] || changes['framePrefix'] || changes['frameCount']) {
+      this.framesPreloaded = false;
+      this.buildFramePaths();
+      this.preloadFrames();
+    }
+
     if (changes['isVisible']) {
       if (this.isVisible) {
         this.startAnimation();

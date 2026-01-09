@@ -161,25 +161,39 @@ export const PILLARS: PillarConfig[] = [
       hasModal: true
     }
   },
+  // v6.1: AGENTS with animated hologram (white theme)
   {
     id: 'agent-orchestration',
     label: 'AGENTS',
     icon: 'robot',
-    type: 'modal',
+    type: 'hologram',
     destination: 'agent-orchestration',
-    color: '#ff6600',
+    color: '#ffffff',  // White
     worldX: 2800,
-    description: 'Orquestación de Agentes de IA'
+    description: 'Orquestación de Agentes de IA',
+    hologramConfig: {
+      frameFolder: 'gifagents',
+      framePrefix: 'agents',
+      frameCount: 30,
+      hasModal: true
+    }
   },
+  // v6.1: INTEGRATIONS with animated hologram (orange theme)
   {
     id: 'custom-integrations',
     label: 'INTEGRATIONS',
     icon: 'plug',
-    type: 'modal',
+    type: 'hologram',
     destination: 'custom-integrations',
-    color: '#ff6600',
+    color: '#ff6600',  // Orange
     worldX: 3400,
-    description: 'Integraciones personalizadas con IA'
+    description: 'Integraciones personalizadas con IA',
+    hologramConfig: {
+      frameFolder: 'gifintegrations',
+      framePrefix: 'integrations',
+      frameCount: 30,
+      hasModal: true
+    }
   },
   {
     id: 'calendly',
