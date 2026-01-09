@@ -67,13 +67,16 @@
   <!-- v5.0: Only show after onboarding spawn phase -->
   <!-- v5.2: Added energization event handlers -->
   <!-- v5.4.5: Added robotDoubleClicked to open chat -->
+  <!-- v6.2: Added robotClicked and robotDragStarted to close chat -->
   @if (shouldShowCharacter()) {
     <app-flame-head-character
       (energizationStarted)="onEnergizationStarted($event)"
       (energizationFinished)="onEnergizationFinished($event)"
       (pillarExitStarted)="onPillarExitStarted()"
       (pillarExitFinished)="onPillarExitFinished()"
-      (robotDoubleClicked)="onRobotDoubleClicked()">
+      (robotDoubleClicked)="onRobotDoubleClicked()"
+      (robotClicked)="onRobotClicked()"
+      (robotDragStarted)="onRobotDragStarted()">
     </app-flame-head-character>
   }
 

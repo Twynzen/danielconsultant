@@ -610,8 +610,22 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * v6.2: Close chat when user drags or clicks the robot
+   * Called from landing-page when robot receives drag/click interaction
+   * This separates drag/click from double-click (which opens chat)
+   */
+  public closeChatFromRobotInteraction(): void {
+    // Only close if chat is actually open or has content
+    if (this.isChatMode() && (this.isChatOpen() || this.displayedText())) {
+      console.log('[SendellDialog] Closing chat from robot drag/click interaction');
+      this.closeDialog();
+    }
+  }
+
+  /**
    * v5.4.5: Open chat when user double-clicks on the robot
-   * v5.5: Toggle behavior - also restores from minimized or closes if open
+   * v5.5: Also restores from minimized state
+   * v6.2: REMOVED toggle behavior - only opens, never closes
    * Called from landing-page when robot receives double-click
    */
   public openChatFromRobot(): void {
@@ -624,19 +638,16 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
-    // v5.5: If chat is open, close it (toggle behavior)
-    if (this.isChatMode() && this.isChatOpen()) {
-      console.log('[SendellDialog] Closing chat');
-      this.closeDialog();
-      return;
-    }
+    // v6.2: REMOVED toggle behavior
+    // Double-click only OPENS the chat, never closes it
+    // Use closeChatFromRobotInteraction() for closing via click/drag
 
     // Activate chat mode if not already active
     if (!this.isChatMode()) {
       this.isChatMode.set(true);
     }
 
-    // Open the input
+    // Open the input (if already open, this is a no-op)
     this.openChatInput();
 
     // If dialog has no text, show a greeting

@@ -85,6 +85,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private releaseY = 0;  // Y position when released (for crash detection)
   private wasDropped = false;  // Flag to track if character was just dropped
   private wasInAir = false;  // Track if character was falling
+  // v6.2: Timestamp when drag ended (for click protection)
+  private dragEndTime = 0;
 
   // v5.1: Cooldown after crash (block input for 2 seconds after reassembly)
   isCooldown = signal(false);
@@ -107,6 +109,10 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   @Output() pillarExitFinished = new EventEmitter<void>();
   // v5.4.5: Double-click on robot to open chat
   @Output() robotDoubleClicked = new EventEmitter<void>();
+  // v6.2: Single click on robot to close chat
+  @Output() robotClicked = new EventEmitter<void>();
+  // v6.2: Drag started - close chat when drag begins (separate interactions)
+  @Output() robotDragStarted = new EventEmitter<void>();
 
   // Reference to binary character for crash trigger
   @ViewChild(BinaryCharacterComponent) binaryCharacter!: BinaryCharacterComponent;
@@ -171,6 +177,18 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   onRobotDoubleClicked(): void {
     console.log('[FlameHead] Propagating double-click event');
     this.robotDoubleClicked.emit();
+  }
+
+  // v6.2: Called when user single-clicks on the robot
+  // Includes protection to ignore clicks immediately after drag ends
+  onRobotClicked(): void {
+    // Ignore clicks for 200ms after drag ends to prevent accidental closes
+    if (Date.now() - this.dragEndTime < 200) {
+      console.log('[FlameHead] Click ignored - too close to drag end');
+      return;
+    }
+    console.log('[FlameHead] Propagating robot click event');
+    this.robotClicked.emit();
   }
 
   private showCrashDialog(): void {
@@ -284,6 +302,9 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
       // v5.9: Register drag action with state service
       this.stateService.startAction('drag');
       this.stateService.requestTransition(SendellState.BEING_DRAGGED, 'mouse_drag_start');
+      // v6.2: Notify that drag started - close chat (separate interactions)
+      console.log('[FlameHead] Drag started - emitting robotDragStarted');
+      this.robotDragStarted.emit();
     }
   }
 
@@ -321,6 +342,8 @@ export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
     // v5.9: End drag action with state service
     this.stateService.endAction('drag');
     this.stateService.requestTransition(SendellState.IDLE, 'mouse_drag_end');
+    // v6.2: Record drag end time for click protection
+    this.dragEndTime = Date.now();
 
     // Store the release Y position for crash detection on landing
     const state = this.physicsService.state();

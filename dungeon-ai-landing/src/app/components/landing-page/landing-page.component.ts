@@ -350,6 +350,32 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * v6.2: Handle drag start on robot - close chat
+   * Drag and chat are separate interactions that should not overlap
+   */
+  onRobotDragStarted(): void {
+    console.log('[LandingPage] Robot drag started, closing chat');
+
+    // Only close chat if onboarding is complete
+    if (this.sendellDialog && this.onboarding.phase() === OnboardingPhase.COMPLETE) {
+      this.sendellDialog.closeChatFromRobotInteraction();
+    }
+  }
+
+  /**
+   * v6.2: Handle single click on robot - close chat
+   * Single click closes chat, double click opens it
+   */
+  onRobotClicked(): void {
+    console.log('[LandingPage] Robot clicked, closing chat');
+
+    // Only close chat if onboarding is complete
+    if (this.sendellDialog && this.onboarding.phase() === OnboardingPhase.COMPLETE) {
+      this.sendellDialog.closeChatFromRobotInteraction();
+    }
+  }
+
+  /**
    * v4.5: ESC key closes hologram
    */
   @HostListener('window:keydown.escape')

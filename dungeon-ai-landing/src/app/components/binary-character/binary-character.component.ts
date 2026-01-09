@@ -163,6 +163,8 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   @Output() exitPillarComplete = new EventEmitter<void>();
   // v5.4.5: Double-click to open chat
   @Output() robotDoubleClicked = new EventEmitter<void>();
+  // v6.2: Single click to close chat (separate from double-click)
+  @Output() robotClicked = new EventEmitter<void>();
   isCrashing = signal(false);  // Public for template
   private crashStartTime = 0;
   private crashPhase: 'exploding' | 'falling' | 'settling' | 'reassembling' = 'exploding';
@@ -255,9 +257,11 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   }
 
   // Click reaction
+  // v6.2: Emit robotClicked for chat closing (separate from double-click)
   @HostListener('click')
   onClick(): void {
     this.triggerStartled();
+    this.robotClicked.emit();
   }
 
   // v5.4.5: Double-click to open chat
