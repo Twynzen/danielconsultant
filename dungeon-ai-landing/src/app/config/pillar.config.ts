@@ -144,15 +144,22 @@ export const PILLARS: PillarConfig[] = [
       hasModal: true  // Clicking hologram opens modal with service info
     }
   },
+  // v6.1: RAG with animated hologram (red neural network animation)
   {
     id: 'rag-systems',
     label: 'RAG SYSTEMS',
     icon: 'database',
-    type: 'modal',
+    type: 'hologram',
     destination: 'rag-systems',
-    color: '#00ccff',
+    color: '#ff3344',  // Matrix Red
     worldX: 2200,
-    description: 'Sistemas de Retrieval Augmented Generation'
+    description: 'Sistemas de Retrieval Augmented Generation',
+    hologramConfig: {
+      frameFolder: 'gifrag',
+      framePrefix: 'rag',
+      frameCount: 30,
+      hasModal: true
+    }
   },
   {
     id: 'agent-orchestration',
