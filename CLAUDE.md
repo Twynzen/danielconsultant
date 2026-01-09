@@ -1,4 +1,4 @@
-# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v6.0 GAME UPDATE
+# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v6.2 ROBOT INTERACTION FIX
 
 ## 🚨 **REGLAS CRÍTICAS DE GIT - LEER SIEMPRE**
 
@@ -17,6 +17,73 @@
 ### **Recordatorio:**
 > "Los cambios están listos para probar. Cuando confirmes que funcionan,
 > puedo mergear a main y tú haces el push."
+
+---
+
+## 🤖 **v6.2: ROBOT-CHAT INTERACTION FIX (Enero 9, 2026)**
+
+### **Problema Corregido:**
+El comportamiento de clic/drag en el robot era inconsistente con respecto al chat de Sendell. El chat se cerraba de forma inesperada o no se cerraba cuando debía.
+
+### **Nuevo Comportamiento:**
+| Acción | Resultado |
+|--------|-----------|
+| **Arrastrar robot** | CIERRA el chat inmediatamente (interacciones separadas) |
+| **Clic simple** | CIERRA el chat si está abierto |
+| **Doble-clic** | ABRE el chat si está cerrado |
+
+### **Archivos Modificados:**
+- `binary-character.component.ts` - Nuevo Output `robotClicked`
+- `flame-head-character.component.ts` - Nuevos Outputs `robotClicked`, `robotDragStarted` + protección 200ms post-drag
+- `flame-head-character.component.html` - Conexión de eventos
+- `sendell-dialog.component.ts` - Nuevo método `closeChatFromRobotInteraction()`, removido toggle de `openChatFromRobot()`
+- `landing-page.component.ts` - Nuevos handlers `onRobotDragStarted()`, `onRobotClicked()`
+- `landing-page.component.html` - Conexión de eventos
+
+### **Testing Checklist v6.2:**
+- [ ] Doble-clic en robot → abre chat con saludo
+- [ ] Clic simple en robot (chat abierto) → CIERRA el chat
+- [ ] Iniciar drag (mousedown) → chat se CIERRA inmediatamente
+- [ ] Soltar robot + clic inmediato (<200ms) → clic ignorado
+- [ ] Soltar robot + esperar (>200ms) + clic → clic funciona
+- [ ] Chat minimizado + doble-clic → restaura chat
+- [ ] Durante tour → chat bloqueado, interacciones ignoradas
+
+---
+
+## 📅 **CAMBIOS ÚLTIMA SEMANA (Enero 2-9, 2026)**
+
+### **Commits Recientes:**
+| Fecha | Commit | Descripción |
+|-------|--------|-------------|
+| Jan 9 | `7647832` | feat: Add Núvariz rename, SVG holograms, and GitHub animation |
+| Jan 9 | `5321902` | feat: Add AGENTS and INTEGRATIONS hologram animations |
+| Jan 9 | `024830c` | feat: Add RAG hologram animation with red Matrix theme |
+| Jan 8 | `d21bda2` | feat: Add generic hologram animation for LOCAL LLMS pillar |
+| Jan 8 | `fd5e970` | docs: Add git workflow rules to CLAUDE.md |
+| Jan 8 | `6fd9385` | assets: Add LLM local demo screenshots |
+| Jan 8 | `52098f5` | feat: v5.9.5 Loading/Welcome Fusion + Tour Guards + Tooltip Fix |
+
+### **Sistema de Hologramas (v6.0-6.1):**
+- `HologramPortraitComponent` soporta PNG frames y SVG animations
+- Nuevos hologramas: LOCAL LLMS, RAG, AGENTS, INTEGRATIONS, GITHUB
+- Hologramas SVG animados: Calendly (calendario), Núvariz (planeta)
+- Configuración en `pillar.config.ts` con `HologramConfig` interface
+
+### **Núvariz Rename:**
+- Renombrado de "Nuvaris" → "NÚVARIZ" en toda la aplicación
+- Nueva descripción: "Universo Núvariz - Próximamente"
+
+### **Loading/Welcome Fusion (v5.9.5):**
+- Fusión de loading bar y welcome message en sección unificada
+- Nuevas animaciones CSS: `fadeSlideIn`, `morphIn`
+- Guards para evitar callbacks después de que el tour termine
+- Limpieza de historial LLM después del tour
+
+### **Assets Añadidos:**
+- 30 frames PNG para cada hologram (~150 archivos totales)
+- ~31 MB de assets de animación
+- Directorios: gifllmlocal/, gifrag/, gifagents/, gifintegrations/, gifgithub/
 
 ---
 
