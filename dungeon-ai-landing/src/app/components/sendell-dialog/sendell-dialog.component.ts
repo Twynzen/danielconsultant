@@ -122,6 +122,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private _isLLMResponsePending = false;
   // v5.9.2: Flag to track if current message is a greeting (not LLM response)
   private _isGreetingMessage = false;
+  // v6.3: Flag to track if LLM had an error (keep chat open for retry)
+  private _hadChatError = false;
   // v5.9.4: Flag to track if tour was cancelled by ESC
   private _tourCancelled = false;
 
@@ -715,6 +717,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     // v5.9.2: Reset all state flags to prevent stuck states
     this._isGreetingMessage = false;
     this._isLLMResponsePending = false;
+    this._hadChatError = false;  // v6.3: Reset error flag
     this.isChatResponseComplete.set(false);
     this.cdr.markForCheck();
 
@@ -1548,6 +1551,18 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
       return;
     }
 
+    // v6.3: If there was an error, show input immediately for retry (don't close chat)
+    if (this._hadChatError) {
+      console.log('[Chat] Error occurred, showing input for retry');
+      this._hadChatError = false;  // Reset flag
+      this._isLLMResponsePending = false;  // Clear pending flag
+      this.showChatInput.set(true);
+      this.isChatOpen.set(true);  // Ensure chat stays open
+      setTimeout(() => this.chatInputRef?.nativeElement?.focus(), 100);
+      this.cdr.markForCheck();
+      return;  // Don't show "[CUALQUIER TECLA]" - keep input visible
+    }
+
     // v5.8.1: In free chat mode, show continue prompt ONLY after LLM response (not greeting)
     if (this.isChatMode() && !this.tourService.isActive() && this._isLLMResponsePending) {
       console.log('[Chat] LLM response complete, waiting for user to dismiss');
@@ -1620,7 +1635,11 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
 
     } catch (error) {
       console.error('Chat error:', error);
-      this.startAITypingAnimation('Disculpa, hubo un error. ¿Puedes repetir?');
+      // v6.3: Mark as error so finishAITyping keeps input visible
+      this._hadChatError = true;
+      this.startAITypingAnimation(
+        'Ocurrió un error técnico procesando tu mensaje. Por favor, intenta reformular tu pregunta.'
+      );
     }
   }
 

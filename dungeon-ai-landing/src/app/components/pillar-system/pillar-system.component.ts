@@ -237,8 +237,17 @@ export class PillarSystemComponent implements OnInit, OnDestroy {
 
   // v4.6: Changed from ENTER to E key (videogame style)
   // v5.2: Also handles exiting pillar when robot is inside
+  // v6.3: Fixed - allow E key when typing in input fields
   @HostListener('window:keydown.e', ['$event'])
   onActivate(event: KeyboardEvent): void {
+    // v6.3: If user is typing in an input, allow E key to pass through
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable) {
+      return; // Don't block E - let it be typed in the input
+    }
+
     // v5.9: Guardrail - No pillar action if being dragged
     if (this.stateService.isBeingDragged()) {
       console.log('%c[Guardrail] E key blocked - robot being dragged', 'color: #ff6b6b');
