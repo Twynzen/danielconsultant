@@ -185,11 +185,18 @@ export class LandingPageComponent implements OnInit, OnDestroy {
    * Stores WORLD coordinates so hologram stays anchored to pillar
    * v4.6.3: Activates cinematic zoom effect
    * v5.1: Handles internal route navigation
+   * v6.3: Handles external routes (same-domain apps like /deskflow)
    */
   onPillarActivated(event: { config: PillarConfig; worldX: number; worldY: number }): void {
     // v5.1: Handle internal routes (navigate to Angular route)
     if (event.config.type === 'internal') {
       this.router.navigate([event.config.destination]);
+      return;
+    }
+
+    // v6.3: Handle external routes (same-domain apps served by Netlify)
+    if (event.config.type === 'external') {
+      window.location.href = event.config.destination;
       return;
     }
 
