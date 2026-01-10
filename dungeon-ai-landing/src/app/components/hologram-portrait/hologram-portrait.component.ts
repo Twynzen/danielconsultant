@@ -92,7 +92,7 @@ export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
     this.frames = [];
     for (let i = 1; i <= this.frameCount; i++) {
       const num = i.toString().padStart(3, '0');
-      this.frames.push(`assets/${this.frameFolder}/${this.framePrefix}-${num}.png`);
+      this.frames.push(`assets/${this.frameFolder}/${this.framePrefix}-${num}.webp`);
     }
     // Set initial frame
     this.currentFrame = this.frames[0];
