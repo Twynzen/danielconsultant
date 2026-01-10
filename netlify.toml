@@ -1,0 +1,44 @@
+# Netlify Configuration for Multi-App Deployment
+# Landing Page (Angular 19) + DeskFlow App (Angular 21)
+
+[build]
+  publish = "dist"
+  command = "npm run build:all"
+
+# DeskFlow app routes - serve from /deskflow subfolder
+[[redirects]]
+  from = "/deskflow/*"
+  to = "/deskflow/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/deskflow"
+  to = "/deskflow/index.html"
+  status = 200
+
+# SPA fallback for landing page (must be last)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for caching
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/deskflow/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

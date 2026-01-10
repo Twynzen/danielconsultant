@@ -60,7 +60,7 @@ export const SIDESCROLLER_PILLAR_POSITIONS = [
   { x: 4000, service: 'calendly' },
   { x: 4600, service: 'github' },           // v5.2.3: New pillar
   { x: 5200, service: 'nuvaris' },          // v5.2.3: Moved
-  { x: 5800, service: 'multidesktopflow' }, // v5.2.3: Moved
+  { x: 5800, service: 'deskflow' }, // v6.3: Renamed
 ];
 
 /**

@@ -178,7 +178,7 @@ export const VALID_PILLAR_IDS = [
   'calendly',
   'github',
   'nuvaris',
-  'multidesktopflow'
+  'deskflow'
 ] as const;
 
 // ==================== PILLAR DESCRIPTIONS (RAG Context) ====================
@@ -249,12 +249,12 @@ export const PILLAR_DESCRIPTIONS: Record<string, PillarDescription> = {
     tourIntro: 'Universo Núvariz - Un nuevo mundo por revelarse.',
     tourExplain: 'Universo Núvariz está próximamente. Mantente atento.'
   },
-  'multidesktopflow': {
-    id: 'multidesktopflow',
-    name: 'MultiDesktopFlow',
-    shortDesc: 'Próximamente',
-    tourIntro: 'Este también está en construcción.',
-    tourExplain: 'MultiDesktopFlow es otro proyecto en camino. Daniel está trabajando en algo interesante aquí.'
+  'deskflow': {
+    id: 'deskflow',
+    name: 'DeskFlow',
+    shortDesc: 'Escritorios virtuales',
+    tourIntro: 'DeskFlow - organiza tu trabajo de forma visual.',
+    tourExplain: 'DeskFlow es una app de escritorios virtuales con notas, conexiones y sincronización en la nube.'
   }
 };
 
@@ -370,7 +370,7 @@ La web tiene 9 pilares de información:
 6. calendly: Agendar sesión gratuita de consultoría (x=4000)
 7. github: Repositorio de Daniel (x=4600)
 8. núvariz: Universo Próximamente (x=5200)
-9. multidesktopflow: Próximamente (x=5800)
+9. deskflow: Escritorios virtuales (x=5800)
 
 ## CONSCIENCIA ESPACIAL
 Tu posición actual se te proporciona como [POSICIÓN: x=XXX].

@@ -170,17 +170,22 @@ Un nuevo mundo está por revelarse.
     keywords: ['núvariz', 'universo', 'próximamente']
   },
 
-  'multidesktopflow': {
-    id: 'multidesktopflow',
-    title: 'MultiDesktopFlow (Próximamente)',
+  'deskflow': {
+    id: 'deskflow',
+    title: 'DeskFlow - Escritorios Virtuales',
     content: `
-MultiDesktopFlow es un sistema avanzado de flujo multi-escritorio que está en desarrollo.
-Permitirá orquestar workflows complejos entre múltiples aplicaciones de escritorio.
+DeskFlow es una aplicación de escritorios virtuales para organizar tu trabajo de forma visual.
 
-Próximamente estará disponible con más información.
-Si te interesa, agenda una sesión con Daniel para más detalles.
+Características:
+- Escritorios anidados jerárquicos
+- Notas arrastrables con conexiones visuales
+- Sincronización con la nube (Supabase)
+- Modo offline con IndexedDB
+- Tema cyberpunk
+
+Accede a DeskFlow en danielconsultant.dev/deskflow
     `.trim(),
-    keywords: ['multidesktopflow', 'desktop', 'workflow', 'próximamente', 'automatización']
+    keywords: ['deskflow', 'desktop', 'notas', 'virtual', 'organización']
   }
 };
 

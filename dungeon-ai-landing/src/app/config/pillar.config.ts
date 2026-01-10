@@ -247,16 +247,16 @@ export const PILLARS: PillarConfig[] = [
       hasModal: true
     }
   },
-  // v5.2.3: MultiDesktopFlow - Próximamente
+  // v6.3: DeskFlow - App de escritorios virtuales
   {
-    id: 'multidesktopflow',
-    label: 'PRÓXIMAMENTE',
+    id: 'deskflow',
+    label: 'DESKFLOW',
     icon: 'desktop',
-    type: 'modal',  // Changed from 'internal' to prevent navigation
-    destination: 'multidesktopflow',
+    type: 'external',  // Opens external app at /deskflow
+    destination: '/deskflow',
     color: '#aa00ff',
     worldX: 5800,
-    description: 'MultiDesktopFlow - Próximamente'
+    description: 'DeskFlow - Escritorios virtuales inteligentes'
   }
 ];
 

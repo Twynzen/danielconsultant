@@ -1,4 +1,4 @@
-# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v6.2 ROBOT INTERACTION FIX
+# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v6.3 CHAT FIXES + DESKFLOW
 
 ## 🚨 **REGLAS CRÍTICAS DE GIT - LEER SIEMPRE**
 
@@ -41,17 +41,51 @@ El comportamiento de clic/drag en el robot era inconsistente con respecto al cha
 - `landing-page.component.html` - Conexión de eventos
 
 ### **Testing Checklist v6.2:**
-- [ ] Doble-clic en robot → abre chat con saludo
-- [ ] Clic simple en robot (chat abierto) → CIERRA el chat
-- [ ] Iniciar drag (mousedown) → chat se CIERRA inmediatamente
-- [ ] Soltar robot + clic inmediato (<200ms) → clic ignorado
-- [ ] Soltar robot + esperar (>200ms) + clic → clic funciona
-- [ ] Chat minimizado + doble-clic → restaura chat
-- [ ] Durante tour → chat bloqueado, interacciones ignoradas
+- [x] Doble-clic en robot → abre chat con saludo
+- [x] Clic simple en robot (chat abierto) → CIERRA el chat
+- [x] Iniciar drag (mousedown) → chat se CIERRA inmediatamente
+- [x] Soltar robot + clic inmediato (<200ms) → clic ignorado
+- [x] Soltar robot + esperar (>200ms) + clic → clic funciona
+- [x] Chat minimizado + doble-clic → restaura chat
+- [x] Durante tour → chat bloqueado, interacciones ignoradas
 
 ---
 
-## 📅 **CAMBIOS ÚLTIMA SEMANA (Enero 2-9, 2026)**
+## 🔧 **v6.3: CHAT BUG FIXES + DESKFLOW INTEGRATION (Enero 10, 2026)**
+
+### **Bug Fixes Implementados:**
+
+#### **Bug 1: Tecla "E" bloqueada en chat**
+- **Problema**: No se podia escribir la letra E mientras se chateaba frente a un pilar
+- **Causa**: `@HostListener('window:keydown.e')` capturaba TODOS los eventos E
+- **Solucion**: Verificar si el target es INPUT/TEXTAREA antes de bloquear
+- **Archivo**: `pillar-system.component.ts:243-249`
+
+#### **Bug 2: Error LLM mal manejado**
+- **Problema**: Despues de error, el chat se cerraba y el movimiento se activaba
+- **Solucion**:
+  - Nuevo flag `_hadChatError` para detectar errores
+  - Mensaje de error mas claro
+  - `finishAITyping()` mantiene input visible para reintentar
+- **Archivos**: `sendell-dialog.component.ts:125-126, 1553-1563, 1626-1629`
+
+### **DeskFlow Integration (En Progreso):**
+- Renombrado de MULTIDESKTOPFLOW a **DeskFlow**
+- Ruta: `danielconsultant.dev/deskflow`
+- Deployment via Netlify con routing separado
+- Angular 21 app independiente con Supabase auth
+
+### **Testing Checklist v6.3:**
+- [x] Chat abierto + frente a pilar → E se puede escribir
+- [x] Chat cerrado + frente a pilar → E activa pilar
+- [x] Error LLM → mensaje claro + input visible para reintentar
+- [x] Despues de error → movimiento sigue bloqueado
+- [ ] DeskFlow accesible en /deskflow
+- [ ] DeskFlow login/register funcionan
+
+---
+
+## 📅 **CAMBIOS ÚLTIMA SEMANA (Enero 2-10, 2026)**
 
 ### **Commits Recientes:**
 | Fecha | Commit | Descripción |

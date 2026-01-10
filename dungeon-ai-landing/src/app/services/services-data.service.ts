@@ -373,26 +373,32 @@ export class ServicesDataService {
       ],
       technologies: ['Próximamente']
     },
-    // v5.2.3: MultiDesktopFlow - Próximamente
+    // v6.3: DeskFlow - Escritorios virtuales
     {
-      id: 'multidesktopflow',
-      title: 'MULTIDESKTOPFLOW',
-      description: 'Próximamente - Sistema avanzado de flujo multi-escritorio para automatización de workflows. En desarrollo.',
+      id: 'deskflow',
+      title: 'DESKFLOW',
+      description: 'App de escritorios virtuales con notas, conexiones visuales y sincronización en la nube. Organiza tu trabajo de forma visual.',
       features: [
         {
-          icon: 'clock',
+          icon: 'layout',
           iconType: 'lucide',
           animation: 'pulse',
-          text: 'En desarrollo activo'
+          text: 'Escritorios virtuales anidados'
         },
         {
-          icon: 'monitor',
+          icon: 'link',
           iconType: 'lucide',
           animation: 'bounce',
-          text: 'Multi-escritorio inteligente'
+          text: 'Conexiones visuales entre notas'
+        },
+        {
+          icon: 'cloud',
+          iconType: 'lucide',
+          animation: 'glow',
+          text: 'Sincronización con Supabase'
         }
       ],
-      technologies: ['Próximamente']
+      technologies: ['Angular 21', 'Supabase', 'IndexedDB', 'GSAP']
     }
   ];
 

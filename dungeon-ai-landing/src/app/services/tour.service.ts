@@ -56,7 +56,7 @@ const PILLAR_POSITIONS: Record<string, number> = {
   'calendly': 4000,
   'github': 4600,
   'nuvaris': 5200,
-  'multidesktopflow': 5800
+  'deskflow': 5800
 };
 
 @Injectable({

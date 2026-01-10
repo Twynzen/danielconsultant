@@ -12,11 +12,7 @@ export const routes: Routes = [
     loadComponent: () => import('./components/vampire-survivors-game/vampire-survivors-game.component')
       .then(m => m.VampireSurvivorsGameComponent)
   },
-  {
-    path: 'multidesktopflow',
-    loadComponent: () => import('./pages/multidesktopflow/multidesktopflow.component')
-      .then(m => m.MultidesktopflowComponent),
-  },
+  // DeskFlow app is served by Netlify at /deskflow (separate Angular app)
   {
     path: '**',
     redirectTo: '',

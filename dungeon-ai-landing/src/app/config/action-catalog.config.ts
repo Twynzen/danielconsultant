@@ -196,10 +196,10 @@ export const PILLAR_POSITIONS_RAG: Record<string, PillarInfo> = {
     name: 'Núvariz',
     description: 'Universo Núvariz - Próximamente'
   },
-  'multidesktopflow': {
+  'deskflow': {
     x: 5800,
-    name: 'MultiDesktopFlow',
-    description: 'Próximamente - Automatización multi-escritorio'
+    name: 'DeskFlow',
+    description: 'Escritorios virtuales con notas y conexiones'
   }
 };
 
