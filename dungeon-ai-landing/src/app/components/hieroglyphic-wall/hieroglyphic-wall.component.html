@@ -133,7 +133,7 @@
 
           <a class="external-url"
              [href]="inscription.url"
-             target="_blank"
+             (click)="onExternalLinkClick($event, inscription.url)"
              rel="noopener noreferrer">
             {{ inscription.urlDisplay }}
           </a>

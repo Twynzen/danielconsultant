@@ -289,6 +289,25 @@ export class HieroglyphicWallComponent {
     }
   }
 
+  /**
+   * v6.3: Handle click on external links
+   * Same-domain URLs (starting with /) use window.location.href to bypass Angular routing
+   * External URLs use window.open for new tab
+   */
+  onExternalLinkClick(event: MouseEvent, url: string | undefined): void {
+    if (!url) return;
+
+    // Prevent default anchor behavior
+    event.preventDefault();
+
+    // Same-domain routes need full page navigation to bypass Angular router
+    if (url.startsWith('/')) {
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
   // For CSS custom property binding
   getIlluminationStyle(inscriptionId: string): string {
     return this.getIllumination(inscriptionId).toString();

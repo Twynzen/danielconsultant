@@ -252,16 +252,11 @@ export const PILLARS: PillarConfig[] = [
     id: 'deskflow',
     label: 'DESKFLOW',
     icon: 'desktop',
-    type: 'hologram',  // v6.3: Changed to hologram for proper click handling
-    destination: 'deskflow',
+    type: 'external',
+    destination: '/deskflow',
     color: '#aa00ff',
     worldX: 5800,
-    description: 'DeskFlow - Escritorios virtuales inteligentes',
-    hologramConfig: {
-      svgType: 'planet',  // Reuse planet animation for now
-      hasModal: false,
-      externalUrl: '/deskflow'  // Same-domain navigation
-    }
+    description: 'DeskFlow - Escritorios virtuales inteligentes'
   }
 ];
 
