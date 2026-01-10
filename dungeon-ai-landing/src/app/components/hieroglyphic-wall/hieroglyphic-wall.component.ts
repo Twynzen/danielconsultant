@@ -263,6 +263,7 @@ export class HieroglyphicWallComponent {
   /**
    * v6.0: Handle click on hologram (for opening modal)
    * v6.1: Added support for externalUrl to open links
+   * v6.3: Same-domain URLs use window.location.href to bypass Angular routing
    * Emits serviceClicked event to open the service modal, or opens external URL
    */
   onHologramInfoClick(inscription: InscriptionData): void {
@@ -271,7 +272,15 @@ export class HieroglyphicWallComponent {
 
     // v6.1: Check for external URL first
     if (inscription.hologramConfig?.externalUrl) {
-      window.open(inscription.hologramConfig.externalUrl, '_blank', 'noopener,noreferrer');
+      const url = inscription.hologramConfig.externalUrl;
+
+      // v6.3: Same-domain routes (like /deskflow) need full page navigation
+      // to bypass Angular router's catch-all redirect
+      if (url.startsWith('/')) {
+        window.location.href = url;
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
       return;
     }
 
