@@ -7,11 +7,10 @@ import { CommonModule } from '@angular/common';
 import { OnboardingService } from '../../services/onboarding.service';
 
 @Component({
-  selector: 'app-torch-system',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './torch-system.component.html',
-  styleUrl: './torch-system.component.scss'
+    selector: 'app-torch-system',
+    imports: [CommonModule],
+    templateUrl: './torch-system.component.html',
+    styleUrl: './torch-system.component.scss'
 })
 export class TorchSystemComponent implements OnInit, OnDestroy {
   private onboarding = inject(OnboardingService);

@@ -44,12 +44,11 @@ import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { SendellResponse, RobotAction, getTourFallback, getPillarDescription, TOUR_FAREWELL } from '../../config/sendell-ai.config';
 
 @Component({
-  selector: 'app-sendell-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './sendell-dialog.component.html',
-  styleUrls: ['./sendell-dialog.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-sendell-dialog',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './sendell-dialog.component.html',
+    styleUrls: ['./sendell-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private onboarding = inject(OnboardingService);

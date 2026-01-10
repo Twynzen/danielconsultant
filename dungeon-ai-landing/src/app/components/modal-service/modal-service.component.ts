@@ -6,13 +6,12 @@ import { trigger, state, style, transition, animate, keyframes } from '@angular/
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-modal-service',
-  standalone: true,
-  imports: [CommonModule, LucideAngularModule],
-  templateUrl: './modal-service.component.html',
-  styleUrl: './modal-service.component.scss',
-  // ANIMACIONES DESHABILITADAS - Causaban errores que mataban event handlers
-  animations: []
+    selector: 'app-modal-service',
+    imports: [CommonModule, LucideAngularModule],
+    templateUrl: './modal-service.component.html',
+    styleUrl: './modal-service.component.scss',
+    // ANIMACIONES DESHABILITADAS - Causaban errores que mataban event handlers
+    animations: []
 })
 export class ModalServiceComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
   @Input() serviceId: string | null = null;

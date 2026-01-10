@@ -14,11 +14,10 @@ interface Particle {
 }
 
 @Component({
-  selector: 'app-pillar',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './pillar.component.html',
-  styleUrl: './pillar.component.scss'
+    selector: 'app-pillar',
+    imports: [CommonModule],
+    templateUrl: './pillar.component.html',
+    styleUrl: './pillar.component.scss'
 })
 export class PillarComponent implements OnInit {
   @Input() config!: PillarConfig;

@@ -41,12 +41,11 @@ interface InscriptionData {
 }
 
 @Component({
-  selector: 'app-hieroglyphic-wall',
-  standalone: true,
-  imports: [CommonModule, HologramPortraitComponent],  // v4.8: Added HologramPortrait
-  templateUrl: './hieroglyphic-wall.component.html',
-  styleUrls: ['./hieroglyphic-wall.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-hieroglyphic-wall',
+    imports: [CommonModule, HologramPortraitComponent], // v4.8: Added HologramPortrait
+    templateUrl: './hieroglyphic-wall.component.html',
+    styleUrls: ['./hieroglyphic-wall.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HieroglyphicWallComponent {
   private servicesData = inject(ServicesDataService);

@@ -14,11 +14,10 @@ import { PillarConfig } from '../../config/pillar.config';
 type Direction = 'left' | 'right';
 
 @Component({
-  selector: 'app-flame-head-character',
-  standalone: true,
-  imports: [CommonModule, BinaryCharacterComponent],
-  templateUrl: './flame-head-character.component.html',
-  styleUrls: ['./flame-head-character.component.scss']
+    selector: 'app-flame-head-character',
+    imports: [CommonModule, BinaryCharacterComponent],
+    templateUrl: './flame-head-character.component.html',
+    styleUrls: ['./flame-head-character.component.scss']
 })
 export class FlameHeadCharacterComponent implements OnInit, OnDestroy {
   private lightingService = inject(LightingService);

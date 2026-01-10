@@ -22,12 +22,11 @@ interface Circuit {
 }
 
 @Component({
-  selector: 'app-circuits-background',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './circuits-background.component.html',
-  styleUrl: './circuits-background.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-circuits-background',
+    imports: [CommonModule],
+    templateUrl: './circuits-background.component.html',
+    styleUrl: './circuits-background.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CircuitsBackgroundComponent implements OnInit, OnDestroy {
   private physicsService = inject(PhysicsService);

@@ -23,23 +23,22 @@ import { TourService, TourStep } from '../../services/tour.service';
 import { ActionExecutorService } from '../../services/action-executor.service';
 
 @Component({
-  selector: 'app-landing-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    CircuitsBackgroundComponent,
-    ModalServiceComponent,
-    // v4.7: Replaced HologramProjection with HieroglyphicWall
-    HieroglyphicWallComponent,
-    FlameHeadCharacterComponent,
-    PillarSystemComponent,
-    // v5.0: Onboarding dialog system
-    SendellDialogComponent,
-    // v5.1: Single torch in top-right corner
-    TorchSystemComponent
-  ],
-  templateUrl: './landing-page.component.html',
-  styleUrl: './landing-page.component.scss'
+    selector: 'app-landing-page',
+    imports: [
+        CommonModule,
+        CircuitsBackgroundComponent,
+        ModalServiceComponent,
+        // v4.7: Replaced HologramProjection with HieroglyphicWall
+        HieroglyphicWallComponent,
+        FlameHeadCharacterComponent,
+        PillarSystemComponent,
+        // v5.0: Onboarding dialog system
+        SendellDialogComponent,
+        // v5.1: Single torch in top-right corner
+        TorchSystemComponent
+    ],
+    templateUrl: './landing-page.component.html',
+    styleUrl: './landing-page.component.scss'
 })
 export class LandingPageComponent implements OnInit, OnDestroy {
   // v7.0: Made public to use computed signal directly in template (eliminates render loop)

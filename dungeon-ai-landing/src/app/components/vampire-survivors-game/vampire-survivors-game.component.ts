@@ -69,11 +69,10 @@ enum GameState {
 }
 
 @Component({
-  selector: 'app-vampire-survivors-game',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './vampire-survivors-game.component.html',
-  styleUrl: './vampire-survivors-game.component.scss'
+    selector: 'app-vampire-survivors-game',
+    imports: [CommonModule],
+    templateUrl: './vampire-survivors-game.component.html',
+    styleUrl: './vampire-survivors-game.component.scss'
 })
 export class VampireSurvivorsGameComponent implements OnInit, OnDestroy {
   @ViewChild('gameCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;

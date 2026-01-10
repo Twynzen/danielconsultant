@@ -52,12 +52,11 @@ interface PillarState {
 }
 
 @Component({
-  selector: 'app-pillar-system',
-  standalone: true,
-  imports: [CommonModule, PillarComponent],
-  templateUrl: './pillar-system.component.html',
-  styleUrl: './pillar-system.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-pillar-system',
+    imports: [CommonModule, PillarComponent],
+    templateUrl: './pillar-system.component.html',
+    styleUrl: './pillar-system.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PillarSystemComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

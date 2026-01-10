@@ -9,11 +9,10 @@ import { CommonModule } from '@angular/common';
  * v6.0: Made generic with configurable frame source + click support for modals
  */
 @Component({
-  selector: 'app-hologram-portrait',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './hologram-portrait.component.html',
-  styleUrl: './hologram-portrait.component.scss'
+    selector: 'app-hologram-portrait',
+    imports: [CommonModule],
+    templateUrl: './hologram-portrait.component.html',
+    styleUrl: './hologram-portrait.component.scss'
 })
 export class HologramPortraitComponent implements OnInit, OnDestroy, OnChanges {
   @Input() isVisible = false;

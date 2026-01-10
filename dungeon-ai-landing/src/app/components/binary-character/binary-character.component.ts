@@ -82,12 +82,11 @@ interface EnergyParticleState {
 }
 
 @Component({
-  selector: 'app-binary-character',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './binary-character.component.html',
-  styleUrls: ['./binary-character.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-binary-character',
+    imports: [CommonModule],
+    templateUrl: './binary-character.component.html',
+    styleUrls: ['./binary-character.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BinaryCharacterComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
