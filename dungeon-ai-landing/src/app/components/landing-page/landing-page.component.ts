@@ -42,7 +42,8 @@ import { ActionExecutorService } from '../../services/action-executor.service';
   styleUrl: './landing-page.component.scss'
 })
 export class LandingPageComponent implements OnInit, OnDestroy {
-  private cameraService = inject(CameraService);
+  // v7.0: Made public to use computed signal directly in template (eliminates render loop)
+  readonly cameraService = inject(CameraService);
   private physicsService = inject(PhysicsService);  // v2.0: For AI-controlled movement
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
@@ -135,15 +136,13 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   // Animation frame for change detection
   private animationFrameId: number | null = null;
 
-  // Camera transform for world scrolling - computed signal
-  // v4.6.4: No scale on world - only hologram scales (fixes robot floating issue)
-  get cameraTransformValue(): string {
-    return this.cameraService.cameraTransform();
-  }
+  // v7.0: REMOVED - getter replaced by direct signal access in template
+  // Old getter caused need for expensive render loop with detectChanges() every frame
+  // Now template uses: cameraService.cameraTransform() directly
 
   ngOnInit(): void {
-    // Start a loop to trigger change detection for camera updates
-    this.startRenderLoop();
+    // v7.0: REMOVED startRenderLoop() - Angular signals handle reactivity automatically
+    // This eliminates ~60 detectChanges() calls per second, major performance improvement
 
     // v5.0: Start onboarding experience
     this.onboarding.startOnboarding();
@@ -162,19 +161,16 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // v7.0: Render loop removed - nothing to clean up for camera
+    // AnimationFrameId kept for potential future use by other animations
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
   }
 
-  private startRenderLoop(): void {
-    const loop = () => {
-      // Trigger change detection
-      this.cdr.detectChanges();
-      this.animationFrameId = requestAnimationFrame(loop);
-    };
-    this.animationFrameId = requestAnimationFrame(loop);
-  }
+  // v7.0: REMOVED startRenderLoop() - was calling detectChanges() 60 times/second
+  // This caused unnecessary CPU usage even when nothing changed
+  // Angular signals now handle reactivity automatically when cameraService.cameraTransform() changes
 
   // Level dimensions
   get levelWidth(): number {

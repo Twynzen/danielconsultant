@@ -23,9 +23,10 @@
   </div>
 
   <!-- ========== WORLD LAYER (scrolls horizontally) ========== -->
+  <!-- v7.0: Using computed signal directly instead of getter (eliminates render loop) -->
   <div class="dungeon-world"
        [style.width.px]="levelWidth"
-       [style.transform]="cameraTransformValue">
+       [style.transform]="cameraService.cameraTransform()">
 
     <!-- Background with circuits CSS approach -->
     <app-circuits-background></app-circuits-background>
