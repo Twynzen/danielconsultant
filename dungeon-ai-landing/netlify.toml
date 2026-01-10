@@ -1,11 +1,48 @@
-[build]
-  command = "npm ci && npm run build"
-  publish = "dist/dungeon-ai-landing/browser"
+# Netlify Configuration for Multi-App Deployment
+# Landing Page (Angular 19) + DeskFlow App (Angular 21)
+# Build runs from parent directory to access both projects
 
+[build]
+  command = "cd .. && npm run build:all"
+  publish = "../dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# DeskFlow app routes - serve from /deskflow subfolder
+[[redirects]]
+  from = "/deskflow/*"
+  to = "/deskflow/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/deskflow"
+  to = "/deskflow/index.html"
+  status = 200
+
+# SPA fallback for landing page (must be last)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-[build.environment]
-  NODE_VERSION = "20"
+# Headers for caching
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/deskflow/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
