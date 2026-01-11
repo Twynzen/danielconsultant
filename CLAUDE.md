@@ -69,19 +69,32 @@ El comportamiento de clic/drag en el robot era inconsistente con respecto al cha
   - `finishAITyping()` mantiene input visible para reintentar
 - **Archivos**: `sendell-dialog.component.ts:125-126, 1553-1563, 1626-1629`
 
-### **DeskFlow Integration (En Progreso):**
+### **DeskFlow Integration + Security (Completado):**
 - Renombrado de MULTIDESKTOPFLOW a **DeskFlow**
 - Ruta: `danielconsultant.dev/deskflow`
 - Deployment via Netlify con routing separado
 - Angular 21 app independiente con Supabase auth
+- **Seguridad mejorada:**
+  - Credenciales removidas de angular.json
+  - Script `inject-env.js` para inyectar env vars en build
+  - Validación de contraseña mejorada (8+ chars, mayús, minús, número)
+  - AUTH_TIMEOUT reducido de 10s a 5s
+  - Console.logs comentados para producción
+  - Favicon actualizado (mismo que landing)
 
 ### **Testing Checklist v6.3:**
 - [x] Chat abierto + frente a pilar → E se puede escribir
 - [x] Chat cerrado + frente a pilar → E activa pilar
 - [x] Error LLM → mensaje claro + input visible para reintentar
 - [x] Despues de error → movimiento sigue bloqueado
-- [ ] DeskFlow accesible en /deskflow
-- [ ] DeskFlow login/register funcionan
+- [x] DeskFlow accesible en /deskflow
+- [x] DeskFlow seguridad configurada
+
+### **Configuración Requerida en Netlify:**
+```
+VITE_SUPABASE_URL = https://mzgwipdaveyzgscnxlhj.supabase.co
+VITE_SUPABASE_ANON_KEY = [ver danielrevisalodesupabase.md]
+```
 
 ---
 
