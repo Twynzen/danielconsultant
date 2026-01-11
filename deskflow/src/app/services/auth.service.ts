@@ -33,48 +33,48 @@ export class AuthService {
   }
 
   private async initializeAuth(): Promise<void> {
-    console.log('[AuthService] 🚀 initializeAuth() started');
+    // console.log('[AuthService] 🚀 initializeAuth() started');
 
     try {
       // Check if Supabase is configured
       if (!this.supabase.isConfigured()) {
-        console.log('[AuthService] ⚠️ Supabase not configured. Offline mode available.');
+        // console.log('[AuthService] ⚠️ Supabase not configured. Offline mode available.');
         this.offlineMode.set(true);
         this.authState.set({
           user: null,
           isAuthenticated: false,
           isLoading: false
         });
-        console.log('[AuthService] ✅ Offline mode set, isLoading: false');
+        // console.log('[AuthService] ✅ Offline mode set, isLoading: false');
         return;
       }
 
-      console.log('[AuthService] 📡 Supabase is configured, setting up auth listener...');
+      // console.log('[AuthService] 📡 Supabase is configured, setting up auth listener...');
 
       // Listen to auth state changes
       this.supabase.onAuthStateChange(async (event, session) => {
-        console.log(`[AuthService] 🔔 onAuthStateChange event: ${event}`, { hasSession: !!session, hasUser: !!session?.user });
+        // console.log(`[AuthService] 🔔 onAuthStateChange event: ${event}`, { hasSession: !!session, hasUser: !!session?.user });
 
         try {
           if (session?.user) {
-            console.log(`[AuthService] 👤 User found in session: ${session.user.email}`);
+            // console.log(`[AuthService] 👤 User found in session: ${session.user.email}`);
             const profile = await this.fetchProfile(session.user.id, session.user.email);
-            console.log('[AuthService] 📋 Profile fetched:', { hasProfile: !!profile, displayName: profile?.displayName });
+            // console.log('[AuthService] 📋 Profile fetched:', { hasProfile: !!profile, displayName: profile?.displayName });
 
             this.authState.set({
               user: profile,
               isAuthenticated: !!profile,
               isLoading: false
             });
-            console.log('[AuthService] ✅ Auth state updated from listener, isAuthenticated:', !!profile);
+            // console.log('[AuthService] ✅ Auth state updated from listener, isAuthenticated:', !!profile);
           } else {
-            console.log('[AuthService] 👻 No user in session from listener');
+            // console.log('[AuthService] 👻 No user in session from listener');
             this.authState.set({
               user: null,
               isAuthenticated: false,
               isLoading: false
             });
-            console.log('[AuthService] ✅ Auth state cleared from listener');
+            // console.log('[AuthService] ✅ Auth state cleared from listener');
           }
         } catch (listenerError) {
           console.error('[AuthService] ❌ Error in onAuthStateChange listener:', listenerError);
@@ -87,29 +87,29 @@ export class AuthService {
       });
 
       // Check initial session
-      console.log('[AuthService] 🔍 Checking initial session...');
+      // console.log('[AuthService] 🔍 Checking initial session...');
       const session = await this.supabase.getSession();
-      console.log('[AuthService] 📦 Initial session result:', { hasSession: !!session, hasUser: !!session?.user });
+      // console.log('[AuthService] 📦 Initial session result:', { hasSession: !!session, hasUser: !!session?.user });
 
       if (session?.user) {
-        console.log(`[AuthService] 👤 User found: ${session.user.email}, fetching profile...`);
+        // console.log(`[AuthService] 👤 User found: ${session.user.email}, fetching profile...`);
         const profile = await this.fetchProfile(session.user.id, session.user.email);
-        console.log('[AuthService] 📋 Profile result:', { hasProfile: !!profile, displayName: profile?.displayName });
+        // console.log('[AuthService] 📋 Profile result:', { hasProfile: !!profile, displayName: profile?.displayName });
 
         this.authState.set({
           user: profile,
           isAuthenticated: !!profile,
           isLoading: false
         });
-        console.log('[AuthService] ✅ Auth initialized with user, isAuthenticated:', !!profile);
+        // console.log('[AuthService] ✅ Auth initialized with user, isAuthenticated:', !!profile);
       } else {
-        console.log('[AuthService] 👻 No initial session found');
+        // console.log('[AuthService] 👻 No initial session found');
         this.authState.set({
           user: null,
           isAuthenticated: false,
           isLoading: false
         });
-        console.log('[AuthService] ✅ Auth initialized without user');
+        // console.log('[AuthService] ✅ Auth initialized without user');
       }
     } catch (error) {
       console.error('[AuthService] ❌ CRITICAL ERROR in initializeAuth:', error);
@@ -119,10 +119,10 @@ export class AuthService {
         isAuthenticated: false,
         isLoading: false
       });
-      console.log('[AuthService] 🔧 Recovered from error, isLoading set to false');
+      // console.log('[AuthService] 🔧 Recovered from error, isLoading set to false');
     }
 
-    console.log('[AuthService] 🏁 initializeAuth() completed. Final state:', {
+    // console.log('[AuthService] 🏁 initializeAuth() completed. Final state:', {
       isLoading: this.isLoading(),
       isAuthenticated: this.isAuthenticated(),
       hasUser: !!this.currentUser()
@@ -130,10 +130,10 @@ export class AuthService {
   }
 
   private async fetchProfile(userId: string, email?: string): Promise<UserProfile | null> {
-    console.log(`[AuthService] 🔍 fetchProfile() called for userId: ${userId}`);
+    // console.log(`[AuthService] 🔍 fetchProfile() called for userId: ${userId}`);
 
     try {
-      console.log('[AuthService] 📡 Querying profiles table...');
+      // console.log('[AuthService] 📡 Querying profiles table...');
 
       // Add timeout to prevent infinite hanging
       const PROFILE_TIMEOUT_MS = 5000;
@@ -153,17 +153,17 @@ export class AuthService {
       const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
 
       if (error) {
-        console.log('[AuthService] ⚠️ Profile query error:', { code: error.code, message: error.message });
+        // console.log('[AuthService] ⚠️ Profile query error:', { code: error.code, message: error.message });
 
         // Profile doesn't exist OR timeout - try to create one
         if ((error.code === 'PGRST116' || error.code === 'TIMEOUT') && email) {
-          console.log('[AuthService] 📝 Profile not found or timeout, creating new profile...');
+          // console.log('[AuthService] 📝 Profile not found or timeout, creating new profile...');
           return await this.createProfile(userId, email);
         }
         throw error;
       }
 
-      console.log('[AuthService] ✅ Profile found:', { id: data.id, email: data.email, displayName: data.display_name });
+      // console.log('[AuthService] ✅ Profile found:', { id: data.id, email: data.email, displayName: data.display_name });
 
       return {
         id: data.id,
@@ -182,7 +182,7 @@ export class AuthService {
       });
       // Return a minimal profile from auth data so user can still access the app
       if (email) {
-        console.log('[AuthService] 🔧 Creating fallback profile from auth data');
+        // console.log('[AuthService] 🔧 Creating fallback profile from auth data');
         return {
           id: userId,
           email: email,
@@ -196,12 +196,12 @@ export class AuthService {
   }
 
   private async createProfile(userId: string, email: string): Promise<UserProfile | null> {
-    console.log(`[AuthService] 📝 createProfile() called for: ${email}`);
+    // console.log(`[AuthService] 📝 createProfile() called for: ${email}`);
     const displayName = email.split('@')[0];
 
     try {
       const now = new Date();
-      console.log('[AuthService] 📡 Inserting new profile...');
+      // console.log('[AuthService] 📡 Inserting new profile...');
 
       // Add timeout to prevent infinite hanging
       const CREATE_TIMEOUT_MS = 5000;
@@ -231,7 +231,7 @@ export class AuthService {
         throw error;
       }
 
-      console.log('[AuthService] ✅ Profile created successfully:', { id: data.id, displayName: data.display_name });
+      // console.log('[AuthService] ✅ Profile created successfully:', { id: data.id, displayName: data.display_name });
 
       return {
         id: data.id,
@@ -248,7 +248,7 @@ export class AuthService {
         details: error?.details
       });
       // Return fallback profile so user can access the app
-      console.log('[AuthService] 🔧 Returning fallback profile');
+      // console.log('[AuthService] 🔧 Returning fallback profile');
       return {
         id: userId,
         email: email,

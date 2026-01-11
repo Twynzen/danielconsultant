@@ -46,8 +46,10 @@ export class RegisterComponent {
       return;
     }
 
-    if (this.password.length < 6) {
-      this.error.set('La contraseña debe tener al menos 6 caracteres');
+    // Password strength validation
+    const passwordValidation = this.validatePassword(this.password);
+    if (!passwordValidation.valid) {
+      this.error.set(passwordValidation.error);
       return;
     }
 
@@ -89,6 +91,30 @@ export class RegisterComponent {
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  /**
+   * Validate password strength
+   * Requirements:
+   * - At least 8 characters
+   * - At least one uppercase letter
+   * - At least one lowercase letter
+   * - At least one number
+   */
+  private validatePassword(password: string): { valid: boolean; error: string } {
+    if (password.length < 8) {
+      return { valid: false, error: 'La contraseña debe tener al menos 8 caracteres' };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return { valid: false, error: 'La contraseña debe incluir al menos una letra mayúscula' };
+    }
+    if (!/[a-z]/.test(password)) {
+      return { valid: false, error: 'La contraseña debe incluir al menos una letra minúscula' };
+    }
+    if (!/[0-9]/.test(password)) {
+      return { valid: false, error: 'La contraseña debe incluir al menos un número' };
+    }
+    return { valid: true, error: '' };
   }
 
   isOfflineMode(): boolean {
