@@ -1,0 +1,24 @@
+# DeskFlow MCP Server - Dependencies
+# Python 3.10+ required
+
+# MCP SDK (official)
+mcp>=1.0.0
+
+# Supabase client
+supabase>=2.0.0
+
+# Async HTTP client (used by supabase)
+httpx>=0.25.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Data validation
+pydantic>=2.0.0
+
+# JWT handling (for token refresh)
+PyJWT>=2.8.0
+
+# Development tools (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0

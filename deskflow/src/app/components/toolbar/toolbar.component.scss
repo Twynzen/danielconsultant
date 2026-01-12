@@ -378,3 +378,41 @@
     transform: translateY(0);
   }
 }
+
+// ==================== MCP TOKEN BUTTON ====================
+.mcp-token-btn {
+  position: relative;
+  transition: all 0.3s ease;
+
+  &.copied {
+    background: rgba(0, 255, 65, 0.2) !important;
+    color: #00ff41 !important;
+
+    svg {
+      stroke: #00ff41 !important;
+    }
+  }
+
+  &:not(.copied):hover {
+    background: rgba(var(--primary-rgb), 0.15);
+  }
+
+  // Tooltip hint
+  &::after {
+    content: 'Para usar con Claude Desktop';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -24px;
+    font-size: 9px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover::after {
+    opacity: 0.7;
+  }
+}
