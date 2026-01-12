@@ -15,6 +15,9 @@ import { Injectable, signal, computed, inject, NgZone } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { LLMService, LLMStatus } from './llm.service';
 import { PhysicsService } from '../core/services/physics.service';
+// v2.0: Nuevos servicios de RAG semántico y memoria
+import { SemanticSearchService, SemanticSearchResult } from './semantic-search.service';
+import { SendellMemoryService } from './sendell-memory.service';
 import {
   SendellResponse,
   RobotAction,
@@ -80,6 +83,9 @@ export class SendellAIService {
   private ngZone = inject(NgZone);
   // v5.3.0: Physics service for robot position awareness
   private physicsService = inject(PhysicsService);
+  // v2.0: Servicios de RAG semántico y memoria
+  private semanticSearch = inject(SemanticSearchService);
+  private memoryService = inject(SendellMemoryService);
 
   // Internal state
   private _status = signal<SendellAIStatus>('initializing');
@@ -233,8 +239,12 @@ export class SendellAIService {
   /**
    * Initialize the AI system
    * v2.0: Now checks if LLM is already loading/ready (via OnboardingService preloading)
+   * v2.0: Also initializes semantic search in background
    */
   async initialize(): Promise<void> {
+    // v2.0: Iniciar búsqueda semántica en paralelo (no bloquea)
+    this.initSemanticSearchBackground();
+
     // v2.0: Check if LLM is already ready (preloaded during onboarding)
     if (this.llmService.isReady) {
       console.log('LLM already ready (preloaded during onboarding)');
@@ -289,6 +299,24 @@ export class SendellAIService {
   }
 
   /**
+   * v2.0: Inicializa el servicio de búsqueda semántica en background
+   * No bloquea la inicialización principal - el LLM funciona sin esto
+   */
+  private async initSemanticSearchBackground(): Promise<void> {
+    try {
+      console.log('[SendellAI] Starting semantic search initialization in background...');
+      const success = await this.semanticSearch.initialize();
+      if (success) {
+        console.log('[SendellAI] Semantic search ready! Queries will now use embeddings.');
+      } else {
+        console.warn('[SendellAI] Semantic search failed to initialize, using keyword fallback.');
+      }
+    } catch (error) {
+      console.warn('[SendellAI] Semantic search error:', error);
+    }
+  }
+
+  /**
    * Process user input and get Sendell's response
    * This is the main entry point for user interaction
    * v5.4.5: Added timing metrics for LLM performance monitoring
@@ -315,6 +343,9 @@ export class SendellAIService {
       let response: SendellResponse;
       let usedLLM = false;
 
+      // v2.0: Registrar query en memoria
+      this.memoryService.recordQuery(trimmedInput);
+
       // Check for off-topic query first
       const offTopicResponse = this.checkOffTopic(trimmedInput);
       if (offTopicResponse) {
@@ -326,17 +357,36 @@ export class SendellAIService {
         // v5.9: Start progress indicator
         this.startQueryProgress();
 
-        // Add context from pillar knowledge
-        const contextualInput = this.addContext(trimmedInput);
-// v5.6: Detailed LLM request logs
+        // v2.0: Búsqueda semántica (async, ~100-150ms)
+        let semanticResults: SemanticSearchResult[] = [];
+        if (this.semanticSearch.isReady()) {
+          try {
+            semanticResults = await this.semanticSearch.search(trimmedInput, 2);
+            console.log(`[SendellAI] Semantic search found ${semanticResults.length} results`);
+          } catch (err) {
+            console.warn('[SendellAI] Semantic search failed, using keyword fallback', err);
+          }
+        }
+
+        // Add context from pillar knowledge (ahora con resultados semánticos)
+        const contextualInput = this.addContext(trimmedInput, semanticResults);
+        // v5.6: Detailed LLM request logs
         console.log('[SendellAI] ====== LLM REQUEST ======');
         console.log('[SendellAI] Original input:', trimmedInput);
+        console.log('[SendellAI] Semantic matches:', semanticResults.map(r => `${r.pillar.id}(${(r.score*100).toFixed(0)}%)`).join(', ') || 'none');
         console.log('[SendellAI] With context (first 500 chars):', contextualInput.substring(0, 500));
 
         response = await this.llmService.processInput(contextualInput);
 
         // v5.9: Complete progress indicator
         this.completeQueryProgress();
+
+        // v2.0: Registrar visitas a pilares basado en las acciones
+        for (const action of response.actions) {
+          if (action.type === 'walk_to_pillar' && action.target) {
+            this.memoryService.recordPillarVisit(action.target, true);
+          }
+        }
 
         // v5.6: Log LLM response
         console.log('[SendellAI] ====== LLM RESPONSE ======');
@@ -484,10 +534,9 @@ export class SendellAIService {
    * Add contextual information to user input based on keywords
    * v3.0: ALWAYS includes Sendell identity context first
    * v5.3.0: Includes robot position for spatial awareness
+   * v2.0: Usa RAG semántico + memoria para mejor contexto
    */
-  private addContext(input: string): string {
-    const relevantPillars = searchPillarsByKeyword(input);
-
+  private addContext(input: string, semanticResults?: SemanticSearchResult[]): string {
     // v5.3.0: Get robot position for spatial awareness
     const robotX = Math.round(this.physicsService.state().x);
     const positionContext = `[POSICIÓN: x=${robotX}]`;
@@ -495,13 +544,38 @@ export class SendellAIService {
     // v3.0: ALWAYS include Sendell identity first to prevent confusion
     let context = SENDELL_IDENTITY_CONTEXT;
 
-    // Add relevant pillar context if found
-    if (relevantPillars.length > 0) {
-      const pillarContext = relevantPillars
-        .slice(0, 2) // Max 2 relevant sections
-        .map(p => `## ${p.title}\n${p.content.substring(0, 300)}...`)
+    // v2.0: Añadir contexto de memoria
+    const memoryContext = this.memoryService.getMemoryContext();
+    if (memoryContext && memoryContext.length > 30) {
+      context += '\n\n' + memoryContext;
+    }
+
+    // v2.0: Usar resultados semánticos si están disponibles, sino keyword matching
+    let pillarContext = '';
+    if (semanticResults && semanticResults.length > 0) {
+      // Usar resultados de búsqueda semántica
+      pillarContext = semanticResults
+        .slice(0, 2)
+        .map(r => {
+          const hint = r.actionHint ? `[ACCIÓN_SUGERIDA: ${r.actionHint} target="${r.pillar.id}"]` : '';
+          return `## ${r.pillar.title} (relevancia: ${(r.score * 100).toFixed(0)}%)\n${hint}\n${r.pillar.content.substring(0, 250)}`;
+        })
         .join('\n\n');
-      context += '\n\n' + pillarContext;
+      console.log('[SendellAI] Using SEMANTIC search results');
+    } else {
+      // Fallback a keyword matching
+      const relevantPillars = searchPillarsByKeyword(input);
+      if (relevantPillars.length > 0) {
+        pillarContext = relevantPillars
+          .slice(0, 2)
+          .map(p => `## ${p.title}\n[ACCIÓN_SUGERIDA: ${p.actionHint} target="${p.id}"]\n${p.content.substring(0, 250)}`)
+          .join('\n\n');
+        console.log('[SendellAI] Using KEYWORD search results');
+      }
+    }
+
+    if (pillarContext) {
+      context += '\n\n[Contexto relevante encontrado]\n' + pillarContext;
     }
 
     return `${positionContext}\n[Contexto de la página]\n${context}\n\n[Pregunta del usuario]\n${input}`;

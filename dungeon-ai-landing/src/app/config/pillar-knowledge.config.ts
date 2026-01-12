@@ -1,10 +1,15 @@
 /**
  * Pillar Knowledge Configuration
- * v1.0: Content for RAG system - indexed for semantic search
+ * v2.0: Content for RAG system - indexed for semantic search
  *
  * This file contains detailed information about each pillar/section
  * of the landing page. This content is used by the RAG service to
  * provide contextual information to the LLM.
+ *
+ * v2.0 CAMBIOS:
+ * - Añadido actionHint para respuestas action-first
+ * - Añadidos synonyms para mejor matching semántico
+ * - Keywords expandidos para mejorar recall
  */
 
 export interface PillarKnowledge {
@@ -12,6 +17,10 @@ export interface PillarKnowledge {
   title: string;
   content: string;
   keywords: string[];
+  /** v2.0: Acción sugerida cuando este pilar es relevante */
+  actionHint: 'walk_to_pillar' | 'idle' | 'wave';
+  /** v2.0: Sinónimos para mejor matching semántico */
+  synonyms: string[];
 }
 
 export const PILLAR_KNOWLEDGE: Record<string, PillarKnowledge> = {
@@ -27,7 +36,9 @@ Creó a Sendell como demostración de sus capacidades en IA.
 Daniel combina conocimiento técnico profundo con visión de negocio para ayudar
 a empresas a implementar soluciones de IA que generan valor real.
     `.trim(),
-    keywords: ['daniel', 'castiblanco', 'consultor', 'experiencia', 'bluecore', 'creador']
+    keywords: ['daniel', 'castiblanco', 'consultor', 'experiencia', 'bluecore', 'creador', 'quién', 'quien'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['fundador', 'experto', 'especialista', 'ingeniero', 'desarrollador', 'creó', 'hizo']
   },
 
   'local-llms': {
@@ -47,7 +58,9 @@ latencias bajas y control sobre sus modelos de IA.
 
 Tecnologías: Ollama, vLLM, llama.cpp, Mistral, Llama, Qwen, fine-tuning, quantization.
     `.trim(),
-    keywords: ['llm', 'local', 'privacidad', 'ollama', 'infraestructura', 'edge', 'offline']
+    keywords: ['llm', 'local', 'privacidad', 'ollama', 'infraestructura', 'edge', 'offline', 'propio'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['privado', 'sin internet', 'datos sensibles', 'compliance', 'gdpr', 'seguro', 'confidencial', 'interno']
   },
 
   'rag-systems': {
@@ -71,7 +84,9 @@ Casos de uso:
 
 Stack típico: ChromaDB, Pinecone, sentence-transformers, LangChain, OpenAI Embeddings.
     `.trim(),
-    keywords: ['rag', 'retrieval', 'embeddings', 'vectores', 'búsqueda', 'documentos', 'chromadb']
+    keywords: ['rag', 'retrieval', 'embeddings', 'vectores', 'búsqueda', 'documentos', 'chromadb'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['buscar', 'encontrar', 'conocimiento', 'base de datos', 'chatbot', 'asistente', 'preguntas', 'respuestas', 'pdf', 'archivos']
   },
 
   'agent-orchestration': {
@@ -95,7 +110,9 @@ un robot que combina NLP, toma de decisiones, y ejecución de acciones.
 
 Ideal para: automatización de workflows, análisis multi-paso, investigación automatizada.
     `.trim(),
-    keywords: ['agentes', 'multi-agente', 'orquestación', 'workflows', 'automatización', 'langgraph', 'crewai']
+    keywords: ['agentes', 'multi-agente', 'orquestación', 'workflows', 'automatización', 'langgraph', 'crewai'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['automatizar', 'proceso', 'flujo', 'tareas', 'robot', 'bots', 'inteligente', 'negocio', 'empresa', 'trabajo']
   },
 
   'custom-integrations': {
@@ -117,7 +134,9 @@ no forzarte a cambiar todo tu stack tecnológico.
 
 Tecnologías: FastAPI, Apache Kafka, Redis, RabbitMQ, n8n, Zapier, Make.
     `.trim(),
-    keywords: ['integración', 'api', 'erp', 'crm', 'legacy', 'webhooks', 'automatización']
+    keywords: ['integración', 'api', 'erp', 'crm', 'legacy', 'webhooks', 'automatización', 'conectar'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['sistema', 'software', 'aplicación', 'datos', 'migrar', 'sincronizar', 'unir', 'SAP', 'Salesforce']
   },
 
   'calendly': {
@@ -138,7 +157,9 @@ se alinea con lo que necesitas para tu empresa.
 
 La sesión es completamente gratuita y sin presión de compra.
     `.trim(),
-    keywords: ['agendar', 'sesión', 'gratuita', 'consulta', 'calendly', 'reunión', 'cita']
+    keywords: ['agendar', 'sesión', 'gratuita', 'consulta', 'calendly', 'reunión', 'cita', 'contacto'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['llamada', 'hablar', 'contratar', 'precio', 'costo', 'cotización', 'presupuesto', 'empezar', 'comenzar', 'reservar']
   },
 
   'github': {
@@ -157,7 +178,9 @@ Incluye:
 
 Es una forma de ver el trabajo técnico de Daniel antes de contactarlo.
     `.trim(),
-    keywords: ['github', 'código', 'repositorio', 'proyectos', 'open source', 'ejemplos']
+    keywords: ['github', 'código', 'repositorio', 'proyectos', 'open source', 'ejemplos'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['portafolio', 'portfolio', 'trabajos', 'demos', 'mostrar', 'ver']
   },
 
   'nuvaris': {
@@ -167,7 +190,9 @@ Es una forma de ver el trabajo técnico de Daniel antes de contactarlo.
 Universo Núvariz - Próximamente.
 Un nuevo mundo está por revelarse.
     `.trim(),
-    keywords: ['núvariz', 'universo', 'próximamente']
+    keywords: ['núvariz', 'universo', 'próximamente'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['nuevo', 'secreto', 'misterio']
   },
 
   'deskflow': {
@@ -185,7 +210,9 @@ Características:
 
 Accede a DeskFlow en danielconsultant.dev/deskflow
     `.trim(),
-    keywords: ['deskflow', 'desktop', 'notas', 'virtual', 'organización']
+    keywords: ['deskflow', 'desktop', 'notas', 'virtual', 'organización'],
+    actionHint: 'walk_to_pillar',
+    synonyms: ['app', 'aplicación', 'herramienta', 'productividad']
   }
 };
 
@@ -207,12 +234,22 @@ export function getPillarKnowledge(pillarId: string): PillarKnowledge | null {
 
 /**
  * Search pillars by keyword (simple matching)
+ * v2.0: Ahora incluye synonyms para mejor matching
  */
 export function searchPillarsByKeyword(query: string): PillarKnowledge[] {
   const normalized = query.toLowerCase();
   return Object.values(PILLAR_KNOWLEDGE).filter(p =>
     p.keywords.some(k => normalized.includes(k)) ||
+    p.synonyms.some(s => normalized.includes(s)) ||
     p.content.toLowerCase().includes(normalized) ||
     p.title.toLowerCase().includes(normalized)
   );
+}
+
+/**
+ * v2.0: Obtener el actionHint para un pilar
+ */
+export function getPillarActionHint(pillarId: string): string | null {
+  const pillar = PILLAR_KNOWLEDGE[pillarId];
+  return pillar?.actionHint || null;
 }
