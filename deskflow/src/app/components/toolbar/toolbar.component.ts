@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { SyncService } from '../../services/sync.service';
 import { StorageService } from '../../services/storage.service';
 import { MapService } from '../../services/map.service';
+import { SupabaseService } from '../../services/supabase.service';
 import { Desktop } from '../../models/desktop.model';
 import { SyncIndicatorComponent } from '../sync-indicator/sync-indicator.component';
 
@@ -32,6 +33,7 @@ export class ToolbarComponent {
   showThemePicker = signal(false);
   showMenu = signal(false);
   showUserMenu = signal(false);
+  mcpTokenCopied = signal(false);
 
   constructor(
     public themeService: ThemeService,
@@ -39,6 +41,7 @@ export class ToolbarComponent {
     public syncService: SyncService,
     private storageService: StorageService,
     private mapService: MapService,
+    private supabaseService: SupabaseService,
     private router: Router
   ) {}
 
@@ -175,6 +178,40 @@ export class ToolbarComponent {
     this.showUserMenu.set(false);
     await this.authService.signOut();
     this.router.navigate(['/login']);
+  }
+
+  /**
+   * Copia el refresh token de Supabase para usar con el MCP Server.
+   * Este token permite al MCP Server autenticarse como el usuario actual.
+   */
+  async onCopyMcpToken(): Promise<void> {
+    try {
+      // Get current session from Supabase
+      const session = await this.supabaseService.getSession();
+
+      if (!session?.refresh_token) {
+        alert('No hay sesión activa. Inicia sesión primero.');
+        return;
+      }
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(session.refresh_token);
+
+      // Show success feedback
+      this.mcpTokenCopied.set(true);
+      setTimeout(() => this.mcpTokenCopied.set(false), 3000);
+
+    } catch (error) {
+      console.error('Error copying MCP token:', error);
+      alert('Error al copiar el token. Intenta de nuevo.');
+    }
+  }
+
+  /**
+   * Verifica si el MCP token está disponible (usuario autenticado y no en modo offline)
+   */
+  get canCopyMcpToken(): boolean {
+    return !this.authService.isOfflineMode() && this.authService.isAuthenticated();
   }
 
   closeAllMenus(): void {

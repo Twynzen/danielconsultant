@@ -201,6 +201,22 @@
           <span class="user-email">{{ authService.currentUser()?.email }}</span>
           <span class="user-mode" *ngIf="authService.isOfflineMode()">Modo Offline</span>
         </div>
+        <!-- MCP Token Button -->
+        <button
+          *ngIf="canCopyMcpToken"
+          (click)="onCopyMcpToken()"
+          [class.copied]="mcpTokenCopied()"
+          class="mcp-token-btn"
+        >
+          <svg *ngIf="!mcpTokenCopied()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <svg *ngIf="mcpTokenCopied()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          {{ mcpTokenCopied() ? 'Token copiado!' : 'Copiar Token MCP' }}
+        </button>
         <button (click)="onSignOut()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
