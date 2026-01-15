@@ -40,9 +40,7 @@ def create_server() -> FastMCP:
     """
     # Create MCP server instance
     mcp = FastMCP(
-        name="DeskFlow",
-        version="1.0.0",
-        description="Servidor MCP para interactuar con DeskFlow - Tu workspace de notas visual"
+        name="DeskFlow"
     )
 
     # Register all tools

@@ -345,3 +345,164 @@ def register_search_tools(mcp: FastMCP):
         result["connections"] = unique_connections
 
         return result
+
+    @mcp.tool()
+    async def get_workspace_index(
+        workspace_id: str,
+        include_note_content: bool = False
+    ) -> dict[str, Any]:
+        """
+        Obtiene el índice COMPLETO de un workspace en UNA sola llamada.
+        Incluye todos los desktops, notas, carpetas y sus relaciones.
+
+        Esta herramienta es MUCHO más eficiente que llamar get_desktop_contents
+        múltiples veces. Úsala cuando necesites ver la estructura completa.
+
+        Args:
+            workspace_id: UUID del workspace
+            include_note_content: Si incluir el contenido completo de las notas (default: False)
+
+        Returns:
+            Índice completo con:
+            - workspace: información del workspace
+            - tree: árbol jerárquico de desktops con sus notas y carpetas
+            - flat_notes: lista plana de todas las notas (para búsqueda rápida)
+            - flat_folders: lista plana de todas las carpetas
+            - stats: estadísticas totales
+        """
+        check_rate_limit(is_write=False)
+
+        if not workspace_id or len(workspace_id) != 36:
+            raise ValueError("workspace_id debe ser un UUID válido")
+
+        client = await get_authenticated_client()
+
+        # 1. Get workspace info
+        workspace = client.table("workspaces") \
+            .select("id, name, description, is_default, created_at") \
+            .eq("id", workspace_id) \
+            .is_("deleted_at", "null") \
+            .single() \
+            .execute()
+
+        if not workspace.data:
+            raise ValueError(f"Workspace {workspace_id} no encontrado")
+
+        # 2. Get ALL desktops
+        desktops = client.table("desktops") \
+            .select("id, name, parent_id, position_order, created_at") \
+            .eq("workspace_id", workspace_id) \
+            .order("position_order") \
+            .execute()
+
+        desktop_list = desktops.data or []
+        desktop_ids = [d["id"] for d in desktop_list]
+
+        if not desktop_ids:
+            return {
+                "workspace": workspace.data,
+                "tree": [],
+                "flat_notes": [],
+                "flat_folders": [],
+                "stats": {"desktops": 0, "notes": 0, "folders": 0, "connections": 0}
+            }
+
+        # 3. Get ALL notes
+        note_fields = "id, title, desktop_id, position_x, position_y, color, z_index, created_at, updated_at"
+        if include_note_content:
+            note_fields += ", content"
+
+        notes = client.table("notes") \
+            .select(note_fields) \
+            .in_("desktop_id", desktop_ids) \
+            .order("z_index") \
+            .execute()
+
+        all_notes = notes.data or []
+
+        # 4. Get ALL folders
+        folders = client.table("folders") \
+            .select("id, name, desktop_id, target_desktop_id, position_x, position_y, icon, color, created_at") \
+            .in_("desktop_id", desktop_ids) \
+            .execute()
+
+        all_folders = folders.data or []
+
+        # 5. Get ALL connections
+        connections = client.table("connections") \
+            .select("id, from_note_id, to_note_id, desktop_id, color") \
+            .in_("desktop_id", desktop_ids) \
+            .execute()
+
+        all_connections = connections.data or []
+
+        # 6. Build hierarchical tree
+        # Create lookup maps
+        notes_by_desktop = {}
+        for note in all_notes:
+            did = note["desktop_id"]
+            if did not in notes_by_desktop:
+                notes_by_desktop[did] = []
+            notes_by_desktop[did].append({
+                "id": note["id"],
+                "title": note["title"],
+                "color": note.get("color"),
+                "updated_at": note.get("updated_at"),
+                "content": note.get("content") if include_note_content else None
+            })
+
+        folders_by_desktop = {}
+        for folder in all_folders:
+            did = folder["desktop_id"]
+            if did not in folders_by_desktop:
+                folders_by_desktop[did] = []
+            # Find target desktop name
+            target_name = None
+            for d in desktop_list:
+                if d["id"] == folder.get("target_desktop_id"):
+                    target_name = d["name"]
+                    break
+            folders_by_desktop[did].append({
+                "id": folder["id"],
+                "name": folder["name"],
+                "target_desktop_id": folder.get("target_desktop_id"),
+                "target_desktop_name": target_name,
+                "icon": folder.get("icon"),
+                "color": folder.get("color")
+            })
+
+        # Build tree recursively
+        def build_tree(parent_id, level=0):
+            children = []
+            for d in desktop_list:
+                if d.get("parent_id") == parent_id:
+                    desktop_node = {
+                        "id": d["id"],
+                        "name": d["name"],
+                        "level": level,
+                        "notes": notes_by_desktop.get(d["id"], []),
+                        "folders": folders_by_desktop.get(d["id"], []),
+                        "note_count": len(notes_by_desktop.get(d["id"], [])),
+                        "folder_count": len(folders_by_desktop.get(d["id"], [])),
+                        "children": build_tree(d["id"], level + 1)
+                    }
+                    children.append(desktop_node)
+            return children
+
+        tree = build_tree(None)
+
+        # 7. Build stats
+        stats = {
+            "desktops": len(desktop_list),
+            "notes": len(all_notes),
+            "folders": len(all_folders),
+            "connections": len(all_connections)
+        }
+
+        return {
+            "workspace": workspace.data,
+            "tree": tree,
+            "flat_notes": [{"id": n["id"], "title": n["title"], "desktop_id": n["desktop_id"]} for n in all_notes],
+            "flat_folders": [{"id": f["id"], "name": f["name"], "desktop_id": f["desktop_id"]} for f in all_folders],
+            "stats": stats
+        }

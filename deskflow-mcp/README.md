@@ -2,12 +2,32 @@
 
 Servidor MCP (Model Context Protocol) para interactuar con **DeskFlow** desde Claude Desktop.
 
+> **¿Qué es DeskFlow?** Una aplicación web de notas visuales con workspaces, conexiones entre notas, y organización espacial. Disponible en [danielconsultant.dev/deskflow](https://danielconsultant.dev/deskflow)
+
+---
+
+## ¿Por qué usar este MCP?
+
 Con este servidor puedes usar Claude para:
-- Buscar en tus notas
-- Crear, editar y eliminar notas
-- Organizar tus workspaces
-- Generar conexiones entre notas
-- Y mucho más...
+- 🔍 **Buscar en tus notas** - "¿Qué notas tengo sobre Angular?"
+- 📝 **Crear y editar notas** - "Crea una nota con el resumen de esta conversación"
+- 🗂️ **Organizar workspaces** - "Muéstrame la estructura de mi DeskFlow"
+- 🔗 **Generar conexiones** - "Conecta las notas relacionadas con IA"
+- 📊 **Obtener insights** - "¿Cuáles son mis notas más recientes?"
+
+---
+
+## Herramientas Destacadas (v1.1)
+
+### `get_workspace_index` ⭐ NUEVO
+Obtiene TODO el workspace en **una sola llamada**:
+```
+"Dame el índice completo de mi DeskFlow"
+→ Devuelve: árbol de desktops, todas las notas, todas las carpetas, estadísticas
+```
+
+### `get_desktop_hierarchy` (mejorado)
+Ahora soporta `include_notes=true` y `include_folders=true` para reducir llamadas a la API.
 
 ---
 

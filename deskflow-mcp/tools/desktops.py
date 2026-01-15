@@ -100,7 +100,9 @@ def register_desktop_tools(mcp: FastMCP):
     @mcp.tool()
     async def get_desktop_hierarchy(
         workspace_id: str,
-        max_depth: int = 10
+        max_depth: int = 10,
+        include_notes: bool = False,
+        include_folders: bool = False
     ) -> list[dict[str, Any]]:
         """
         Obtiene la jerarquía completa de desktops de un workspace.
@@ -108,9 +110,11 @@ def register_desktop_tools(mcp: FastMCP):
         Args:
             workspace_id: UUID del workspace
             max_depth: Profundidad máxima (default: 10)
+            include_notes: Si incluir las notas de cada desktop (default: False)
+            include_folders: Si incluir las carpetas de cada desktop (default: False)
 
         Returns:
-            Lista de desktops con información de nivel y padre
+            Lista de desktops con información de nivel, padre, y opcionalmente notas/carpetas
         """
         check_rate_limit(is_write=False)
 
@@ -127,6 +131,41 @@ def register_desktop_tools(mcp: FastMCP):
             .execute()
 
         desktops = result.data or []
+        desktop_ids = [d["id"] for d in desktops]
+
+        # Optionally get notes
+        notes_by_desktop = {}
+        if include_notes and desktop_ids:
+            notes_result = client.table("notes") \
+                .select("id, title, desktop_id, color, updated_at") \
+                .in_("desktop_id", desktop_ids) \
+                .execute()
+            for note in (notes_result.data or []):
+                did = note["desktop_id"]
+                if did not in notes_by_desktop:
+                    notes_by_desktop[did] = []
+                notes_by_desktop[did].append({
+                    "id": note["id"],
+                    "title": note["title"],
+                    "color": note.get("color")
+                })
+
+        # Optionally get folders
+        folders_by_desktop = {}
+        if include_folders and desktop_ids:
+            folders_result = client.table("folders") \
+                .select("id, name, desktop_id, target_desktop_id") \
+                .in_("desktop_id", desktop_ids) \
+                .execute()
+            for folder in (folders_result.data or []):
+                did = folder["desktop_id"]
+                if did not in folders_by_desktop:
+                    folders_by_desktop[did] = []
+                folders_by_desktop[did].append({
+                    "id": folder["id"],
+                    "name": folder["name"],
+                    "target_desktop_id": folder.get("target_desktop_id")
+                })
 
         # Build hierarchy with levels
         def add_level(desktop_list, parent_id, level):
@@ -134,6 +173,12 @@ def register_desktop_tools(mcp: FastMCP):
             for d in desktop_list:
                 if d.get("parent_id") == parent_id and level <= max_depth:
                     d["level"] = level
+                    if include_notes:
+                        d["notes"] = notes_by_desktop.get(d["id"], [])
+                        d["note_count"] = len(d["notes"])
+                    if include_folders:
+                        d["folders"] = folders_by_desktop.get(d["id"], [])
+                        d["folder_count"] = len(d["folders"])
                     items.append(d)
                     # Add children
                     items.extend(add_level(desktop_list, d["id"], level + 1))
