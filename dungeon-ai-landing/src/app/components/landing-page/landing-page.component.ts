@@ -114,6 +114,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   // v5.2: Energization state - which pillar the robot is currently inside
   energizedPillarId = signal<string | null>(null);
 
+  // v8.1: Track pending pillar to energize after walk completes (for chat mode)
+  private _pendingEnergizePillarId: string | null = null;
+
   // v4.6.3: Zoom cinematográfico state
   isZoomed = false;
   zoomScale = 1;
@@ -145,6 +148,24 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
     // v5.0: Start onboarding experience
     this.onboarding.startOnboarding();
+
+    // v8.1: Register callback to auto-energize pillar after walk completes (chat mode)
+    this.actionExecutor.onWalkComplete(() => {
+      if (this._pendingEnergizePillarId && !this.tourService.isActive()) {
+        console.log('[LandingPage] Walk complete - auto-energizing pillar:', this._pendingEnergizePillarId);
+        const pillar = PILLARS.find(p => p.id === this._pendingEnergizePillarId);
+        if (pillar && this.characterComponent) {
+          const pillarScreenX = this.cameraService.worldToScreenX(pillar.worldX);
+          const pillarTop = window.innerHeight - SIDESCROLLER_CONFIG.GROUND_HEIGHT - PILLAR_INTERACTION.PILLAR_HEIGHT;
+          const pillarScreenY = pillarTop + 25;
+          // Small delay to ensure walking animation has fully stopped
+          setTimeout(() => {
+            this.characterComponent.activatePillar(pillar, pillarScreenX, pillarScreenY);
+          }, 100);
+        }
+        this._pendingEnergizePillarId = null;
+      }
+    });
   }
 
   /**
@@ -391,6 +412,7 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   /**
    * v2.0: Handle AI-requested robot actions
    * v5.4.0: Now uses ActionExecutor for consistent organic movement
+   * v8.1: walk_to_pillar auto-energizes pillar when arriving (via onWalkComplete callback)
    * Called when Sendell AI decides to move or interact with something
    */
   onAIActionRequested(action: RobotAction): void {
@@ -398,7 +420,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
     switch (action.type) {
       case 'walk_to_pillar':
-        // v5.4.0: Use ActionExecutor for organic walking
+        // v8.1: Use ActionExecutor for organic walking (keyboard simulation)
+        // Store target for auto-energize when walk completes
+        this._pendingEnergizePillarId = action.target || null;
         this.actionExecutor.executeAction(action);
         break;
       case 'energize_pillar':

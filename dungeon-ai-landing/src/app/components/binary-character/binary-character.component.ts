@@ -186,10 +186,11 @@ export class BinaryCharacterComponent implements OnInit, OnDestroy {
   private robotOriginalX = 0; // Robot position before energizing
   private robotOriginalY = 0;
   // v5.2.2: STREAMING EFFECT - particles flow one by one
-  private readonly ENERGY_ANIMATION_DURATION = 3500; // 3.5 seconds total for all particles
-  private readonly EXIT_ANIMATION_DURATION = 3000;   // 3.0 seconds to recompose
-  private readonly PARTICLE_FLIGHT_TIME = 800;       // Each particle takes 800ms to travel
-  private readonly TOTAL_STAGGER_SPREAD = 2500;      // 2.5 seconds spread across all particles
+  // v8.1: 25% faster animations for snappier UX
+  private readonly ENERGY_ANIMATION_DURATION = 2625; // 2.625 seconds total for all particles (was 3.5s)
+  private readonly EXIT_ANIMATION_DURATION = 2250;   // 2.25 seconds to recompose (was 3.0s)
+  private readonly PARTICLE_FLIGHT_TIME = 600;       // Each particle takes 600ms to travel (was 800ms)
+  private readonly TOTAL_STAGGER_SPREAD = 1875;      // 1.875 seconds spread across all particles (was 2.5s)
 
   // ========== V4.0 - GIVING LIFE ==========
 

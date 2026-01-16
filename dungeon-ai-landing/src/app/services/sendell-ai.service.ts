@@ -34,6 +34,8 @@ import {
   searchPillarsByKeyword,
   getAllPillarContent
 } from '../config/pillar-knowledge.config';
+// v8.0 PHASE 1: Smart responses for instant fallback
+import { getSmartResponse } from '../config/sendell-smart-responses.config';
 
 // v3.0: Sendell identity context - ALWAYS included to prevent identity confusion
 // v5.8.2: Clarified that Sendell talks to VISITORS (potential clients), NOT to Daniel
@@ -238,64 +240,19 @@ export class SendellAIService {
 
   /**
    * Initialize the AI system
-   * v2.0: Now checks if LLM is already loading/ready (via OnboardingService preloading)
-   * v2.0: Also initializes semantic search in background
+   * v8.0 PHASE 1: INSTANT READY - No LLM needed for smart responses
+   *
+   * Smart responses work immediately without any AI model.
+   * The system is ALWAYS ready to respond.
    */
   async initialize(): Promise<void> {
-    // v2.0: Iniciar búsqueda semántica en paralelo (no bloquea)
-    this.initSemanticSearchBackground();
+    console.log('[SendellAI] v8.0 PHASE 1: Smart Responses Mode - INSTANT READY');
 
-    // v2.0: Check if LLM is already ready (preloaded during onboarding)
-    if (this.llmService.isReady) {
-      console.log('LLM already ready (preloaded during onboarding)');
-      this._status.set('ready');
-      this._isWebGPUSupported.set(true);
-      return;
-    }
+    // v8.0: Set to ready immediately - smart responses don't need LLM
+    this._status.set('ready');
+    this._isWebGPUSupported.set(true); // Not actually using WebGPU, but keeps UI happy
 
-    // v2.0: Check if LLM is currently loading
-    const currentState = this.llmService.currentState;
-    if (currentState.status === 'loading') {
-      console.log('LLM already loading (preloaded during onboarding)');
-      this._status.set('loading_llm');
-      // Wait for loading to complete
-      return new Promise((resolve) => {
-        const subscription = this.llmService.state$.subscribe(state => {
-          if (state.status === 'ready') {
-            this._status.set('ready');
-            subscription.unsubscribe();
-            resolve();
-          } else if (state.status === 'error' || state.status === 'unsupported') {
-            this._status.set('fallback_only');
-            subscription.unsubscribe();
-            resolve();
-          }
-        });
-      });
-    }
-
-    this._status.set('initializing');
-
-    // Check WebGPU support first
-    const hasWebGPU = await this.llmService.checkWebGPUSupport();
-    this._isWebGPUSupported.set(hasWebGPU);
-
-    if (!hasWebGPU) {
-      console.warn('WebGPU not supported, running in fallback mode');
-      this._status.set('fallback_only');
-      return;
-    }
-
-    // Start LLM initialization (runs in background)
-    this._status.set('loading_llm');
-
-    try {
-      await this.llmService.initialize();
-      this._status.set('ready');
-    } catch (error) {
-      console.error('LLM initialization failed:', error);
-      this._status.set('fallback_only');
-    }
+    console.log('[SendellAI] Status: READY (using smart keyword-based responses)');
   }
 
   /**
@@ -319,7 +276,10 @@ export class SendellAIService {
   /**
    * Process user input and get Sendell's response
    * This is the main entry point for user interaction
-   * v5.4.5: Added timing metrics for LLM performance monitoring
+   * v8.0 PHASE 1: Uses SMART RESPONSES by default (instant, no LLM wait)
+   *
+   * The robot responds INSTANTLY with keyword-matched responses
+   * and WALKS to relevant pillars. No more waiting for WebLLM downloads.
    */
   async processUserInput(input: string): Promise<SendellResponse> {
     if (this._isProcessing()) {
@@ -328,9 +288,6 @@ export class SendellAIService {
 
     this._isProcessing.set(true);
     const trimmedInput = input.trim();
-
-    // v5.4.5: Start timing
-    const requestStart = performance.now();
 
     // Add user message to history
     this.addChatMessage({
@@ -341,87 +298,31 @@ export class SendellAIService {
 
     try {
       let response: SendellResponse;
-      let usedLLM = false;
 
       // v2.0: Registrar query en memoria
       this.memoryService.recordQuery(trimmedInput);
 
-      // Check for off-topic query first
+      // Check for off-topic query first (keeps the escalating response system)
       const offTopicResponse = this.checkOffTopic(trimmedInput);
       if (offTopicResponse) {
         response = offTopicResponse;
       }
-      // Use LLM if available
-      else if (this.llmService.isReady) {
-        usedLLM = true;
-        // v5.9: Start progress indicator
-        this.startQueryProgress();
-
-        // v2.0: Búsqueda semántica (async, ~100-150ms)
-        let semanticResults: SemanticSearchResult[] = [];
-        if (this.semanticSearch.isReady()) {
-          try {
-            semanticResults = await this.semanticSearch.search(trimmedInput, 2);
-            console.log(`[SendellAI] Semantic search found ${semanticResults.length} results`);
-          } catch (err) {
-            console.warn('[SendellAI] Semantic search failed, using keyword fallback', err);
-          }
-        }
-
-        // Add context from pillar knowledge (ahora con resultados semánticos)
-        const contextualInput = this.addContext(trimmedInput, semanticResults);
-        // v5.6: Detailed LLM request logs
-        console.log('[SendellAI] ====== LLM REQUEST ======');
-        console.log('[SendellAI] Original input:', trimmedInput);
-        console.log('[SendellAI] Semantic matches:', semanticResults.map(r => `${r.pillar.id}(${(r.score*100).toFixed(0)}%)`).join(', ') || 'none');
-        console.log('[SendellAI] With context (first 500 chars):', contextualInput.substring(0, 500));
-
-        response = await this.llmService.processInput(contextualInput);
-
-        // v5.9: Complete progress indicator
-        this.completeQueryProgress();
-
-        // v2.0: Registrar visitas a pilares basado en las acciones
-        for (const action of response.actions) {
-          if (action.type === 'walk_to_pillar' && action.target) {
-            this.memoryService.recordPillarVisit(action.target, true);
-          }
-        }
-
-        // v5.6: Log LLM response
-        console.log('[SendellAI] ====== LLM RESPONSE ======');
+      // v8.0 PHASE 1: Use SMART RESPONSES (instant, with robot actions)
+      else {
+        response = getSmartResponse(trimmedInput);
+        console.log('[SendellAI] ====== SMART RESPONSE ======');
+        console.log('[SendellAI] Input:', trimmedInput);
         console.log('[SendellAI] Dialogue:', response.dialogue);
+        console.log('[SendellAI] Action:', JSON.stringify(response.actions));
         console.log('[SendellAI] Emotion:', response.emotion);
-        console.log('[SendellAI] Actions:', JSON.stringify(response.actions));
         console.log('[SendellAI] ==============================');
       }
-      // Fallback to keyword matching
-      else {
-        response = getFallbackResponse(trimmedInput);
-      }
 
-      // v5.4.5: Update metrics only for LLM requests
-      if (usedLLM) {
-        const requestEnd = performance.now();
-        const responseTime = requestEnd - requestStart;
-
-        this._metrics.update(m => {
-          const newTotalRequests = m.totalRequests + 1;
-          const newAverageResponseTime =
-            (m.averageResponseTime * m.totalRequests + responseTime) / newTotalRequests;
-
-          return {
-            lastRequestStart: requestStart,
-            lastRequestEnd: requestEnd,
-            lastResponseTime: responseTime,
-            totalRequests: newTotalRequests,
-            averageResponseTime: newAverageResponseTime,
-            minResponseTime: Math.min(m.minResponseTime, responseTime),
-            maxResponseTime: Math.max(m.maxResponseTime, responseTime)
-          };
-        });
-
-        console.log(`[SendellAI] Response time: ${responseTime.toFixed(2)}ms | Avg: ${this._metrics().averageResponseTime.toFixed(2)}ms | Total: ${this._metrics().totalRequests}`);
+      // v2.0: Registrar visitas a pilares basado en las acciones
+      for (const action of response.actions) {
+        if (action.type === 'walk_to_pillar' && action.target) {
+          this.memoryService.recordPillarVisit(action.target, true);
+        }
       }
 
       // Add Sendell's response to history
@@ -437,16 +338,14 @@ export class SendellAIService {
       this._lastResponse.set(response);
       this.responseSubject.next(response);
 
-      // Execute actions
+      // Execute actions (this makes the robot WALK to pillars)
       await this.executeActions(response.actions);
 
       return response;
 
     } catch (error) {
       console.error('Error processing input:', error);
-      // v5.9: Clean up progress on error
-      this.completeQueryProgress();
-      const fallback = getFallbackResponse(trimmedInput);
+      const fallback = getSmartResponse(trimmedInput);
       this._lastResponse.set(fallback);
       return fallback;
 

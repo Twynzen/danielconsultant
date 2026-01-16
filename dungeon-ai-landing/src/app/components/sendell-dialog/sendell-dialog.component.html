@@ -17,46 +17,20 @@
 
       <div class="dialog-content">
         <!-- Terminal Header -->
+        <!-- v8.0 PHASE 1: Simplified header - MODO SMART indicator -->
         <div class="dialog-header">
-          <span class="dialog-indicator" [class.ai-active]="isChatMode() && sendellAI.status() === 'ready'"></span>
+          <span class="dialog-indicator ai-active"></span>
           <span class="dialog-title">// SENDELL</span>
-          <!-- v2.0: AI Status indicator -->
           @if (isChatMode()) {
-            <span class="ai-status" [class.loading]="isLLMLoading()" [class.ready]="sendellAI.status() === 'ready'">
-              @if (isLLMLoading()) {
-                <span class="status-text">IA: {{ llmLoadingProgress() | number:'1.0-0' }}%</span>
-              } @else if (sendellAI.status() === 'ready') {
-                <span class="status-text">IA ACTIVA</span>
-              } @else if (sendellAI.status() === 'fallback_only') {
-                <span class="status-text">MODO BÁSICO</span>
-              }
+            <span class="ai-status ready">
+              <span class="status-text">MODO SMART</span>
             </span>
-            <!-- v5.5: Minimize controlled by double-click on Sendell robot -->
           }
         </div>
 
-        <!-- v5.9.5: Unified Loading + Welcome Section with smooth transition -->
+        <!-- v8.0 PHASE 1: Simplified Loading + Welcome Section (no LLM info) -->
         @if (isLoading() || isWelcome()) {
           <div class="loading-welcome-section">
-            <!-- ? always visible in corner -->
-            <div class="info-icon-floating">
-              <span class="llm-info-icon" (click)="toggleLLMInfo()">?</span>
-              @if (showLLMInfo()) {
-                <div class="llm-info-tooltip">
-                  <div class="tooltip-title">⚡ IA Local en tu Navegador</div>
-                  <div class="tooltip-content">
-                    Esta web utiliza <strong>WebGPU</strong> para ejecutar un modelo de IA
-                    directamente en tu dispositivo. El modelo se descarga en caché (~700MB).
-                  </div>
-                  <div class="tooltip-note">
-                    Puedes continuar navegando. Algunas funciones de Sendell estarán
-                    limitadas hasta completar la descarga.
-                  </div>
-                  <div class="tooltip-close" (click)="toggleLLMInfo()">[CERRAR]</div>
-                </div>
-              }
-            </div>
-
             <!-- Content that transitions smoothly -->
             <div class="content-transition-wrapper">
               @if (isLoading()) {
@@ -79,38 +53,20 @@
           </div>
         }
 
-        <!-- v2.0: LLM Loading indicator (chat mode) -->
-        @if (isChatMode() && isLLMLoading()) {
-          <div class="llm-loading-section">
-            <div class="llm-loading-text">{{ llmLoadingText() || 'Inicializando IA...' }}</div>
-            <div class="loading-bar-container small">
-              <div class="loading-bar" [style.width.%]="llmLoadingProgress()"></div>
-            </div>
-          </div>
-        }
+        <!-- v8.0 PHASE 1: Removed AI download indicators - smart responses are instant -->
 
         <!-- Dialog Text with Typing Effect -->
+        <!-- v8.0 PHASE 1: Simplified - no LLM progress, just typing animation -->
         @if (!isLoading() && !isWelcome() && (displayedText() || isTyping())) {
           <div class="dialog-text" [class.chat-response]="isChatMode()">
-            <!-- v5.9: Real progress bar when waiting for LLM response -->
             @if (isAITyping() && !isTyping()) {
+              <!-- Brief "..." while processing (instant for smart responses) -->
               <span class="loading-text">{{ displayedText() }}</span>
-              <!-- v5.9: Show progress bar if LLM query is in progress -->
-              @if (sendellAI.llmQueryProgress() > 0) {
-                <div class="llm-query-progress">
-                  <span class="stage-text">{{ sendellAI.llmQueryStage() }}</span>
-                  <div class="progress-bar-mini">
-                    <div class="progress-fill" [style.width.%]="sendellAI.llmQueryProgress()"></div>
-                  </div>
-                </div>
-              } @else {
-                <!-- Fallback to animated dots if no progress yet -->
-                <span class="loading-dots">
-                  <span class="dot">.</span>
-                  <span class="dot">.</span>
-                  <span class="dot">.</span>
-                </span>
-              }
+              <span class="loading-dots">
+                <span class="dot">.</span>
+                <span class="dot">.</span>
+                <span class="dot">.</span>
+              </span>
             } @else {
               <span class="typing-effect">{{ displayedText() }}</span>
               @if (isTyping()) {

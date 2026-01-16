@@ -39,6 +39,8 @@ import { InputService } from '../../core/services/input.service';
 import { CameraService } from '../../services/camera.service';
 import { SendellAIService } from '../../services/sendell-ai.service';
 import { TourService, TourStep } from '../../services/tour.service';
+// v7.0: Background loader for deferred AI downloads
+import { BackgroundLoaderService } from '../../services/background-loader.service';
 import { DialogMessage, ONBOARDING_TIMING, LOADING_CONFIG, FREE_MODE_DIALOGS } from '../../config/onboarding.config';
 import { SIDESCROLLER_CONFIG } from '../../config/sidescroller.config';
 import { SendellResponse, RobotAction, getTourFallback, getPillarDescription, TOUR_FAREWELL } from '../../config/sendell-ai.config';
@@ -61,6 +63,8 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private inputService = inject(InputService);
   // v5.3.0: Tour service for intelligent guided tour
   private tourService = inject(TourService);
+  // v7.0: Background loader for deferred AI downloads
+  private backgroundLoader = inject(BackgroundLoaderService);
 
   // v1.1: Character dimensions for positioning
   private readonly CHARACTER_WIDTH = 180;
@@ -400,6 +404,12 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   readonly llmLoadingProgress = computed(() => this.sendellAI.llmProgress());
   readonly llmLoadingText = computed(() => this.sendellAI.llmProgressText());
+
+  // v7.0: Background download progress (for visual indicator)
+  readonly isBackgroundDownloading = computed(() => this.backgroundLoader.isDownloading());
+  readonly backgroundProgress = computed(() => this.backgroundLoader.totalProgress());
+  readonly backgroundCurrentFile = computed(() => this.backgroundLoader.currentFile());
+  readonly isAIFullyReady = computed(() => this.backgroundLoader.isReady());
 
   // v5.9.1: Computed to determine if dialog should be on LEFT of character (arrow points right)
   // This is computed based on whether the dialog would overflow the right viewport edge
@@ -1012,6 +1022,7 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * v5.3.0: Handle TOUR_INTRO step - LLM generates intro message
    * v5.4.0: Added processing guard to prevent duplicate execution
+   * v8.0: PHASE 1 - Uses predefined fallbacks directly (no LLM/AI call)
    */
   private async handleTourIntro(): Promise<void> {
     // v5.9.4: Guard - only process if tour is actually in progress
@@ -1027,75 +1038,26 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     }
     this._isTourStepProcessing = true;
 
-    const tourPrompt = this.tourService.getTourPrompt();
-    console.log('[Tour] ====== INTRO - LLM REQUEST ======');
-    console.log('[Tour] Prompt:', tourPrompt);
+    const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
+    console.log('[Tour] ====== INTRO (SMART MODE) ======');
+    console.log('[Tour] Current pillar:', currentPillar);
 
-    // Show loading indicator with descriptive message
-    this.displayedText.set('Organizando mis circuitos');
-    this.isTyping.set(false);
-    this.isAITyping.set(true);
-    this.cdr.markForCheck();
+    // v8.0: Use predefined fallbacks directly (instant, no AI wait)
+    const fallback = getTourFallback(currentPillar);
+    const dialogueToShow = fallback.intro.dialogue;
 
-    try {
-      const response = await this.sendellAI.processUserInput(tourPrompt);
+    console.log('[Tour] Using fallback dialogue:', dialogueToShow);
+    console.log('[Tour] Action: walk_to_pillar →', currentPillar);
 
-      // v5.9.4: Check if tour was cancelled during LLM request
-      if (!this.tourService.isActive() || this._tourCancelled) {
-        console.log('[Tour] INTRO aborted - tour cancelled during LLM request');
-        this._isTourStepProcessing = false;
-        return;
-      }
+    // Set pending walk action
+    this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar });
 
-      console.log('[Tour] ====== INTRO - LLM RESPONSE ======');
-      console.log('[Tour] Dialogue:', response.dialogue);
-      console.log('[Tour] Actions:', JSON.stringify(response.actions));
+    // Start typing animation (TourService will be notified when done)
+    this.tourService.onTypingStarted();
+    this.startAITypingAnimation(dialogueToShow);
 
-      // v5.4.0: Enhanced detection of bad LLM responses
-      const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
-      const fallback = getTourFallback(currentPillar);
-      let dialogueToShow = response.dialogue;
-
-      // Detect generic, third-person, or malformed responses
-      const isGenericResponse = this.isResponseGeneric(dialogueToShow, 'intro');
-
-      if (isGenericResponse) {
-        console.log('[Tour] WARNING: Generic/third-person response detected, using fallback');
-        dialogueToShow = fallback.intro.dialogue;
-      }
-
-      // Store pending action (will execute after typing)
-      const walkAction = response.actions.find(a => a.type === 'walk_to_pillar');
-      if (walkAction && !isGenericResponse) {
-        this.tourService.setPendingAction(walkAction);
-      } else {
-        // Use fallback action
-        this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar });
-      }
-
-      // Start typing animation (TourService will be notified when done)
-      this.tourService.onTypingStarted();
-      this.startAITypingAnimation(dialogueToShow);
-
-    } catch (error) {
-      // v5.9.4: Check if tour was cancelled
-      if (!this.tourService.isActive() || this._tourCancelled) {
-        console.log('[Tour] INTRO aborted after error - tour cancelled');
-        this._isTourStepProcessing = false;
-        return;
-      }
-
-      console.error('[Tour] INTRO ERROR:', error);
-      // v5.4.0: Use config fallback on error
-      const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
-      const fallback = getTourFallback(currentPillar);
-      this.tourService.setPendingAction({ type: 'walk_to_pillar', target: currentPillar });
-      this.tourService.onTypingStarted();
-      this.startAITypingAnimation(fallback.intro.dialogue);
-    } finally {
-      // v5.4.0: Release processing lock
-      this._isTourStepProcessing = false;
-    }
+    // v5.4.0: Release processing lock
+    this._isTourStepProcessing = false;
   }
 
   /**
@@ -1155,12 +1117,11 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
 
   /**
    * v5.3.0: Handle TOUR_PILLAR_INFO step - LLM explains current pillar
-   * v5.4.0: Uses enhanced fallback detection
-   * v5.4.4: Uses pre-fetched response if available
+   * v8.0: PHASE 1 - Uses predefined fallbacks directly (no LLM/AI call)
    */
   private async handleTourPillarInfo(): Promise<void> {
     const currentPillar = this.tourService.currentPillarId() || 'about-daniel';
-    console.log('[Tour] ====== PILLAR_INFO ======');
+    console.log('[Tour] ====== PILLAR_INFO (SMART MODE) ======');
     console.log('[Tour] Current pillar:', currentPillar);
 
     // v5.9.4: Check if tour was cancelled
@@ -1169,78 +1130,18 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
-    // v5.4.4: Check if we have a pre-fetched response
-    if (this.prefetchedPillarInfo &&
-        this.prefetchedPillarInfo.pillarId === currentPillar &&
-        this.prefetchedPillarInfo.response) {
+    // v8.0: Use predefined fallbacks directly (instant, no AI wait)
+    const fallback = getTourFallback(currentPillar);
+    const dialogueToShow = fallback.explain.dialogue;
 
-      console.log('[Tour] Using pre-fetched pillar info');
-      const response = this.prefetchedPillarInfo.response;
-      this.prefetchedPillarInfo = null;  // Clear after use
+    console.log('[Tour] Using fallback dialogue:', dialogueToShow);
 
-      // v5.4.0: Use fallback if response is generic/third-person
-      const fallback = getTourFallback(currentPillar);
-      let dialogueToShow = response.dialogue;
+    // Clear any pre-fetched data (not needed anymore)
+    this.prefetchedPillarInfo = null;
 
-      if (this.isResponseGeneric(dialogueToShow, 'explain')) {
-        console.log('[Tour] WARNING: Pre-fetched response is generic, using fallback');
-        dialogueToShow = fallback.explain.dialogue;
-      }
-
-      // Start typing animation immediately - no loading indicator needed
-      this.tourService.onTypingStarted();
-      this.startAITypingAnimation(dialogueToShow);
-      return;
-    }
-
-    // Fallback: No pre-fetch available, make LLM request now
-    console.log('[Tour] No pre-fetch available, making LLM request');
-    const tourPrompt = this.buildPillarInfoPrompt(currentPillar);
-
-    // Show loading indicator with descriptive message
-    this.displayedText.set('Analizando pilar');
-    this.isTyping.set(false);
-    this.isAITyping.set(true);
-    this.cdr.markForCheck();
-
-    try {
-      const response = await this.sendellAI.processUserInput(tourPrompt);
-
-      // v5.9.4: Check if tour was cancelled during LLM request
-      if (!this.tourService.isActive() || this._tourCancelled) {
-        console.log('[Tour] PILLAR_INFO aborted - tour cancelled during LLM request');
-        return;
-      }
-
-      console.log('[Tour] ====== PILLAR_INFO - LLM RESPONSE ======');
-      console.log('[Tour] Dialogue:', response.dialogue);
-
-      // v5.4.0: Use fallback if response is generic/third-person
-      const fallback = getTourFallback(currentPillar);
-      let dialogueToShow = response.dialogue;
-
-      if (this.isResponseGeneric(dialogueToShow, 'explain')) {
-        console.log('[Tour] WARNING: Generic/third-person response, using fallback');
-        dialogueToShow = fallback.explain.dialogue;
-      }
-
-      // Start typing animation
-      this.tourService.onTypingStarted();
-      this.startAITypingAnimation(dialogueToShow);
-
-    } catch (error) {
-      // v5.9.4: Check if tour was cancelled
-      if (!this.tourService.isActive() || this._tourCancelled) {
-        console.log('[Tour] PILLAR_INFO aborted after error - tour cancelled');
-        return;
-      }
-
-      console.error('[Tour] PILLAR_INFO ERROR:', error);
-      // v5.4.0: Use config fallback on error
-      const fallback = getTourFallback(currentPillar);
-      this.tourService.onTypingStarted();
-      this.startAITypingAnimation(fallback.explain.dialogue);
-    }
+    // Start typing animation immediately
+    this.tourService.onTypingStarted();
+    this.startAITypingAnimation(dialogueToShow);
   }
 
   /**
@@ -1598,6 +1499,8 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
   /**
    * v2.0: Submit chat message to AI
    * v5.8.1: Set _isLLMResponsePending flag to show continue prompt after response
+   * v8.0 PHASE 1: INSTANT responses with smart keyword matching
+   * No more waiting for WebLLM - responses are immediate!
    */
   async submitChat(): Promise<void> {
     const input = this.chatUserInput.trim();
@@ -1608,26 +1511,26 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
     this.isChatOpen.set(false);  // v3.0: Reset to prevent auto-show
     this.showChatInput.set(false);
 
-    // v5.8.1: Mark that we're expecting an LLM response (not a greeting)
+    // v5.8.1: Mark that we're expecting a response
     this._isLLMResponsePending = true;
 
-    // Show processing state with descriptive message
+    // v8.0: Brief processing indicator (smart responses are instant)
     this.isAITyping.set(true);
-    this.displayedText.set('Procesando consulta');
+    this.displayedText.set('...');
     this.isTyping.set(false);
     this.cdr.markForCheck();
 
     try {
-      // v5.9.3: Debug log to verify LLM is being called
-      console.log('[Chat] ====== SUBMITTING TO LLM ======');
+      // v8.0 PHASE 1: Smart responses are INSTANT - no waiting needed
+      console.log('[Chat] ====== SMART RESPONSE MODE ======');
       console.log('[Chat] User input:', input);
 
-      // Process with AI service
+      // Process with AI service (uses smart keyword matching)
       const response = await this.sendellAI.processUserInput(input);
 
-      // v5.9.3: Debug log to verify response
-      console.log('[Chat] Response received from AI');
-      console.log('[Chat] Dialogue preview:', response.dialogue.substring(0, 100) + '...');
+      console.log('[Chat] Response received (instant)');
+      console.log('[Chat] Dialogue:', response.dialogue);
+      console.log('[Chat] Action:', JSON.stringify(response.actions));
       console.log('[Chat] ================================');
 
       // Show response with typing animation
@@ -1635,10 +1538,9 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
 
     } catch (error) {
       console.error('Chat error:', error);
-      // v6.3: Mark as error so finishAITyping keeps input visible
       this._hadChatError = true;
       this.startAITypingAnimation(
-        'Ocurrió un error técnico procesando tu mensaje. Por favor, intenta reformular tu pregunta.'
+        'Mmm, algo salió mal. ¿Puedes intentar de nuevo?'
       );
     }
   }
