@@ -1,0 +1,110 @@
+<!-- Mobile Sendell Chat v7.0 -->
+<div class="mobile-sendell" [class.minimized]="isMinimized">
+
+  <!-- Header -->
+  <header class="chat-header" (click)="isMinimized ? focusInput() : null">
+    <div class="header-left">
+      <div class="sendell-avatar">
+        <span class="avatar-icon">S</span>
+        <span class="status-dot"></span>
+      </div>
+      <div class="header-info">
+        <h3 class="header-title">SENDELL</h3>
+        <span class="header-status">
+          @if (isTyping()) {
+            escribiendo...
+          } @else {
+            en línea
+          }
+        </span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="action-btn" (click)="onMinimize()" aria-label="Minimizar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <button class="action-btn close" (click)="onClose()" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Messages (hidden when minimized) -->
+  @if (!isMinimized) {
+    <div class="chat-body">
+      <!-- Messages container -->
+      <div class="messages-container" #messagesContainer>
+        @for (message of messages(); track message.id) {
+          <div
+            class="message"
+            [class.user]="message.sender === 'user'"
+            [class.sendell]="message.sender === 'sendell'"
+          >
+            <div class="message-bubble">
+              <p class="message-text">{{ message.text }}</p>
+              <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+            </div>
+          </div>
+        }
+
+        <!-- Typing indicator -->
+        @if (isTyping()) {
+          <div class="message sendell typing">
+            <div class="message-bubble">
+              <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Quick actions -->
+      @if (messages().length <= 1) {
+        <div class="quick-actions">
+          @for (action of quickActions; track action.label) {
+            <button
+              class="quick-btn"
+              (click)="onQuickAction(action.query)"
+            >
+              {{ action.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Input area -->
+    <footer class="chat-input">
+      <div class="input-container">
+        <input
+          #inputField
+          type="text"
+          [(ngModel)]="inputText"
+          (keydown)="onKeyDown($event)"
+          placeholder="Escribe un mensaje..."
+          class="input-field"
+          autocomplete="off"
+        />
+        <button
+          class="send-btn"
+          (click)="sendMessage()"
+          [disabled]="!inputText.trim()"
+          aria-label="Enviar mensaje"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </footer>
+  }
+</div>

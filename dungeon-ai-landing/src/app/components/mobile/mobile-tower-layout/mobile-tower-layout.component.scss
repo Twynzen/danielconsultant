@@ -1,0 +1,428 @@
+/**
+ * Mobile Tower Layout Styles v7.0
+ * Matrix-themed vertical tower experience
+ */
+
+// Variables
+$matrix-green: #00ff44;
+$matrix-green-dark: #00cc33;
+$matrix-green-glow: rgba(0, 255, 68, 0.5);
+$bg-dark: #0a0a0a;
+$bg-darker: #050505;
+$panel-bg: rgba(10, 10, 10, 0.95);
+
+// Mixins
+@mixin matrix-glow($color: $matrix-green, $intensity: 1) {
+  text-shadow:
+    0 0 #{5px * $intensity} $color,
+    0 0 #{10px * $intensity} rgba($color, 0.5),
+    0 0 #{20px * $intensity} rgba($color, 0.3);
+}
+
+@mixin panel-glass {
+  background: $panel-bg;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba($matrix-green, 0.3);
+}
+
+// Main wrapper
+.mobile-tower-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: $bg-dark;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+  color: $matrix-green;
+
+  // Prevent pull-to-refresh
+  overscroll-behavior: none;
+}
+
+// Header
+.tower-header {
+  position: relative;
+  z-index: 100;
+  padding: 12px 16px;
+  @include panel-glass;
+  border-bottom: 1px solid rgba($matrix-green, 0.4);
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    @include matrix-glow($matrix-green, 0.8);
+    margin: 0;
+  }
+
+  .desktop-link {
+    background: transparent;
+    border: 1px solid rgba($matrix-green, 0.4);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    svg {
+      width: 20px;
+      height: 20px;
+      color: $matrix-green;
+    }
+
+    &:hover, &:active {
+      background: rgba($matrix-green, 0.1);
+      border-color: $matrix-green;
+    }
+  }
+
+  .header-glow {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      $matrix-green,
+      transparent
+    );
+    opacity: 0.6;
+  }
+}
+
+// Tower container
+.tower-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba($matrix-green, 0.1);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($matrix-green, 0.4);
+    border-radius: 2px;
+  }
+}
+
+.tower-shaft {
+  position: relative;
+  min-height: 100%;
+  padding: 16px;
+  padding-bottom: 100px; // Space for robot panel
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// Background circuits
+.tower-circuits {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.15;
+  background-image:
+    linear-gradient(rgba($matrix-green, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba($matrix-green, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      $bg-dark 0%,
+      transparent 10%,
+      transparent 90%,
+      $bg-dark 100%
+    );
+  }
+}
+
+// Ground base
+.tower-ground {
+  position: relative;
+  height: 60px;
+  margin-top: 20px;
+  border-top: 2px solid $matrix-green;
+
+  .ground-pattern {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba($matrix-green, 0.1) 0px,
+      rgba($matrix-green, 0.1) 2px,
+      transparent 2px,
+      transparent 20px
+    );
+  }
+
+  &::before {
+    content: 'GROUND FLOOR';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: rgba($matrix-green, 0.5);
+  }
+}
+
+// Robot panel
+.robot-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  @include panel-glass;
+  border-top: 1px solid rgba($matrix-green, 0.4);
+  transition: all 0.3s ease;
+
+  &.chat-open {
+    background: rgba(0, 0, 0, 0.98);
+  }
+}
+
+.robot-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.energizing {
+    animation: energize-pulse 0.5s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes energize-pulse {
+  from {
+    filter: brightness(1) drop-shadow(0 0 5px $matrix-green);
+  }
+  to {
+    filter: brightness(1.5) drop-shadow(0 0 20px $matrix-green);
+  }
+}
+
+.floor-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px;
+
+  .floor-label {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    opacity: 0.6;
+  }
+
+  .floor-number {
+    font-size: 1.8rem;
+    font-weight: bold;
+    @include matrix-glow($matrix-green, 0.5);
+  }
+}
+
+.chat-toggle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid rgba($matrix-green, 0.4);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  .chat-icon svg {
+    width: 28px;
+    height: 28px;
+    color: $matrix-green;
+  }
+
+  .chat-label {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: $matrix-green;
+  }
+
+  .chat-pulse {
+    position: absolute;
+    inset: -2px;
+    border: 2px solid $matrix-green;
+    border-radius: 14px;
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  &:hover, &:active {
+    background: rgba($matrix-green, 0.1);
+    border-color: $matrix-green;
+  }
+
+  &.active {
+    background: rgba($matrix-green, 0.2);
+    border-color: $matrix-green;
+
+    .chat-icon svg {
+      fill: rgba($matrix-green, 0.3);
+    }
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+// Chat panel
+.chat-panel {
+  position: fixed;
+  bottom: 100px;
+  left: 0;
+  right: 0;
+  z-index: 85;
+  height: calc(100vh - 200px);
+  @include panel-glass;
+  border-top: 1px solid rgba($matrix-green, 0.4);
+  border-radius: 20px 20px 0 0;
+  transform: translateY(0);
+  transition: all 0.3s ease;
+  animation: slide-up 0.3s ease;
+
+  &.minimized {
+    height: 60px;
+    overflow: hidden;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Ambient particles
+.ambient-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: $matrix-green;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: float-particle 15s linear infinite;
+    animation-delay: var(--delay, 0s);
+
+    &:nth-child(1) { left: 10%; }
+    &:nth-child(2) { left: 25%; }
+    &:nth-child(3) { left: 40%; }
+    &:nth-child(4) { left: 55%; }
+    &:nth-child(5) { left: 70%; }
+    &:nth-child(6) { left: 85%; }
+    &:nth-child(7) { left: 15%; }
+    &:nth-child(8) { left: 75%; }
+  }
+}
+
+@keyframes float-particle {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+    transform: translateY(90vh) scale(1);
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-10vh) scale(0.5);
+    opacity: 0;
+  }
+}
+
+// Responsive adjustments
+@media (max-height: 600px) {
+  .tower-header {
+    padding: 8px 12px;
+
+    .title {
+      font-size: 1.2rem;
+    }
+  }
+
+  .robot-panel {
+    padding: 8px 12px;
+  }
+
+  .robot-container {
+    width: 60px;
+    height: 60px;
+  }
+
+  .floor-indicator .floor-number {
+    font-size: 1.4rem;
+  }
+}
+
+@media (min-width: 768px) {
+  // Tablet optimizations
+  .tower-shaft {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .chat-panel {
+    max-width: 500px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 20px;
+    bottom: 110px;
+    height: calc(100vh - 250px);
+  }
+}

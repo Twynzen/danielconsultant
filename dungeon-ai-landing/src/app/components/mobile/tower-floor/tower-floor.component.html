@@ -1,0 +1,82 @@
+<!-- Tower Floor v7.0 -->
+<div
+  class="tower-floor"
+  [class.active]="isActive"
+  [class.has-robot]="hasRobot"
+  [class.external]="isExternal()"
+  [style]="getGlowStyle()"
+  (touchstart)="onTouchStart($event)"
+  (touchend)="onTouchEnd($event)"
+  (click)="onClick()"
+  (dblclick)="onDoubleClick()"
+>
+  <!-- Floor number indicator -->
+  <div class="floor-number">
+    <span class="number">{{ floorNumber }}</span>
+    <div class="connector"></div>
+  </div>
+
+  <!-- Floor content card -->
+  <div class="floor-card">
+    <!-- Top border with corners -->
+    <div class="card-border top">
+      <span class="corner left"></span>
+      <span class="corner right"></span>
+    </div>
+
+    <!-- Main content -->
+    <div class="floor-content">
+      <!-- Icon -->
+      <div class="floor-icon" [innerHTML]="getIcon()"></div>
+
+      <!-- Info -->
+      <div class="floor-info">
+        <span class="floor-type">{{ getTypeLabel() }}</span>
+        <h3 class="floor-label">{{ floor.label }}</h3>
+        @if (floor.description) {
+          <p class="floor-description">{{ floor.description }}</p>
+        }
+      </div>
+
+      <!-- Action indicator -->
+      <div class="floor-action">
+        @if (isExternal()) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        }
+      </div>
+    </div>
+
+    <!-- Bottom border with corners -->
+    <div class="card-border bottom">
+      <span class="corner left"></span>
+      <span class="corner right"></span>
+    </div>
+
+    <!-- Glow effect on active -->
+    @if (isActive || hasRobot) {
+      <div class="active-glow"></div>
+    }
+
+    <!-- Robot indicator -->
+    @if (hasRobot) {
+      <div class="robot-indicator">
+        <div class="robot-marker"></div>
+        <span class="robot-label">AQUÍ</span>
+      </div>
+    }
+  </div>
+
+  <!-- Connecting line to next floor -->
+  <div class="floor-connector">
+    <div class="connector-line"></div>
+    <div class="connector-pulse"></div>
+  </div>
+</div>

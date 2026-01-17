@@ -1,0 +1,101 @@
+<!-- Mobile Tower Layout v7.0 -->
+<div class="mobile-tower-wrapper">
+
+  <!-- Fixed Header -->
+  <header class="tower-header">
+    <div class="header-content">
+      <h1 class="title">CONSULTOR IA</h1>
+      <button class="desktop-link" (click)="goToDesktop()" aria-label="Ver versión desktop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </button>
+    </div>
+    <div class="header-glow"></div>
+  </header>
+
+  <!-- Scrollable Tower -->
+  <main class="tower-container" #towerContainer>
+    <div class="tower-shaft">
+      <!-- Background circuits -->
+      <div class="tower-circuits"></div>
+
+      <!-- Tower floors -->
+      @for (floor of floors(); track floor.id; let i = $index) {
+        <app-tower-floor
+          [floor]="floor"
+          [floorNumber]="getFloorNumber(i)"
+          [isActive]="activeFloorId() === floor.id"
+          [hasRobot]="isRobotOnFloor(i)"
+          [isRobotMoving]="isRobotMoving()"
+          (floorTapped)="onFloorTapped(floor, i)"
+          (floorActivated)="onFloorActivated(floor)"
+        />
+      }
+
+      <!-- Ground base -->
+      <div class="tower-ground">
+        <div class="ground-pattern"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Fixed Robot Panel -->
+  <footer class="robot-panel" #robotPanel [class.chat-open]="isChatOpen()">
+    <!-- Robot character -->
+    <div class="robot-container" [class.energizing]="isRobotEnergizing()">
+      <app-mobile-robot
+        [isMoving]="isRobotMoving()"
+        [direction]="robotDirection()"
+        [isEnergizing]="isRobotEnergizing()"
+        [currentFloor]="getCurrentFloor()"
+        (robotTapped)="onRobotTap()"
+        (robotDoubleTapped)="onRobotDoubleTap()"
+      />
+    </div>
+
+    <!-- Floor indicator -->
+    <div class="floor-indicator">
+      <span class="floor-label">PISO</span>
+      <span class="floor-number">{{ robotFloorIndex() + 1 }}</span>
+    </div>
+
+    <!-- Chat toggle button -->
+    <button
+      class="chat-toggle"
+      (click)="toggleChat()"
+      [class.active]="isChatOpen()"
+      aria-label="Abrir chat con Sendell"
+    >
+      <div class="chat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>
+        </svg>
+      </div>
+      <span class="chat-label">SENDELL</span>
+      @if (!isChatOpen()) {
+        <div class="chat-pulse"></div>
+      }
+    </button>
+  </footer>
+
+  <!-- Chat Panel (slides up) -->
+  @if (isChatOpen()) {
+    <div class="chat-panel" [class.minimized]="isChatMinimized()">
+      <app-mobile-sendell
+        [isMinimized]="isChatMinimized()"
+        (minimizeChat)="minimizeChat()"
+        (closeChat)="closeChat()"
+      />
+    </div>
+  }
+
+  <!-- Ambient particles -->
+  <div class="ambient-particles">
+    @for (i of [1,2,3,4,5,6,7,8]; track i) {
+      <div class="particle" [style.--delay]="i * 0.5 + 's'"></div>
+    }
+  </div>
+</div>
