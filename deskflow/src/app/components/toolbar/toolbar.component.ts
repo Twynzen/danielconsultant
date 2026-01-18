@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, Input, signal } from '@angular/core';
+import { Component, Output, EventEmitter, Input, signal, ViewEncapsulation, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { SyncService } from '../../services/sync.service';
 import { StorageService } from '../../services/storage.service';
 import { MapService } from '../../services/map.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { DeviceService } from '../../services/device.service';
 import { Desktop } from '../../models/desktop.model';
 import { SyncIndicatorComponent } from '../sync-indicator/sync-indicator.component';
 
@@ -16,7 +17,8 @@ import { SyncIndicatorComponent } from '../sync-indicator/sync-indicator.compone
   standalone: true,
   imports: [CommonModule, FormsModule, SyncIndicatorComponent],
   templateUrl: './toolbar.component.html',
-  styleUrl: './toolbar.component.scss'
+  styleUrl: './toolbar.component.scss',
+  encapsulation: ViewEncapsulation.None
 })
 export class ToolbarComponent {
   @Input() breadcrumb: Desktop[] = [];
@@ -35,6 +37,9 @@ export class ToolbarComponent {
   showUserMenu = signal(false);
   mcpTokenCopied = signal(false);
 
+  // Inyectar DeviceService para detectar mobile
+  private deviceService = inject(DeviceService);
+
   constructor(
     public themeService: ThemeService,
     public authService: AuthService,
@@ -44,6 +49,13 @@ export class ToolbarComponent {
     private supabaseService: SupabaseService,
     private router: Router
   ) {}
+
+  /**
+   * Detecta si estamos en mobile
+   */
+  get isMobile(): boolean {
+    return this.deviceService.isMobile();
+  }
 
   get themes() {
     return this.themeService.availableThemes;

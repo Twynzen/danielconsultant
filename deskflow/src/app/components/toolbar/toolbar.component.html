@@ -1,4 +1,4 @@
-<div class="toolbar cyber-panel">
+<div class="toolbar" [class.cyber-panel]="!isMobile" [class.cyber-panel-mobile]="isMobile">
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     <button
@@ -65,7 +65,7 @@
         </svg>
       </button>
 
-      <div class="theme-picker" *ngIf="showThemePicker()">
+      <div class="theme-picker" *ngIf="showThemePicker()" [class.mobile-panel]="isMobile">
         <div class="theme-picker-header">
           <span class="font-display">TEMA</span>
         </div>
@@ -103,7 +103,7 @@
         </svg>
       </button>
 
-      <div class="menu-dropdown" *ngIf="showMenu()">
+      <div class="menu-dropdown" *ngIf="showMenu()" [class.mobile-panel]="isMobile">
         <div class="menu-section">
           <span class="menu-section-title">Vista</span>
           <button (click)="onToggleStructure()">
@@ -196,7 +196,7 @@
         <span class="user-name">{{ userName }}</span>
       </button>
 
-      <div class="user-dropdown" *ngIf="showUserMenu()">
+      <div class="user-dropdown" *ngIf="showUserMenu()" [class.mobile-panel]="isMobile">
         <div class="user-info">
           <span class="user-email">{{ authService.currentUser()?.email }}</span>
           <span class="user-mode" *ngIf="authService.isOfflineMode()">Modo Offline</span>

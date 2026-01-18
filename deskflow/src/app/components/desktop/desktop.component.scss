@@ -5,6 +5,10 @@
   position: relative;
   overflow: hidden;
   perspective: 1000px;
+
+  @media screen and (max-width: 768px) {
+    perspective: none;
+  }
 }
 
 // ==================== ÁREA DEL ESCRITORIO ====================
@@ -17,6 +21,10 @@
   overflow: hidden;
   transition: transform 0.3s ease, opacity 0.3s ease;
   transform-style: preserve-3d;
+
+  @media screen and (max-width: 768px) {
+    transform-style: flat;
+  }
 
   &.connecting {
     cursor: crosshair;
