@@ -1,22 +1,27 @@
 <!-- Mobile Sendell Chat v8.2 - Terminal Style -->
 <div class="mobile-sendell" [class.minimized]="isMinimized">
 
-  <!-- Terminal Header -->
+  <!-- Terminal Header (simplified) -->
   <header class="terminal-header">
-    <div class="terminal-dots">
-      <span class="dot red" (click)="onClose()"></span>
-      <span class="dot yellow" (click)="onMinimize()"></span>
-      <span class="dot green"></span>
-    </div>
     <div class="terminal-title">
       <span class="title-prefix">//</span>
       <span class="title-text">SENDELL</span>
-      <span class="status-badge">SMART</span>
-    </div>
-    <div class="terminal-status">
       @if (isTyping()) {
-        <span class="typing-indicator">●</span>
+        <span class="typing-indicator">_</span>
       }
+    </div>
+    <div class="header-actions">
+      <button class="action-btn" (click)="onMinimize()" aria-label="Minimizar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <button class="action-btn" (click)="onClose()" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
     </div>
   </header>
 

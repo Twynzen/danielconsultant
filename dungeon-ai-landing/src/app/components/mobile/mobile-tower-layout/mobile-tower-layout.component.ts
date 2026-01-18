@@ -79,6 +79,10 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   selectedFloorId = signal<string | null>(null);
   selectedFloorColor = signal('#00ff44');
 
+  // v8.2: Floor highlight state (after elevator arrives)
+  highlightedFloorId = signal<string | null>(null);
+  private highlightTimeout: any = null;
+
   // Scroll state
   private scrollTimeout: any = null;
   currentScrollFloor = signal(0);
@@ -181,20 +185,63 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   /**
-   * Handle floor tap - move elevator and show info
+   * v8.2: Handle floor tap - two-step interaction
+   * 1st click: Move elevator + highlight floor
+   * 2nd click (when elevator is there): Open modal/link
    */
   onFloorTapped(floor: PillarConfig, index: number): void {
     const currentElevatorIndex = this.elevatorFloorIndex();
+    const isElevatorHere = index === currentElevatorIndex;
 
-    // If elevator not on this floor, move it there
-    if (index !== currentElevatorIndex) {
-      this.moveElevatorToFloor(index);
+    // Clear any pending highlight timeout
+    if (this.highlightTimeout) {
+      clearTimeout(this.highlightTimeout);
     }
 
-    // Set active floor
-    this.activeFloorId.set(floor.id);
+    // If elevator is already here AND floor is highlighted, open modal
+    if (isElevatorHere && this.highlightedFloorId() === floor.id) {
+      this.openFloorContent(floor);
+      return;
+    }
 
-    // Open modal or external link
+    // If elevator not here, move it
+    if (!isElevatorHere) {
+      this.moveElevatorToFloor(index);
+
+      // After elevator arrives (400ms animation), highlight the floor
+      setTimeout(() => {
+        this.highlightFloor(floor);
+      }, 450);
+    } else {
+      // Elevator is here but floor not highlighted yet - highlight it
+      this.highlightFloor(floor);
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * v8.2: Highlight a floor for 2 seconds
+   */
+  private highlightFloor(floor: PillarConfig): void {
+    this.highlightedFloorId.set(floor.id);
+    this.activeFloorId.set(floor.id);
+    this.cdr.markForCheck();
+
+    // Keep highlighted for 2 seconds, then dim if not clicked
+    this.highlightTimeout = setTimeout(() => {
+      // Don't remove highlight if modal is open
+      if (!this.isModalOpen()) {
+        this.highlightedFloorId.set(null);
+        this.cdr.markForCheck();
+      }
+    }, 2000);
+  }
+
+  /**
+   * v8.2: Open floor content (modal or external link)
+   */
+  private openFloorContent(floor: PillarConfig): void {
     if (this.isExternalFloor(floor)) {
       const url = floor.hologramConfig?.externalUrl || floor.destination;
       if (url.startsWith('http')) {
@@ -208,7 +255,6 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
       this.selectedFloorColor.set(floor.color);
       this.isModalOpen.set(true);
     }
-
     this.cdr.markForCheck();
   }
 

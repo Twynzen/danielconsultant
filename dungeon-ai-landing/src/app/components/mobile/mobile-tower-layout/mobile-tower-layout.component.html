@@ -50,8 +50,9 @@
         @for (floor of floors(); track floor.id; let i = $index) {
           <div
             class="floor-card"
-            [class.active]="activeFloorId() === floor.id"
-            [class.has-elevator]="isRobotOnFloor(i)"
+            [class.active]="isRobotOnFloor(i)"
+            [class.highlighted]="highlightedFloorId() === floor.id"
+            [class.dimmed]="!isRobotOnFloor(i)"
             [style.--floor-color]="floor.color"
             (click)="onFloorTapped(floor, i)"
           >
@@ -81,9 +82,9 @@
               }
             </div>
 
-            <!-- Active glow -->
-            @if (activeFloorId() === floor.id || isRobotOnFloor(i)) {
-              <div class="active-glow"></div>
+            <!-- Highlight glow (after elevator arrives) -->
+            @if (highlightedFloorId() === floor.id) {
+              <div class="highlight-glow"></div>
             }
           </div>
         }

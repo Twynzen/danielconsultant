@@ -210,13 +210,13 @@ export class MobileSendellComponent implements OnInit, OnDestroy, AfterViewCheck
   }
 
   /**
-   * Quick actions - v8.1: Updated to match Smart Responses keywords
+   * Quick actions - v8.2: Sin emoticones
    */
   quickActions = [
-    { label: '👋 Hola', query: 'hola' },
-    { label: '📅 Agendar', query: 'agendar' },
-    { label: '🤖 LLMs', query: 'llm local' },
-    { label: '🔍 RAG', query: 'rag' }
+    { label: 'Hola', query: 'hola' },
+    { label: 'Agendar', query: 'agendar' },
+    { label: 'LLMs', query: 'llm local' },
+    { label: 'RAG', query: 'rag' }
   ];
 
   onQuickAction(query: string): void {

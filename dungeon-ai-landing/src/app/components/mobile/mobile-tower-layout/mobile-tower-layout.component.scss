@@ -99,30 +99,31 @@ $panel-bg: rgba(10, 10, 10, 0.95);
   position: relative;
 }
 
-// Elevator shaft (left side)
+// Elevator shaft (left side) - BIGGER v8.2
 .elevator-shaft {
-  width: 24px;
+  width: 36px;
   flex-shrink: 0;
   position: relative;
   background: linear-gradient(
     to right,
-    rgba($matrix-green, 0.05),
+    rgba($matrix-green, 0.08),
     transparent
   );
-  border-right: 1px solid rgba($matrix-green, 0.2);
+  border-right: 1px solid rgba($matrix-green, 0.3);
 }
 
 .shaft-track {
   position: absolute;
-  top: 20px;
-  bottom: 80px;
+  top: 16px;
+  bottom: 70px;
   left: 50%;
-  width: 2px;
-  background: rgba($matrix-green, 0.2);
+  width: 3px;
+  background: rgba($matrix-green, 0.15);
   transform: translateX(-50%);
+  border-radius: 2px;
 }
 
-// Elevator car
+// Elevator car - BIGGER
 .elevator-car {
   position: absolute;
   left: 50%;
@@ -132,65 +133,63 @@ $panel-bg: rgba(10, 10, 10, 0.95);
 
   .car-glow {
     position: absolute;
-    inset: -8px;
+    inset: -12px;
     background: radial-gradient(circle, $matrix-green-glow, transparent);
-    opacity: 0.6;
+    opacity: 0.7;
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
   .car-body {
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
     background: $bg-dark;
     border: 2px solid $matrix-green;
-    border-radius: 4px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 10px $matrix-green-glow;
+    box-shadow: 0 0 12px $matrix-green-glow;
   }
 
   .car-icon {
-    font-size: 8px;
+    font-size: 12px;
     color: $matrix-green;
-    animation: icon-pulse 1.5s ease-in-out infinite;
+    text-shadow: 0 0 8px $matrix-green;
   }
 
   &.moving {
     .car-body {
-      box-shadow: 0 0 20px $matrix-green;
+      box-shadow: 0 0 25px $matrix-green;
+      border-width: 3px;
     }
 
-    .car-icon {
-      animation: icon-pulse 0.3s ease-in-out infinite;
+    .car-glow {
+      animation: pulse-glow 0.4s ease-in-out infinite;
     }
   }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
-@keyframes icon-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-// Track markers
+// Track markers - BIGGER
 .track-marker {
   position: absolute;
   left: 50%;
-  width: 6px;
-  height: 6px;
-  background: rgba($matrix-green, 0.3);
+  width: 8px;
+  height: 8px;
+  background: rgba($matrix-green, 0.2);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   transition: all 0.3s ease;
+  border: 1px solid rgba($matrix-green, 0.3);
 
   &.active {
     background: $matrix-green;
-    box-shadow: 0 0 8px $matrix-green;
+    box-shadow: 0 0 10px $matrix-green;
+    border-color: $matrix-green;
   }
 }
 
@@ -224,7 +223,7 @@ $panel-bg: rgba(10, 10, 10, 0.95);
   gap: 8px;
 }
 
-// Floor cards (simplified)
+// Floor cards (simplified) - v8.2 with dimming
 .floor-card {
   --floor-color: #{$matrix-green};
 
@@ -234,29 +233,99 @@ $panel-bg: rgba(10, 10, 10, 0.95);
   gap: 12px;
   padding: 14px;
   background: rgba(10, 10, 10, 0.8);
-  border: 1px solid rgba($matrix-green, 0.2);
+  border: 1px solid rgba($matrix-green, 0.15);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 
   &:active {
     transform: scale(0.98);
   }
 
-  &.active,
-  &.has-elevator {
-    border-color: var(--floor-color);
-    box-shadow: 0 0 15px rgba(var(--floor-color), 0.3);
+  // Dimmed state (elevator not here)
+  &.dimmed {
+    opacity: 0.5;
 
     .floor-icon {
-      color: var(--floor-color);
-      filter: drop-shadow(0 0 6px var(--floor-color));
+      color: rgba($matrix-green, 0.4);
     }
 
     .floor-label {
-      color: var(--floor-color);
-      text-shadow: 0 0 8px rgba(var(--floor-color), 0.5);
+      color: rgba($matrix-green, 0.6);
     }
+
+    .floor-desc {
+      color: rgba($matrix-green, 0.3);
+    }
+  }
+
+  // Active state (elevator is here)
+  &.active {
+    opacity: 1;
+    border-color: $matrix-green;
+    box-shadow: 0 0 15px $matrix-green-glow;
+
+    .floor-icon {
+      color: $matrix-green;
+      filter: drop-shadow(0 0 6px $matrix-green);
+    }
+
+    .floor-label {
+      color: $matrix-green;
+      text-shadow: 0 0 8px $matrix-green-glow;
+    }
+  }
+
+  // Highlighted state (ready for second click)
+  &.highlighted {
+    opacity: 1;
+    border-color: $matrix-green;
+    box-shadow: 0 0 20px $matrix-green-glow, 0 0 40px rgba($matrix-green, 0.2);
+    animation: highlight-pulse 1s ease-in-out infinite;
+
+    .floor-icon {
+      color: $matrix-green;
+      filter: drop-shadow(0 0 10px $matrix-green);
+    }
+
+    .floor-label {
+      color: $matrix-green;
+      text-shadow: 0 0 12px $matrix-green;
+    }
+
+    .floor-action svg {
+      color: $matrix-green;
+    }
+  }
+}
+
+@keyframes highlight-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px $matrix-green-glow, 0 0 40px rgba($matrix-green, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px $matrix-green, 0 0 60px rgba($matrix-green, 0.3);
+  }
+}
+
+// Highlight glow overlay
+.highlight-glow {
+  position: absolute;
+  inset: -2px;
+  border: 2px solid $matrix-green;
+  border-radius: 10px;
+  pointer-events: none;
+  animation: glow-border 1s ease-in-out infinite;
+}
+
+@keyframes glow-border {
+  0%, 100% {
+    opacity: 0.8;
+    box-shadow: inset 0 0 15px $matrix-green-glow;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: inset 0 0 25px rgba($matrix-green, 0.5);
   }
 }
 
@@ -310,18 +379,6 @@ $panel-bg: rgba(10, 10, 10, 0.95);
     width: 100%;
     height: 100%;
   }
-}
-
-.active-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    rgba($matrix-green, 0.15) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  border-radius: 8px;
 }
 
 // Chat footer

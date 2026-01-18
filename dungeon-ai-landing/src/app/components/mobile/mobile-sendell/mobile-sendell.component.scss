@@ -34,102 +34,71 @@ $bg-dark: #0a0a0a;
   }
 }
 
-// Terminal Header (like desktop)
+// Terminal Header (simplified - no dots)
 .terminal-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: linear-gradient(
-    to bottom,
-    rgba(20, 20, 20, 0.95),
-    rgba(10, 10, 10, 0.95)
-  );
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(10, 10, 10, 0.95);
   border-bottom: 1px solid rgba($matrix-green, 0.3);
 }
 
-.terminal-dots {
-  display: flex;
-  gap: 6px;
-
-  .dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &.red {
-      background: #ff5f56;
-      box-shadow: 0 0 4px rgba(255, 95, 86, 0.5);
-
-      &:active {
-        transform: scale(0.9);
-        box-shadow: 0 0 8px rgba(255, 95, 86, 0.8);
-      }
-    }
-
-    &.yellow {
-      background: #ffbd2e;
-      box-shadow: 0 0 4px rgba(255, 189, 46, 0.5);
-
-      &:active {
-        transform: scale(0.9);
-        box-shadow: 0 0 8px rgba(255, 189, 46, 0.8);
-      }
-    }
-
-    &.green {
-      background: $matrix-green;
-      box-shadow: 0 0 4px $matrix-green-glow;
-      animation: pulse-green 2s ease-in-out infinite;
-    }
-  }
-}
-
-@keyframes pulse-green {
-  0%, 100% {
-    box-shadow: 0 0 4px $matrix-green-glow;
-  }
-  50% {
-    box-shadow: 0 0 10px $matrix-green;
-  }
-}
-
 .terminal-title {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 8px;
 
   .title-prefix {
     color: rgba($matrix-green, 0.5);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
 
   .title-text {
     color: $matrix-green;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: bold;
     letter-spacing: 2px;
     @include matrix-glow(0.5);
   }
 
-  .status-badge {
-    padding: 2px 8px;
-    font-size: 0.6rem;
+  .typing-indicator {
     color: $matrix-green;
-    background: rgba($matrix-green, 0.15);
-    border: 1px solid rgba($matrix-green, 0.4);
-    border-radius: 4px;
-    letter-spacing: 1px;
+    font-weight: bold;
+    animation: blink 0.8s ease-in-out infinite;
   }
 }
 
-.terminal-status {
-  .typing-indicator {
-    color: $matrix-green;
-    animation: blink 1s ease-in-out infinite;
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba($matrix-green, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: rgba($matrix-green, 0.7);
+  }
+
+  &:active {
+    background: rgba($matrix-green, 0.1);
+    border-color: $matrix-green;
+
+    svg {
+      color: $matrix-green;
+    }
   }
 }
 
