@@ -84,10 +84,12 @@
   <!-- Chat Panel (slides up) -->
   @if (isChatOpen()) {
     <div class="chat-panel" [class.minimized]="isChatMinimized()">
+      <!-- v8.1: actionRequested emits when user asks about a service -->
       <app-mobile-sendell
         [isMinimized]="isChatMinimized()"
         (minimizeChat)="minimizeChat()"
         (closeChat)="closeChat()"
+        (actionRequested)="onChatActionRequested($event)"
       />
     </div>
   }

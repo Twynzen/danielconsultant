@@ -18,6 +18,8 @@ import { MobileRobotComponent } from '../mobile-robot/mobile-robot.component';
 import { MobileSendellComponent } from '../mobile-sendell/mobile-sendell.component';
 import { PILLARS, PillarConfig } from '../../../config/pillar.config';
 import { DeviceDetectorService } from '../../../services/device-detector.service';
+// v8.1: Import RobotAction for chat actions
+import { RobotAction } from '../../../config/sendell-ai.config';
 
 /**
  * v7.0: Mobile Tower Layout Component
@@ -306,5 +308,59 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
     const floors = this.floors();
     const index = floors.length - 1 - this.robotFloorIndex();
     return floors[index] || null;
+  }
+
+  /**
+   * v8.1: Handle chat action requests (from Smart Responses)
+   * When user asks about a service, scroll to that floor
+   */
+  onChatActionRequested(action: RobotAction): void {
+    console.log('[MobileTower] Chat action requested:', action);
+
+    if (action.type === 'walk_to_pillar' && action.target) {
+      // Find the floor with this pillar ID
+      const floors = this.floors();
+      const floorIndex = floors.findIndex(f => f.id === action.target);
+
+      if (floorIndex !== -1) {
+        // Calculate the actual floor index (reversed)
+        const targetFloorIndex = floors.length - 1 - floorIndex;
+
+        console.log('[MobileTower] Scrolling to floor:', action.target, 'index:', targetFloorIndex);
+
+        // Move robot to that floor
+        this.moveRobotToFloor(targetFloorIndex);
+
+        // Scroll to that floor
+        this.scrollToFloor(floorIndex);
+
+        // Minimize chat so user can see the floor
+        if (this.isChatOpen()) {
+          setTimeout(() => {
+            this.minimizeChat();
+          }, 500);
+        }
+      }
+    }
+  }
+
+  /**
+   * v8.1: Scroll tower to a specific floor
+   */
+  private scrollToFloor(floorIndex: number): void {
+    if (!this.towerContainer?.nativeElement) return;
+
+    const container = this.towerContainer.nativeElement;
+    const floors = this.floors();
+    const floorHeight = container.scrollHeight / floors.length;
+
+    // Calculate scroll position (from bottom, since tower is reversed)
+    const scrollFromBottom = (floors.length - 1 - floorIndex) * floorHeight;
+    const targetScroll = container.scrollHeight - scrollFromBottom - container.clientHeight;
+
+    container.scrollTo({
+      top: Math.max(0, targetScroll),
+      behavior: 'smooth'
+    });
   }
 }

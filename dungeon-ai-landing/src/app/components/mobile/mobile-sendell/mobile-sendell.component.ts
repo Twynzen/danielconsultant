@@ -15,6 +15,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+// v8.1: Import Smart Responses system
+import { getSmartResponse } from '../../../config/sendell-smart-responses.config';
+import { RobotAction } from '../../../config/sendell-ai.config';
 
 interface ChatMessage {
   id: string;
@@ -43,6 +46,8 @@ export class MobileSendellComponent implements OnInit, OnDestroy, AfterViewCheck
 
   @Output() minimizeChat = new EventEmitter<void>();
   @Output() closeChat = new EventEmitter<void>();
+  // v8.1: Emit action when Smart Response includes walk_to_pillar
+  @Output() actionRequested = new EventEmitter<RobotAction>();
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('inputField') inputField!: ElementRef<HTMLInputElement>;
@@ -55,14 +60,6 @@ export class MobileSendellComponent implements OnInit, OnDestroy, AfterViewCheck
 
   // Scroll tracking
   private shouldScrollToBottom = false;
-
-  // Predefined responses for demo (can be replaced with actual AI service)
-  private responses: { [key: string]: string } = {
-    'hola': 'Hola! Soy Sendell, el asistente de Daniel. ¿En qué puedo ayudarte hoy?',
-    'servicios': 'Daniel ofrece servicios de consultoría en IA: Local LLMs, RAG Systems, Orquestación de Agentes e Integraciones personalizadas. ¿Te interesa alguno en particular?',
-    'contacto': 'Puedes agendar una sesión gratuita de 30 minutos a través de Calendly. ¿Quieres que te lleve al piso de AGENDAR?',
-    'default': 'Interesante pregunta. Te recomiendo explorar los diferentes pisos de la torre para conocer más sobre los servicios de Daniel. ¿Hay algo específico que te gustaría saber?'
-  };
 
   ngOnInit(): void {
     // Initial greeting
@@ -108,17 +105,20 @@ export class MobileSendellComponent implements OnInit, OnDestroy, AfterViewCheck
   }
 
   /**
-   * Simulate AI response
+   * v8.1: Process user message with Smart Responses system
+   * Uses the same keyword-based responses as desktop version
    */
   private simulateResponse(userMessage: string): void {
     this.isTyping.set(true);
     this.cdr.markForCheck();
 
-    // Simulate typing delay
-    const typingDelay = 1000 + Math.random() * 1000;
+    // Small delay for natural feel (instant responses feel robotic)
+    const typingDelay = 300 + Math.random() * 400;
 
     setTimeout(() => {
-      const response = this.getResponse(userMessage.toLowerCase());
+      // v8.1: Use Smart Responses system (same as desktop)
+      const smartResponse = getSmartResponse(userMessage);
+      const response = smartResponse.dialogue;
 
       this.addMessage({
         id: this.generateId(),
@@ -127,26 +127,18 @@ export class MobileSendellComponent implements OnInit, OnDestroy, AfterViewCheck
         timestamp: new Date()
       });
 
+      // v8.1: Emit actions (walk_to_pillar becomes scroll to floor in mobile)
+      for (const action of smartResponse.actions) {
+        if (action.type === 'walk_to_pillar' && action.target) {
+          console.log('[MobileSendell] Action requested:', action);
+          this.actionRequested.emit(action);
+        }
+      }
+
       this.isTyping.set(false);
       this.shouldScrollToBottom = true;
       this.cdr.markForCheck();
     }, typingDelay);
-  }
-
-  /**
-   * Get response based on keywords
-   */
-  private getResponse(message: string): string {
-    if (message.includes('hola') || message.includes('hey') || message.includes('buenas')) {
-      return this.responses['hola'];
-    }
-    if (message.includes('servicio') || message.includes('ofreces') || message.includes('haces')) {
-      return this.responses['servicios'];
-    }
-    if (message.includes('contacto') || message.includes('agendar') || message.includes('reunion')) {
-      return this.responses['contacto'];
-    }
-    return this.responses['default'];
   }
 
   /**
@@ -218,12 +210,13 @@ export class MobileSendellComponent implements OnInit, OnDestroy, AfterViewCheck
   }
 
   /**
-   * Quick actions
+   * Quick actions - v8.1: Updated to match Smart Responses keywords
    */
   quickActions = [
-    { label: 'Servicios', query: 'servicios' },
-    { label: 'Contacto', query: 'contacto' },
-    { label: 'Hola', query: 'hola' }
+    { label: '👋 Hola', query: 'hola' },
+    { label: '📅 Agendar', query: 'agendar' },
+    { label: '🤖 LLMs', query: 'llm local' },
+    { label: '🔍 RAG', query: 'rag' }
   ];
 
   onQuickAction(query: string): void {
