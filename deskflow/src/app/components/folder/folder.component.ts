@@ -3,11 +3,13 @@ import {
   Input,
   Output,
   EventEmitter,
-  signal
+  signal,
+  inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Folder } from '../../models/desktop.model';
+import { DeviceService } from '../../services/device.service';
 
 @Component({
   selector: 'app-folder',
@@ -23,6 +25,8 @@ export class FolderComponent {
   @Output() folderChange = new EventEmitter<Partial<Folder>>();
   @Output() folderDelete = new EventEmitter<void>();
 
+  private deviceService = inject(DeviceService);
+
   isDragging = signal(false);
   isEditing = signal(false);
   showMenu = signal(false);
@@ -30,6 +34,10 @@ export class FolderComponent {
   private dragOffset = { x: 0, y: 0 };
 
   get folderStyle() {
+    // En móvil no aplicar posición absoluta - usar layout de lista
+    if (this.deviceService.isMobile()) {
+      return {};
+    }
     return {
       left: `${this.folder.position.x}px`,
       top: `${this.folder.position.y}px`

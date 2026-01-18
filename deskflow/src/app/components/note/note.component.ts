@@ -7,11 +7,13 @@ import {
   ViewChild,
   HostListener,
   signal,
-  computed
+  computed,
+  inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Note, NoteImage, Position, Size } from '../../models/desktop.model';
+import { DeviceService } from '../../services/device.service';
 
 @Component({
   selector: 'app-note',
@@ -29,6 +31,8 @@ export class NoteComponent {
 
   @ViewChild('contentArea') contentArea!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
+  private deviceService = inject(DeviceService);
 
   isDragging = signal(false);
   isResizing = signal(false);
@@ -48,6 +52,12 @@ export class NoteComponent {
   readonly MAX_HEIGHT = 1200;
 
   get noteStyle() {
+    // En móvil no aplicar posición absoluta ni tamaño fijo - usar layout de lista
+    if (this.deviceService.isMobile()) {
+      return {
+        zIndex: this.note.zIndex
+      };
+    }
     return {
       left: `${this.note.position.x}px`,
       top: `${this.note.position.y}px`,
