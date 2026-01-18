@@ -12,48 +12,40 @@ import {
   AfterViewInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { TowerFloorComponent } from '../tower-floor/tower-floor.component';
-import { MobileRobotComponent } from '../mobile-robot/mobile-robot.component';
 import { MobileSendellComponent } from '../mobile-sendell/mobile-sendell.component';
-import { PILLARS, PillarConfig } from '../../../config/pillar.config';
+import { ModalServiceComponent } from '../../modal-service/modal-service.component';
+import { PILLARS, PillarConfig, PILLAR_ICONS } from '../../../config/pillar.config';
 import { DeviceDetectorService } from '../../../services/device-detector.service';
-// v8.1: Import RobotAction for chat actions
 import { RobotAction } from '../../../config/sendell-ai.config';
 
 /**
- * v7.0: Mobile Tower Layout Component
- * Vertical scrolling tower experience for mobile devices
+ * v8.2: Mobile Tower Layout Component - Elevator Design
+ * Simplified vertical tower with elevator indicator
  *
  * Visual concept:
- * ┌──────────────────────┐
- * │   CONSULTOR IA       │ ← Fixed header
- * ├──────────────────────┤
- * │  ┌─────────────────┐ │
- * │  │   Floor 9       │ │
- * │  │   DESKFLOW      │ │
- * │  └─────────────────┘ │
- * │  ┌─────────────────┐ │
- * │  │   Floor 8       │ │ ← Scrollable tower
- * │  │   NÚVARIZ       │ │
- * │  └─────────────────┘ │
- * │         ...          │
- * │  ┌─────────────────┐ │
- * │  │   Floor 1       │ │
- * │  │   QUIÉN SOY     │ │
- * │  └─────────────────┘ │
- * ├──────────────────────┤
- * │  [Robot] 💬 Chat     │ ← Fixed bottom panel
- * └──────────────────────┘
+ * ┌────────────────────────────┐
+ * │   CONSULTOR IA        [🖥️] │ ← Header
+ * ├────────────────────────────┤
+ * │ ║ ┌──────────────────────┐ │
+ * │ ◆ │  DESKFLOW            │ │ ← Elevator + Floor
+ * │ ║ └──────────────────────┘ │
+ * │ ║ ┌──────────────────────┐ │
+ * │ ● │  NÚVARIZ             │ │ ← Track marker
+ * │ ║ └──────────────────────┘ │
+ * │ ║         ...              │
+ * ├────────────────────────────┤
+ * │  [💬 CHAT CON SENDELL]     │ ← Footer button
+ * └────────────────────────────┘
  */
 @Component({
   selector: 'app-mobile-tower-layout',
   standalone: true,
   imports: [
     CommonModule,
-    TowerFloorComponent,
-    MobileRobotComponent,
-    MobileSendellComponent
+    MobileSendellComponent,
+    ModalServiceComponent
   ],
   templateUrl: './mobile-tower-layout.component.html',
   styleUrls: ['./mobile-tower-layout.component.scss'],
@@ -63,9 +55,9 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private deviceDetector = inject(DeviceDetectorService);
+  private sanitizer = inject(DomSanitizer);
 
   @ViewChild('towerContainer') towerContainer!: ElementRef<HTMLDivElement>;
-  @ViewChild('robotPanel') robotPanel!: ElementRef<HTMLDivElement>;
 
   // Tower floors (pillars in reverse order - bottom to top)
   floors = signal<PillarConfig[]>([]);
@@ -73,8 +65,8 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   // Current active floor
   activeFloorId = signal<string | null>(null);
 
-  // Robot state
-  robotFloorIndex = signal(0); // Which floor the robot is on (0 = ground floor)
+  // Elevator state (which floor index the elevator is on)
+  elevatorFloorIndex = signal(0);
   isRobotMoving = signal(false);
   robotDirection = signal<'up' | 'down' | 'idle'>('idle');
 
@@ -82,20 +74,25 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   isChatOpen = signal(false);
   isChatMinimized = signal(false);
 
+  // Modal state
+  isModalOpen = signal(false);
+  selectedFloorId = signal<string | null>(null);
+  selectedFloorColor = signal('#00ff44');
+
   // Scroll state
   private scrollTimeout: any = null;
   currentScrollFloor = signal(0);
 
-  // Animation state
-  isRobotEnergizing = signal(false);
+  // For backwards compatibility
+  robotFloorIndex = computed(() => this.floors().length - 1 - this.elevatorFloorIndex());
 
   ngOnInit(): void {
     // Reverse pillars for tower (first pillar = ground floor, last = top floor)
     const reversedPillars = [...PILLARS].reverse();
     this.floors.set(reversedPillars);
 
-    // Start robot at ground floor (last item in reversed array = "QUIÉN SOY")
-    this.robotFloorIndex.set(reversedPillars.length - 1);
+    // Start elevator at ground floor (bottom = last in reversed array)
+    this.elevatorFloorIndex.set(reversedPillars.length - 1);
   }
 
   ngAfterViewInit(): void {
@@ -131,7 +128,7 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
     const containerHeight = container.clientHeight;
     const scrollHeight = container.scrollHeight;
 
-    // Calculate which floor is in view (reversed because we scroll from bottom)
+    // Calculate which floor is in view
     const floors = this.floors();
     const floorHeight = scrollHeight / floors.length;
     const scrollFromBottom = scrollHeight - scrollTop - containerHeight;
@@ -153,81 +150,98 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   private updateActiveFloor(floorIndex: number): void {
     const floors = this.floors();
     if (floorIndex >= 0 && floorIndex < floors.length) {
-      const floor = floors[floors.length - 1 - floorIndex]; // Reverse index
+      const floor = floors[floors.length - 1 - floorIndex];
       this.activeFloorId.set(floor.id);
       this.cdr.markForCheck();
     }
   }
 
   /**
-   * Handle floor tap - robot moves to that floor
+   * Get elevator position as percentage (0% = top, 100% = bottom)
    */
-  onFloorTapped(floor: PillarConfig, index: number): void {
-    // Index in reversed array
-    const targetFloorIndex = this.floors().length - 1 - index;
-    const currentIndex = this.robotFloorIndex();
-
-    if (targetFloorIndex === currentIndex) {
-      // Already on this floor - activate/enter
-      this.onFloorActivated(floor);
-      return;
-    }
-
-    // Move robot to floor
-    this.moveRobotToFloor(targetFloorIndex);
-  }
-
-  private moveRobotToFloor(targetIndex: number): void {
-    const currentIndex = this.robotFloorIndex();
-
-    if (targetIndex === currentIndex) return;
-
-    // Set movement direction
-    this.robotDirection.set(targetIndex < currentIndex ? 'up' : 'down');
-    this.isRobotMoving.set(true);
-
-    // Animate movement (step by step)
-    const step = targetIndex < currentIndex ? -1 : 1;
-    const moveStep = () => {
-      const current = this.robotFloorIndex();
-      if (current !== targetIndex) {
-        this.robotFloorIndex.set(current + step);
-        this.cdr.markForCheck();
-        setTimeout(moveStep, 200); // 200ms per floor
-      } else {
-        this.isRobotMoving.set(false);
-        this.robotDirection.set('idle');
-        this.cdr.markForCheck();
-      }
-    };
-
-    setTimeout(moveStep, 50);
+  getElevatorPosition(): number {
+    const floors = this.floors();
+    if (floors.length <= 1) return 0;
+    return (this.elevatorFloorIndex() / (floors.length - 1)) * 100;
   }
 
   /**
-   * Activate floor (open modal/external link)
+   * Get SVG icon for a floor
    */
-  onFloorActivated(floor: PillarConfig): void {
-    // Handle different pillar types
-    if (floor.type === 'external' || floor.hologramConfig?.externalUrl) {
+  getFloorIcon(floor: PillarConfig): SafeHtml {
+    const iconSvg = PILLAR_ICONS[floor.icon] || PILLAR_ICONS['globe'];
+    return this.sanitizer.bypassSecurityTrustHtml(iconSvg);
+  }
+
+  /**
+   * Check if floor is external link
+   */
+  isExternalFloor(floor: PillarConfig): boolean {
+    return floor.type === 'external' || !!floor.hologramConfig?.externalUrl;
+  }
+
+  /**
+   * Handle floor tap - move elevator and show info
+   */
+  onFloorTapped(floor: PillarConfig, index: number): void {
+    const currentElevatorIndex = this.elevatorFloorIndex();
+
+    // If elevator not on this floor, move it there
+    if (index !== currentElevatorIndex) {
+      this.moveElevatorToFloor(index);
+    }
+
+    // Set active floor
+    this.activeFloorId.set(floor.id);
+
+    // Open modal or external link
+    if (this.isExternalFloor(floor)) {
       const url = floor.hologramConfig?.externalUrl || floor.destination;
       if (url.startsWith('http')) {
         window.open(url, '_blank');
       } else {
         this.router.navigate([url]);
       }
-      return;
+    } else {
+      // Open service info modal
+      this.selectedFloorId.set(floor.id);
+      this.selectedFloorColor.set(floor.color);
+      this.isModalOpen.set(true);
     }
 
-    // For modal/hologram types, trigger energization animation
-    this.isRobotEnergizing.set(true);
+    this.cdr.markForCheck();
+  }
 
+  /**
+   * Move elevator to a specific floor index
+   */
+  private moveElevatorToFloor(targetIndex: number): void {
+    const currentIndex = this.elevatorFloorIndex();
+
+    if (targetIndex === currentIndex) return;
+
+    // Set movement state
+    this.robotDirection.set(targetIndex < currentIndex ? 'up' : 'down');
+    this.isRobotMoving.set(true);
+
+    // Animate movement (smooth transition via CSS, instant state change)
+    this.elevatorFloorIndex.set(targetIndex);
+
+    // Reset moving state after animation
     setTimeout(() => {
-      this.activeFloorId.set(floor.id);
-      this.isRobotEnergizing.set(false);
+      this.isRobotMoving.set(false);
+      this.robotDirection.set('idle');
       this.cdr.markForCheck();
-      // TODO: Open modal with floor details
-    }, 1500);
+    }, 400);
+  }
+
+  /**
+   * Close the service info modal
+   */
+  closeModal(): void {
+    this.isModalOpen.set(false);
+    this.selectedFloorId.set(null);
+    this.cdr.markForCheck();
   }
 
   /**
@@ -260,38 +274,10 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   /**
-   * Handle robot double-tap
-   */
-  onRobotDoubleTap(): void {
-    if (!this.isChatOpen()) {
-      this.isChatOpen.set(true);
-      this.isChatMinimized.set(false);
-    }
-    this.cdr.markForCheck();
-  }
-
-  /**
-   * Handle robot single tap
-   */
-  onRobotTap(): void {
-    if (this.isChatOpen() && !this.isChatMinimized()) {
-      this.minimizeChat();
-    }
-  }
-
-  /**
-   * Get floor display number (1-based, from bottom)
-   */
-  getFloorNumber(index: number): number {
-    return this.floors().length - index;
-  }
-
-  /**
-   * Check if robot is on this floor
+   * Check if elevator is on this floor
    */
   isRobotOnFloor(index: number): boolean {
-    const floorIndex = this.floors().length - 1 - index;
-    return this.robotFloorIndex() === floorIndex;
+    return this.elevatorFloorIndex() === index;
   }
 
   /**
@@ -302,34 +288,29 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   /**
-   * Get current floor for robot
+   * Get current floor for elevator
    */
   getCurrentFloor(): PillarConfig | null {
     const floors = this.floors();
-    const index = floors.length - 1 - this.robotFloorIndex();
+    const index = this.elevatorFloorIndex();
     return floors[index] || null;
   }
 
   /**
    * v8.1: Handle chat action requests (from Smart Responses)
-   * When user asks about a service, scroll to that floor
    */
   onChatActionRequested(action: RobotAction): void {
     console.log('[MobileTower] Chat action requested:', action);
 
     if (action.type === 'walk_to_pillar' && action.target) {
-      // Find the floor with this pillar ID
       const floors = this.floors();
       const floorIndex = floors.findIndex(f => f.id === action.target);
 
       if (floorIndex !== -1) {
-        // Calculate the actual floor index (reversed)
-        const targetFloorIndex = floors.length - 1 - floorIndex;
+        console.log('[MobileTower] Moving elevator to floor:', action.target, 'index:', floorIndex);
 
-        console.log('[MobileTower] Scrolling to floor:', action.target, 'index:', targetFloorIndex);
-
-        // Move robot to that floor
-        this.moveRobotToFloor(targetFloorIndex);
+        // Move elevator to that floor
+        this.moveElevatorToFloor(floorIndex);
 
         // Scroll to that floor
         this.scrollToFloor(floorIndex);
@@ -345,7 +326,7 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   /**
-   * v8.1: Scroll tower to a specific floor
+   * Scroll tower to a specific floor
    */
   private scrollToFloor(floorIndex: number): void {
     if (!this.towerContainer?.nativeElement) return;
@@ -354,7 +335,7 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
     const floors = this.floors();
     const floorHeight = container.scrollHeight / floors.length;
 
-    // Calculate scroll position (from bottom, since tower is reversed)
+    // Calculate scroll position
     const scrollFromBottom = (floors.length - 1 - floorIndex) * floorHeight;
     const targetScroll = container.scrollHeight - scrollFromBottom - container.clientHeight;
 

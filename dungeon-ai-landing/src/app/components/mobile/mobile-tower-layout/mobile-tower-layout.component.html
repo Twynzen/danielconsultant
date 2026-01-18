@@ -1,4 +1,4 @@
-<!-- Mobile Tower Layout v7.0 -->
+<!-- Mobile Tower Layout v8.2 - Elevator Design -->
 <div class="mobile-tower-wrapper">
 
   <!-- Fixed Header -->
@@ -16,65 +16,94 @@
     <div class="header-glow"></div>
   </header>
 
-  <!-- Scrollable Tower -->
-  <main class="tower-container" #towerContainer>
-    <div class="tower-shaft">
-      <!-- Background circuits -->
-      <div class="tower-circuits"></div>
+  <!-- Main Tower Area with Elevator -->
+  <main class="tower-main">
+    <!-- Elevator Shaft (left side) -->
+    <div class="elevator-shaft">
+      <div class="shaft-track">
+        <!-- Elevator car (Sendell indicator) -->
+        <div
+          class="elevator-car"
+          [class.moving]="isRobotMoving()"
+          [style.top.%]="getElevatorPosition()"
+        >
+          <div class="car-glow"></div>
+          <div class="car-body">
+            <span class="car-icon">◆</span>
+          </div>
+        </div>
+        <!-- Track markers -->
+        @for (floor of floors(); track floor.id; let i = $index) {
+          <div
+            class="track-marker"
+            [class.active]="isRobotOnFloor(i)"
+            [style.top.%]="(i / (floors().length - 1)) * 100"
+          ></div>
+        }
+      </div>
+    </div>
 
-      <!-- Tower floors -->
-      @for (floor of floors(); track floor.id; let i = $index) {
-        <app-tower-floor
-          [floor]="floor"
-          [floorNumber]="getFloorNumber(i)"
-          [isActive]="activeFloorId() === floor.id"
-          [hasRobot]="isRobotOnFloor(i)"
-          [isRobotMoving]="isRobotMoving()"
-          (floorTapped)="onFloorTapped(floor, i)"
-          (floorActivated)="onFloorActivated(floor)"
-        />
-      }
+    <!-- Scrollable Tower Floors -->
+    <div class="tower-container" #towerContainer>
+      <div class="tower-shaft">
+        <!-- Tower floors (simplified) -->
+        @for (floor of floors(); track floor.id; let i = $index) {
+          <div
+            class="floor-card"
+            [class.active]="activeFloorId() === floor.id"
+            [class.has-elevator]="isRobotOnFloor(i)"
+            [style.--floor-color]="floor.color"
+            (click)="onFloorTapped(floor, i)"
+          >
+            <!-- Icon -->
+            <div class="floor-icon" [innerHTML]="getFloorIcon(floor)"></div>
 
-      <!-- Ground base -->
-      <div class="tower-ground">
-        <div class="ground-pattern"></div>
+            <!-- Info -->
+            <div class="floor-info">
+              <h3 class="floor-label">{{ floor.label }}</h3>
+              @if (floor.description) {
+                <p class="floor-desc">{{ floor.description }}</p>
+              }
+            </div>
+
+            <!-- Arrow / External indicator -->
+            <div class="floor-action">
+              @if (isExternalFloor(floor)) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              }
+            </div>
+
+            <!-- Active glow -->
+            @if (activeFloorId() === floor.id || isRobotOnFloor(i)) {
+              <div class="active-glow"></div>
+            }
+          </div>
+        }
       </div>
     </div>
   </main>
 
-  <!-- Fixed Robot Panel -->
-  <footer class="robot-panel" #robotPanel [class.chat-open]="isChatOpen()">
-    <!-- Robot character -->
-    <div class="robot-container" [class.energizing]="isRobotEnergizing()">
-      <app-mobile-robot
-        [isMoving]="isRobotMoving()"
-        [direction]="robotDirection()"
-        [isEnergizing]="isRobotEnergizing()"
-        [currentFloor]="getCurrentFloor()"
-        (robotTapped)="onRobotTap()"
-        (robotDoubleTapped)="onRobotDoubleTap()"
-      />
-    </div>
-
-    <!-- Floor indicator -->
-    <div class="floor-indicator">
-      <span class="floor-label">PISO</span>
-      <span class="floor-number">{{ robotFloorIndex() + 1 }}</span>
-    </div>
-
-    <!-- Chat toggle button -->
+  <!-- Bottom Chat Button (simplified) -->
+  <footer class="chat-footer">
     <button
-      class="chat-toggle"
+      class="chat-button"
       (click)="toggleChat()"
       [class.active]="isChatOpen()"
-      aria-label="Abrir chat con Sendell"
     >
       <div class="chat-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>
         </svg>
       </div>
-      <span class="chat-label">SENDELL</span>
+      <span class="chat-text">CHAT CON SENDELL</span>
       @if (!isChatOpen()) {
         <div class="chat-pulse"></div>
       }
@@ -84,7 +113,6 @@
   <!-- Chat Panel (slides up) -->
   @if (isChatOpen()) {
     <div class="chat-panel" [class.minimized]="isChatMinimized()">
-      <!-- v8.1: actionRequested emits when user asks about a service -->
       <app-mobile-sendell
         [isMinimized]="isChatMinimized()"
         (minimizeChat)="minimizeChat()"
@@ -94,10 +122,20 @@
     </div>
   }
 
-  <!-- Ambient particles -->
+  <!-- Service Info Modal -->
+  @if (isModalOpen()) {
+    <app-modal-service
+      [serviceId]="selectedFloorId()"
+      [isOpen]="isModalOpen()"
+      [serviceColor]="selectedFloorColor()"
+      (closeModal)="closeModal()"
+    />
+  }
+
+  <!-- Ambient particles (reduced) -->
   <div class="ambient-particles">
-    @for (i of [1,2,3,4,5,6,7,8]; track i) {
-      <div class="particle" [style.--delay]="i * 0.5 + 's'"></div>
+    @for (i of [1,2,3,4]; track i) {
+      <div class="particle" [style.--delay]="i * 1 + 's'"></div>
     }
   </div>
 </div>

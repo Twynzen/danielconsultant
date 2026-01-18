@@ -1,11 +1,18 @@
 /**
- * Mobile Sendell Chat Styles v7.0
- * Matrix-themed chat interface for mobile
+ * Mobile Sendell Chat Styles v8.2
+ * Terminal-style chat interface matching desktop
  */
 
 $matrix-green: #00ff44;
 $matrix-green-dark: #00cc33;
+$matrix-green-glow: rgba(0, 255, 68, 0.4);
 $bg-dark: #0a0a0a;
+
+@mixin matrix-glow($intensity: 1) {
+  text-shadow:
+    0 0 #{5px * $intensity} $matrix-green,
+    0 0 #{10px * $intensity} rgba($matrix-green, 0.5);
+}
 
 :host {
   display: block;
@@ -18,123 +25,117 @@ $bg-dark: #0a0a0a;
   height: 100%;
   background: rgba(5, 5, 5, 0.98);
   font-family: 'Courier New', monospace;
+  border: 1px solid rgba($matrix-green, 0.3);
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
 
   &.minimized {
     height: auto;
   }
 }
 
-// Header
-.chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba($matrix-green, 0.3);
-  background: rgba(10, 10, 10, 0.95);
-}
-
-.header-left {
+// Terminal Header (like desktop)
+.terminal-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(
+    to bottom,
+    rgba(20, 20, 20, 0.95),
+    rgba(10, 10, 10, 0.95)
+  );
+  border-bottom: 1px solid rgba($matrix-green, 0.3);
 }
 
-.sendell-avatar {
-  position: relative;
-  width: 40px;
-  height: 40px;
+.terminal-dots {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba($matrix-green, 0.2);
-  border: 1px solid $matrix-green;
-  border-radius: 50%;
+  gap: 6px;
 
-  .avatar-icon {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: $matrix-green;
-    text-shadow: 0 0 10px $matrix-green;
-  }
-
-  .status-dot {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 10px;
-    height: 10px;
-    background: $matrix-green;
-    border: 2px solid $bg-dark;
+  .dot {
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-  }
-}
+    cursor: pointer;
+    transition: all 0.2s ease;
 
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba($matrix-green, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba($matrix-green, 0);
-  }
-}
+    &.red {
+      background: #ff5f56;
+      box-shadow: 0 0 4px rgba(255, 95, 86, 0.5);
 
-.header-info {
-  display: flex;
-  flex-direction: column;
-}
+      &:active {
+        transform: scale(0.9);
+        box-shadow: 0 0 8px rgba(255, 95, 86, 0.8);
+      }
+    }
 
-.header-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: bold;
-  color: $matrix-green;
-  letter-spacing: 2px;
-}
+    &.yellow {
+      background: #ffbd2e;
+      box-shadow: 0 0 4px rgba(255, 189, 46, 0.5);
 
-.header-status {
-  font-size: 0.7rem;
-  color: rgba($matrix-green, 0.6);
-  letter-spacing: 1px;
-}
+      &:active {
+        transform: scale(0.9);
+        box-shadow: 0 0 8px rgba(255, 189, 46, 0.8);
+      }
+    }
 
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid rgba($matrix-green, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  svg {
-    width: 18px;
-    height: 18px;
-    color: $matrix-green;
-  }
-
-  &:hover, &:active {
-    background: rgba($matrix-green, 0.1);
-    border-color: $matrix-green;
-  }
-
-  &.close:hover, &.close:active {
-    background: rgba(255, 50, 50, 0.1);
-    border-color: #ff3232;
-
-    svg {
-      color: #ff3232;
+    &.green {
+      background: $matrix-green;
+      box-shadow: 0 0 4px $matrix-green-glow;
+      animation: pulse-green 2s ease-in-out infinite;
     }
   }
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 4px $matrix-green-glow;
+  }
+  50% {
+    box-shadow: 0 0 10px $matrix-green;
+  }
+}
+
+.terminal-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .title-prefix {
+    color: rgba($matrix-green, 0.5);
+    font-size: 0.85rem;
+  }
+
+  .title-text {
+    color: $matrix-green;
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    @include matrix-glow(0.5);
+  }
+
+  .status-badge {
+    padding: 2px 8px;
+    font-size: 0.6rem;
+    color: $matrix-green;
+    background: rgba($matrix-green, 0.15);
+    border: 1px solid rgba($matrix-green, 0.4);
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+}
+
+.terminal-status {
+  .typing-indicator {
+    color: $matrix-green;
+    animation: blink 1s ease-in-out infinite;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 // Chat body
@@ -143,6 +144,7 @@ $bg-dark: #0a0a0a;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: rgba(5, 5, 5, 0.95);
 }
 
 .messages-container {
@@ -153,17 +155,16 @@ $bg-dark: #0a0a0a;
   flex-direction: column;
   gap: 12px;
 
-  // Custom scrollbar
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
   }
 
   &::-webkit-scrollbar-track {
-    background: rgba($matrix-green, 0.1);
+    background: rgba($matrix-green, 0.05);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba($matrix-green, 0.4);
+    background: rgba($matrix-green, 0.3);
     border-radius: 2px;
   }
 }
@@ -171,92 +172,75 @@ $bg-dark: #0a0a0a;
 // Messages
 .message {
   display: flex;
-  max-width: 85%;
+  align-items: flex-start;
+  gap: 8px;
 
   &.user {
-    align-self: flex-end;
+    justify-content: flex-end;
 
-    .message-bubble {
-      background: rgba($matrix-green, 0.2);
-      border-color: $matrix-green;
+    .message-content {
+      background: rgba($matrix-green, 0.15);
+      border-color: rgba($matrix-green, 0.5);
+    }
+
+    .message-text {
+      color: $matrix-green;
     }
   }
 
   &.sendell {
-    align-self: flex-start;
+    justify-content: flex-start;
 
-    .message-bubble {
-      background: rgba(30, 30, 30, 0.8);
-      border-color: rgba($matrix-green, 0.4);
+    .message-content {
+      background: rgba(15, 15, 15, 0.9);
+      border-color: rgba($matrix-green, 0.3);
     }
   }
 }
 
-.message-bubble {
-  padding: 12px 16px;
+.message-prefix {
+  color: $matrix-green;
+  font-size: 0.9rem;
+  font-weight: bold;
+  opacity: 0.7;
+  flex-shrink: 0;
+  margin-top: 10px;
+}
+
+.message-content {
+  max-width: 80%;
+  padding: 10px 14px;
   border: 1px solid;
-  border-radius: 16px;
-  position: relative;
+  border-radius: 8px;
 }
 
 .message-text {
-  margin: 0 0 4px 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
   color: $matrix-green;
 }
 
-.message-time {
-  display: block;
-  font-size: 0.65rem;
-  color: rgba($matrix-green, 0.5);
-  text-align: right;
-}
-
 // Typing indicator
-.typing .message-bubble {
-  padding: 16px 24px;
+.cursor-blink {
+  color: $matrix-green;
+  font-size: 1rem;
+  animation: cursor-blink 0.8s ease-in-out infinite;
 }
 
-.typing-dots {
-  display: flex;
-  gap: 4px;
-
-  span {
-    width: 8px;
-    height: 8px;
-    background: $matrix-green;
-    border-radius: 50%;
-    animation: typing-bounce 1.4s ease-in-out infinite;
-
-    &:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    &:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-  }
-}
-
-@keyframes typing-bounce {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: 0.5;
-  }
-  30% {
-    transform: translateY(-8px);
-    opacity: 1;
-  }
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 // Quick actions
 .quick-actions {
   display: flex;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  border-top: 1px solid rgba($matrix-green, 0.2);
 
   &::-webkit-scrollbar {
     display: none;
@@ -265,83 +249,88 @@ $bg-dark: #0a0a0a;
 
 .quick-btn {
   flex-shrink: 0;
-  padding: 8px 16px;
+  padding: 8px 14px;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: $matrix-green;
-  background: transparent;
-  border: 1px solid rgba($matrix-green, 0.4);
-  border-radius: 20px;
+  background: rgba($matrix-green, 0.1);
+  border: 1px solid rgba($matrix-green, 0.3);
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 
-  &:hover, &:active {
-    background: rgba($matrix-green, 0.1);
+  &:active {
+    background: rgba($matrix-green, 0.2);
     border-color: $matrix-green;
+    transform: scale(0.98);
   }
 }
 
 // Input area
 .chat-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 16px;
   border-top: 1px solid rgba($matrix-green, 0.3);
   background: rgba(10, 10, 10, 0.95);
 }
 
-.input-container {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.input-prompt {
+  color: $matrix-green;
+  font-size: 1rem;
+  font-weight: bold;
+  @include matrix-glow(0.5);
 }
 
 .input-field {
   flex: 1;
-  padding: 12px 16px;
+  padding: 10px 14px;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: $matrix-green;
-  background: rgba(20, 20, 20, 0.8);
+  background: rgba(15, 15, 15, 0.8);
   border: 1px solid rgba($matrix-green, 0.3);
-  border-radius: 24px;
+  border-radius: 6px;
   outline: none;
   transition: all 0.2s ease;
 
   &::placeholder {
-    color: rgba($matrix-green, 0.4);
+    color: rgba($matrix-green, 0.3);
   }
 
   &:focus {
     border-color: $matrix-green;
-    box-shadow: 0 0 10px rgba($matrix-green, 0.2);
+    box-shadow: 0 0 8px rgba($matrix-green, 0.2);
   }
 }
 
 .send-btn {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $matrix-green;
-  border: none;
-  border-radius: 50%;
+  background: rgba($matrix-green, 0.2);
+  border: 1px solid $matrix-green;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   svg {
-    width: 20px;
-    height: 20px;
-    color: $bg-dark;
+    width: 18px;
+    height: 18px;
+    color: $matrix-green;
   }
 
-  &:hover, &:active {
-    background: $matrix-green-dark;
-    transform: scale(1.05);
+  &:active {
+    background: rgba($matrix-green, 0.3);
+    transform: scale(0.95);
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.3;
     cursor: not-allowed;
     transform: none;
   }
@@ -349,17 +338,18 @@ $bg-dark: #0a0a0a;
 
 // Responsive
 @media (max-height: 500px) {
-  .chat-header {
+  .terminal-header {
     padding: 8px 12px;
   }
 
-  .sendell-avatar {
-    width: 32px;
-    height: 32px;
+  .terminal-dots .dot {
+    width: 10px;
+    height: 10px;
   }
 
   .messages-container {
-    padding: 12px;
+    padding: 10px;
+    gap: 8px;
   }
 
   .chat-input {
