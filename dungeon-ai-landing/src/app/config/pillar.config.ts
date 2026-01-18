@@ -248,6 +248,7 @@ export const PILLARS: PillarConfig[] = [
     }
   },
   // v6.3: DeskFlow - App de escritorios virtuales
+  // v8.6: Fixed external URL for mobile navigation
   {
     id: 'deskflow',
     label: 'DESKFLOW',
@@ -256,7 +257,11 @@ export const PILLARS: PillarConfig[] = [
     destination: '/deskflow',
     color: '#aa00ff',
     worldX: 5800,
-    description: 'DeskFlow - Escritorios virtuales inteligentes'
+    description: 'DeskFlow - Escritorios virtuales inteligentes',
+    hologramConfig: {
+      hasModal: false,
+      externalUrl: 'https://danielconsultant.dev/deskflow'
+    }
   }
 ];
 
