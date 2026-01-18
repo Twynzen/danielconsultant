@@ -1,0 +1,50 @@
+<!-- Mobile Robot v7.0 -->
+<div
+  class="mobile-robot"
+  [class.moving]="isMoving"
+  [class.energizing]="isEnergizing"
+  [class.moving-up]="direction === 'up'"
+  [class.moving-down]="direction === 'down'"
+  [style.--floor-color]="getFloorColor()"
+  (click)="onTap()"
+  (touchend)="onTap()"
+>
+  <!-- Robot grid -->
+  <div class="robot-grid">
+    @for (row of robotGrid; track $index; let rowIndex = $index) {
+      <div class="robot-row">
+        @for (cell of row; track $index; let colIndex = $index) {
+          <span
+            [class]="getCellClass(rowIndex, colIndex)"
+            [class.blinking]="cell === '@' && isBlinking()"
+          >
+            {{ getChar(rowIndex, colIndex) }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Movement indicator -->
+  @if (isMoving) {
+    <div class="movement-trail">
+      @if (direction === 'up') {
+        <div class="trail-arrow up">▲</div>
+      } @else if (direction === 'down') {
+        <div class="trail-arrow down">▼</div>
+      }
+    </div>
+  }
+
+  <!-- Energizing particles -->
+  @if (isEnergizing) {
+    <div class="energy-particles">
+      @for (i of [1,2,3,4,5,6,7,8]; track i) {
+        <div class="particle" [style.--i]="i"></div>
+      }
+    </div>
+  }
+
+  <!-- Glow effect -->
+  <div class="robot-glow"></div>
+</div>

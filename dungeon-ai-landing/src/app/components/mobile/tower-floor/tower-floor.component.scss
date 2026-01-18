@@ -1,0 +1,306 @@
+/**
+ * Tower Floor Styles v7.0
+ * Individual floor card in the mobile tower
+ */
+
+// Variables
+$matrix-green: #00ff44;
+
+// Host binding for custom properties
+:host {
+  display: block;
+  --floor-color: #{$matrix-green};
+  --floor-glow: rgba(0, 255, 68, 0.5);
+}
+
+.tower-floor {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  // Active state
+  &.active, &.has-robot {
+    .floor-card {
+      border-color: var(--floor-color);
+      box-shadow: 0 0 20px var(--floor-glow);
+    }
+
+    .floor-icon {
+      color: var(--floor-color);
+      filter: drop-shadow(0 0 8px var(--floor-color));
+    }
+
+    .floor-label {
+      color: var(--floor-color);
+      text-shadow: 0 0 10px var(--floor-glow);
+    }
+  }
+
+  // External link styling
+  &.external {
+    .floor-action svg {
+      color: var(--floor-color);
+    }
+  }
+}
+
+// Floor number
+.floor-number {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 32px;
+  flex-shrink: 0;
+
+  .number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--floor-color);
+    border: 1px solid rgba($matrix-green, 0.4);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .connector {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(
+      to bottom,
+      var(--floor-color),
+      transparent
+    );
+    margin-top: 4px;
+  }
+}
+
+// Floor card
+.floor-card {
+  position: relative;
+  flex: 1;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba($matrix-green, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+// Card borders with corners
+.card-border {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  display: flex;
+  justify-content: space-between;
+
+  &.top {
+    top: 0;
+  }
+
+  &.bottom {
+    bottom: 0;
+  }
+
+  .corner {
+    width: 12px;
+    height: 12px;
+    border: 1px solid rgba($matrix-green, 0.5);
+
+    &.left {
+      border-right: none;
+      border-bottom: none;
+    }
+
+    &.right {
+      border-left: none;
+      border-bottom: none;
+    }
+  }
+
+  &.bottom .corner {
+    &.left {
+      border-right: none;
+      border-top: none;
+      border-bottom: 1px solid rgba($matrix-green, 0.5);
+    }
+
+    &.right {
+      border-left: none;
+      border-top: none;
+      border-bottom: 1px solid rgba($matrix-green, 0.5);
+    }
+  }
+}
+
+// Floor content
+.floor-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+// Icon
+.floor-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  color: rgba($matrix-green, 0.7);
+  transition: all 0.3s ease;
+
+  :deep(svg) {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Info
+.floor-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.floor-type {
+  display: inline-block;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  color: rgba($matrix-green, 0.5);
+  padding: 2px 6px;
+  border: 1px solid rgba($matrix-green, 0.3);
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.floor-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: $matrix-green;
+  margin: 0 0 4px 0;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floor-description {
+  font-size: 0.75rem;
+  color: rgba($matrix-green, 0.6);
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Action indicator
+.floor-action {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: rgba($matrix-green, 0.5);
+  transition: transform 0.2s ease;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.tower-floor:active .floor-action {
+  transform: translateX(4px);
+}
+
+// Active glow
+.active-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    var(--floor-glow) 0%,
+    transparent 70%
+  );
+  opacity: 0.3;
+  pointer-events: none;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+// Robot indicator
+.robot-indicator {
+  position: absolute;
+  top: 50%;
+  left: -8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .robot-marker {
+    width: 8px;
+    height: 8px;
+    background: var(--floor-color);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--floor-color);
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  .robot-label {
+    font-size: 0.55rem;
+    letter-spacing: 1px;
+    color: var(--floor-color);
+    text-shadow: 0 0 5px var(--floor-color);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+// Connector to next floor
+.floor-connector {
+  display: none; // Hidden for now, could be used for visual connections
+}
+
+// Responsive
+@media (min-width: 400px) {
+  .floor-content {
+    padding: 20px;
+  }
+
+  .floor-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .floor-label {
+    font-size: 1.1rem;
+  }
+}

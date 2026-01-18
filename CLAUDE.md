@@ -1,4 +1,4 @@
-# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v6.3 CHAT FIXES + DESKFLOW
+# 🏰 CLAUDE.md - Dungeon AI Landing Angular - v7.0 MOBILE TOWER LAYOUT
 
 ## 🚨 **REGLAS CRÍTICAS DE GIT - LEER SIEMPRE**
 
@@ -17,6 +17,126 @@
 ### **Recordatorio:**
 > "Los cambios están listos para probar. Cuando confirmes que funcionan,
 > puedo mergear a main y tú haces el push."
+
+---
+
+## 📱 **v7.0: MOBILE TOWER LAYOUT (Enero 17, 2026)**
+
+### **Concepto:**
+Versión mobile del portafolio con diseño de **torre vertical**. El usuario navega por "pisos" en lugar de moverse horizontalmente. Cada piso representa un servicio/pilar.
+
+### **Arquitectura Visual:**
+```
+┌──────────────────────┐
+│   CONSULTOR IA   [🖥️]│ ← Header fijo + link a desktop
+├──────────────────────┤
+│  ┌─────────────────┐ │
+│  │ [9] DESKFLOW    │ │
+│  └─────────────────┘ │
+│  ┌─────────────────┐ │
+│  │ [8] NÚVARIZ     │ │ ← Torre scrolleable
+│  └─────────────────┘ │
+│         ...          │
+│  ┌─────────────────┐ │
+│  │ [1] QUIÉN SOY   │ │
+│  └─────────────────┘ │
+├──────────────────────┤
+│ [Robot] P:1 [SENDELL]│ ← Panel fijo inferior
+└──────────────────────┘
+```
+
+### **Archivos Creados:**
+
+#### **Servicio de Detección:**
+- `services/device-detector.service.ts` - Detecta dispositivo (mobile/tablet/desktop) con signals reactivos
+
+#### **Guards de Routing:**
+- `guards/device-redirect.guard.ts` - Auto-redirect a /mobile en dispositivos móviles
+
+#### **Componentes Mobile:**
+```
+components/mobile/
+├── mobile-tower-layout/
+│   ├── mobile-tower-layout.component.ts    # Layout principal
+│   ├── mobile-tower-layout.component.html  # Template
+│   └── mobile-tower-layout.component.scss  # Estilos Matrix
+├── tower-floor/
+│   ├── tower-floor.component.ts    # Cada piso/servicio
+│   ├── tower-floor.component.html
+│   └── tower-floor.component.scss
+├── mobile-robot/
+│   ├── mobile-robot.component.ts   # Robot compacto 7x5
+│   ├── mobile-robot.component.html
+│   └── mobile-robot.component.scss
+└── mobile-sendell/
+    ├── mobile-sendell.component.ts  # Chat optimizado
+    ├── mobile-sendell.component.html
+    └── mobile-sendell.component.scss
+```
+
+### **Rutas Actualizadas:**
+```typescript
+'/'       → LandingPageComponent (desktop) + auto-redirect si mobile
+'/mobile' → MobileTowerLayoutComponent (lazy loaded)
+'/game'   → VampireSurvivorsGameComponent
+```
+
+### **Características Implementadas:**
+
+#### **MobileTowerLayout:**
+- Scroll vertical nativo optimizado para touch
+- Header fijo con título y link a desktop
+- Panel inferior fijo con robot, indicador de piso y botón de chat
+- Detección de piso actual basada en scroll
+- Animación de movimiento del robot entre pisos
+
+#### **TowerFloor:**
+- Tarjeta por cada servicio/pilar
+- Número de piso + icono + etiqueta + descripción
+- Indicador visual cuando el robot está en ese piso
+- Tap para mover robot, doble-tap para activar
+- Estilos con color personalizado por servicio
+
+#### **MobileRobot:**
+- Grid ASCII compacto de 7x5 caracteres
+- Animaciones de movimiento (up/down/idle)
+- Parpadeo de ojos y animación de boca
+- Efecto de energización con partículas
+- Tap/doble-tap para interactuar con chat
+
+#### **MobileSendell:**
+- Chat deslizable desde abajo
+- Modo minimizado con solo header
+- Mensajes con burbujas estilo chat
+- Indicador de "escribiendo..."
+- Acciones rápidas (Servicios, Contacto, Hola)
+- Respuestas predefinidas para demo
+
+### **Bundle Size:**
+```
+mobile-tower-layout-component: 43.74 kB (9.48 kB gzipped)
+```
+
+### **Testing Checklist v7.0:**
+- [ ] Acceder a /mobile carga el layout de torre
+- [ ] Scroll vertical funciona suavemente
+- [ ] Tap en piso mueve el robot a ese piso
+- [ ] Doble-tap en piso activa el servicio
+- [ ] Tap en robot minimiza chat si está abierto
+- [ ] Doble-tap en robot abre el chat
+- [ ] Chat slide-up desde abajo
+- [ ] Mensajes se envían y reciben respuesta
+- [ ] Botón desktop navega a /
+- [ ] Auto-redirect de / a /mobile en móviles
+- [ ] Partículas ambient flotan en background
+
+### **Próximos Pasos (Futuro):**
+1. Integrar LLM real en MobileSendell
+2. Agregar modales de servicio para cada piso
+3. Animación de energización completa
+4. Persistencia de preferencia de vista
+5. PWA manifest para instalación
+6. Opción Three.js para dispositivos potentes
 
 ---
 
