@@ -99,31 +99,26 @@ $panel-bg: rgba(10, 10, 10, 0.95);
   position: relative;
 }
 
-// Elevator shaft (left side) - BIGGER v8.2
+// Elevator shaft (integrated with floors)
 .elevator-shaft {
-  width: 36px;
+  width: 28px;
   flex-shrink: 0;
   position: relative;
-  background: linear-gradient(
-    to right,
-    rgba($matrix-green, 0.08),
-    transparent
-  );
-  border-right: 1px solid rgba($matrix-green, 0.3);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .shaft-track {
   position: absolute;
-  top: 16px;
-  bottom: 70px;
+  top: 20px;
+  bottom: 80px;
   left: 50%;
-  width: 3px;
-  background: rgba($matrix-green, 0.15);
+  width: 2px;
+  background: rgba($matrix-green, 0.2);
   transform: translateX(-50%);
-  border-radius: 2px;
+  border-radius: 1px;
 }
 
-// Elevator car - BIGGER
+// Elevator car
 .elevator-car {
   position: absolute;
   left: 50%;
@@ -133,63 +128,60 @@ $panel-bg: rgba(10, 10, 10, 0.95);
 
   .car-glow {
     position: absolute;
-    inset: -12px;
+    inset: -10px;
     background: radial-gradient(circle, $matrix-green-glow, transparent);
-    opacity: 0.7;
+    opacity: 0.6;
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
   .car-body {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
     background: $bg-dark;
     border: 2px solid $matrix-green;
-    border-radius: 6px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 12px $matrix-green-glow;
+    box-shadow: 0 0 10px $matrix-green-glow;
   }
 
   .car-icon {
-    font-size: 12px;
+    font-size: 10px;
     color: $matrix-green;
-    text-shadow: 0 0 8px $matrix-green;
+    text-shadow: 0 0 6px $matrix-green;
   }
 
   &.moving {
     .car-body {
-      box-shadow: 0 0 25px $matrix-green;
-      border-width: 3px;
+      box-shadow: 0 0 20px $matrix-green;
     }
 
     .car-glow {
-      animation: pulse-glow 0.4s ease-in-out infinite;
+      animation: pulse-glow 0.3s ease-in-out infinite;
     }
   }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
 }
 
-// Track markers - BIGGER
+// Track markers (aligned with each floor)
 .track-marker {
   position: absolute;
   left: 50%;
-  width: 8px;
-  height: 8px;
-  background: rgba($matrix-green, 0.2);
+  width: 6px;
+  height: 6px;
+  background: rgba($matrix-green, 0.15);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   transition: all 0.3s ease;
-  border: 1px solid rgba($matrix-green, 0.3);
 
   &.active {
     background: $matrix-green;
-    box-shadow: 0 0 10px $matrix-green;
-    border-color: $matrix-green;
+    box-shadow: 0 0 8px $matrix-green;
   }
 }
 
@@ -216,25 +208,23 @@ $panel-bg: rgba(10, 10, 10, 0.95);
 }
 
 .tower-shaft {
-  padding: 12px;
-  padding-bottom: 80px;
+  padding: 12px 12px 80px 0; // No left padding - floors touch elevator shaft
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-// Floor cards (simplified) - v8.2 with dimming
+// Floor cards - v8.2 with individual colors
 .floor-card {
-  --floor-color: #{$matrix-green};
-
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px;
   background: rgba(10, 10, 10, 0.8);
-  border: 1px solid rgba($matrix-green, 0.15);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--floor-color, $matrix-green);
+  border-radius: 0 8px 8px 0;
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -244,67 +234,88 @@ $panel-bg: rgba(10, 10, 10, 0.95);
 
   // Dimmed state (elevator not here)
   &.dimmed {
-    opacity: 0.5;
+    opacity: 0.45;
+    border-left-color: var(--floor-color, $matrix-green);
 
     .floor-icon {
-      color: rgba($matrix-green, 0.4);
+      color: var(--floor-color, $matrix-green);
+      opacity: 0.5;
     }
 
     .floor-label {
-      color: rgba($matrix-green, 0.6);
+      color: rgba(255, 255, 255, 0.5);
     }
 
     .floor-desc {
-      color: rgba($matrix-green, 0.3);
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .floor-action svg {
+      color: rgba(255, 255, 255, 0.3);
     }
   }
 
   // Active state (elevator is here)
   &.active {
     opacity: 1;
-    border-color: $matrix-green;
-    box-shadow: 0 0 15px $matrix-green-glow;
+    border-color: var(--floor-color, $matrix-green);
+    border-left-width: 4px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5),
+                inset 0 0 30px rgba(0, 0, 0, 0.3);
+    background: rgba(15, 15, 15, 0.95);
 
     .floor-icon {
-      color: $matrix-green;
-      filter: drop-shadow(0 0 6px $matrix-green);
+      color: var(--floor-color, $matrix-green);
+      filter: drop-shadow(0 0 8px var(--floor-color, $matrix-green));
+      opacity: 1;
     }
 
     .floor-label {
-      color: $matrix-green;
-      text-shadow: 0 0 8px $matrix-green-glow;
+      color: var(--floor-color, $matrix-green);
+      text-shadow: 0 0 10px var(--floor-color, $matrix-green);
+    }
+
+    .floor-desc {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .floor-action svg {
+      color: var(--floor-color, $matrix-green);
     }
   }
 
   // Highlighted state (ready for second click)
   &.highlighted {
     opacity: 1;
-    border-color: $matrix-green;
-    box-shadow: 0 0 20px $matrix-green-glow, 0 0 40px rgba($matrix-green, 0.2);
+    border-color: var(--floor-color, $matrix-green);
+    box-shadow: 0 0 25px var(--floor-color, $matrix-green),
+                0 0 50px rgba(0, 0, 0, 0.5);
     animation: highlight-pulse 1s ease-in-out infinite;
 
     .floor-icon {
-      color: $matrix-green;
-      filter: drop-shadow(0 0 10px $matrix-green);
+      color: var(--floor-color, $matrix-green);
+      filter: drop-shadow(0 0 12px var(--floor-color, $matrix-green));
     }
 
     .floor-label {
-      color: $matrix-green;
-      text-shadow: 0 0 12px $matrix-green;
+      color: var(--floor-color, $matrix-green);
+      text-shadow: 0 0 15px var(--floor-color, $matrix-green);
     }
 
     .floor-action svg {
-      color: $matrix-green;
+      color: var(--floor-color, $matrix-green);
     }
   }
 }
 
 @keyframes highlight-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px $matrix-green-glow, 0 0 40px rgba($matrix-green, 0.2);
+    box-shadow: 0 0 25px var(--floor-color, $matrix-green),
+                0 0 50px rgba(0, 0, 0, 0.5);
   }
   50% {
-    box-shadow: 0 0 30px $matrix-green, 0 0 60px rgba($matrix-green, 0.3);
+    box-shadow: 0 0 35px var(--floor-color, $matrix-green),
+                0 0 70px var(--floor-color, $matrix-green);
   }
 }
 
@@ -312,8 +323,8 @@ $panel-bg: rgba(10, 10, 10, 0.95);
 .highlight-glow {
   position: absolute;
   inset: -2px;
-  border: 2px solid $matrix-green;
-  border-radius: 10px;
+  border: 2px solid var(--floor-color, $matrix-green);
+  border-radius: 0 10px 10px 0;
   pointer-events: none;
   animation: glow-border 1s ease-in-out infinite;
 }
@@ -321,11 +332,10 @@ $panel-bg: rgba(10, 10, 10, 0.95);
 @keyframes glow-border {
   0%, 100% {
     opacity: 0.8;
-    box-shadow: inset 0 0 15px $matrix-green-glow;
   }
   50% {
     opacity: 1;
-    box-shadow: inset 0 0 25px rgba($matrix-green, 0.5);
+    box-shadow: inset 0 0 20px var(--floor-color, $matrix-green);
   }
 }
 
@@ -333,7 +343,7 @@ $panel-bg: rgba(10, 10, 10, 0.95);
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  color: rgba($matrix-green, 0.6);
+  color: var(--floor-color, $matrix-green);
   transition: all 0.3s ease;
 
   :deep(svg) {
