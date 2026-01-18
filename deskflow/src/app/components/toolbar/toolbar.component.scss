@@ -416,3 +416,122 @@
     opacity: 0.7;
   }
 }
+
+// ==================== MOBILE RESPONSIVE ====================
+@media screen and (max-width: 768px) {
+  .toolbar {
+    height: 56px;
+    padding: 0 12px;
+  }
+
+  .breadcrumb {
+    max-width: 50%;
+    gap: 0;
+  }
+
+  .breadcrumb-item {
+    padding: 6px 8px;
+    font-size: 11px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .separator {
+      width: 10px;
+      height: 10px;
+    }
+
+    // Ocultar texto en pantallas muy pequeñas, mostrar solo icono
+    span {
+      display: none;
+    }
+
+    &.active span {
+      display: inline;
+    }
+  }
+
+  .toolbar-actions {
+    gap: 4px;
+  }
+
+  .action-btn {
+    width: 40px;
+    height: 40px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .separator-line {
+    display: none;
+  }
+
+  // Ocultar nombre de usuario en móvil
+  .user-btn .user-name {
+    display: none;
+  }
+
+  // Dropdown menus ocupa todo el ancho
+  .theme-picker,
+  .menu-dropdown,
+  .user-dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin-top: 0;
+    border-radius: 16px 16px 0 0;
+    min-width: auto;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+
+    button {
+      padding: 14px 20px;
+      font-size: 14px;
+    }
+  }
+
+  .theme-colors {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .theme-color {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .breadcrumb {
+    max-width: 40%;
+  }
+
+  .breadcrumb-item {
+    padding: 4px 6px;
+
+    &.active span {
+      max-width: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
