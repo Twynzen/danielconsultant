@@ -7,46 +7,44 @@
   (mousedown)="onDragStart($event)"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)"
+  (dblclick)="note.minimized ? toggleMinimize() : null"
 >
-  <!-- Header -->
-  <div class="note-header">
-    <div class="note-title" *ngIf="!editingTitle()" (click)="onTitleClick()">
+  <!-- Vista minimizada como ícono (similar a carpetas) -->
+  <div class="note-icon-view" *ngIf="note.minimized">
+    <div class="note-icon">
+      <!-- Ícono de documento/archivo de texto -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="8" y1="13" x2="16" y2="13"/>
+        <line x1="8" y1="17" x2="14" y2="17"/>
+      </svg>
+    </div>
+    <div class="note-icon-name" *ngIf="!editingTitle()" (click)="onTitleClick(); $event.stopPropagation()">
       {{ note.title }}
     </div>
     <input
       *ngIf="editingTitle()"
-      class="note-title-input cyber-input"
+      class="note-name-input cyber-input"
       [value]="note.title"
       (blur)="onTitleBlur($event)"
       (keydown)="onTitleKeydown($event)"
+      (mousedown)="$event.stopPropagation()"
       autofocus
     />
-
-    <div class="note-actions">
+    <div class="note-icon-actions">
       <button
-        class="action-btn tooltip"
-        data-tooltip="Conectar"
-        (click)="onStartConnection(); $event.stopPropagation()"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-          <polyline points="15 3 21 3 21 9"/>
-          <line x1="10" y1="14" x2="21" y2="3"/>
-        </svg>
-      </button>
-      <button
-        class="action-btn tooltip"
-        [attr.data-tooltip]="note.minimized ? 'Expandir' : 'Minimizar'"
+        class="icon-action-btn"
+        title="Expandir"
         (click)="toggleMinimize(); $event.stopPropagation()"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line *ngIf="!note.minimized" x1="5" y1="12" x2="19" y2="12"/>
-          <rect *ngIf="note.minimized" x="3" y="3" width="18" height="18" rx="2"/>
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
         </svg>
       </button>
       <button
-        class="action-btn danger tooltip"
-        data-tooltip="Eliminar"
+        class="icon-action-btn danger"
+        title="Eliminar"
         (click)="onDelete(); $event.stopPropagation()"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -57,8 +55,58 @@
     </div>
   </div>
 
-  <!-- Content -->
-  <div class="note-content" *ngIf="!note.minimized">
+  <!-- Vista expandida normal -->
+  <ng-container *ngIf="!note.minimized">
+    <!-- Header -->
+    <div class="note-header">
+      <div class="note-title" *ngIf="!editingTitle()" (click)="onTitleClick()">
+        {{ note.title }}
+      </div>
+      <input
+        *ngIf="editingTitle()"
+        class="note-title-input cyber-input"
+        [value]="note.title"
+        (blur)="onTitleBlur($event)"
+        (keydown)="onTitleKeydown($event)"
+        autofocus
+      />
+
+      <div class="note-actions">
+        <button
+          class="action-btn tooltip"
+          data-tooltip="Conectar"
+          (click)="onStartConnection(); $event.stopPropagation()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </button>
+        <button
+          class="action-btn tooltip"
+          data-tooltip="Minimizar"
+          (click)="toggleMinimize(); $event.stopPropagation()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button
+          class="action-btn danger tooltip"
+          data-tooltip="Eliminar"
+          (click)="onDelete(); $event.stopPropagation()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="note-content">
     <!-- Imágenes -->
     <div class="note-images" *ngIf="note.images.length > 0">
       <div
@@ -116,15 +164,16 @@
       style="display: none"
       (change)="onFileSelected($event)"
     />
-  </div>
+    </div>
 
-  <!-- Resize Handles -->
-  <div class="resize-handle n" (mousedown)="onResizeStart($event, 'n')"></div>
-  <div class="resize-handle s" (mousedown)="onResizeStart($event, 's')"></div>
-  <div class="resize-handle e" (mousedown)="onResizeStart($event, 'e')"></div>
-  <div class="resize-handle w" (mousedown)="onResizeStart($event, 'w')"></div>
-  <div class="resize-handle ne" (mousedown)="onResizeStart($event, 'ne')"></div>
-  <div class="resize-handle nw" (mousedown)="onResizeStart($event, 'nw')"></div>
-  <div class="resize-handle se" (mousedown)="onResizeStart($event, 'se')"></div>
-  <div class="resize-handle sw" (mousedown)="onResizeStart($event, 'sw')"></div>
+    <!-- Resize Handles (solo en vista expandida) -->
+    <div class="resize-handle n" (mousedown)="onResizeStart($event, 'n')"></div>
+    <div class="resize-handle s" (mousedown)="onResizeStart($event, 's')"></div>
+    <div class="resize-handle e" (mousedown)="onResizeStart($event, 'e')"></div>
+    <div class="resize-handle w" (mousedown)="onResizeStart($event, 'w')"></div>
+    <div class="resize-handle ne" (mousedown)="onResizeStart($event, 'ne')"></div>
+    <div class="resize-handle nw" (mousedown)="onResizeStart($event, 'nw')"></div>
+    <div class="resize-handle se" (mousedown)="onResizeStart($event, 'se')"></div>
+    <div class="resize-handle sw" (mousedown)="onResizeStart($event, 'sw')"></div>
+  </ng-container>
 </div>

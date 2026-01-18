@@ -172,3 +172,73 @@
 :host {
   animation: folder-appear 0.3s ease-out;
 }
+
+// ==================== MOBILE RESPONSIVE ====================
+@media screen and (max-width: 768px) {
+  :host {
+    width: 100%;
+  }
+
+  .folder {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100%;
+    flex-direction: row;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    gap: 12px;
+
+    &:hover {
+      background: rgba(var(--primary-rgb), 0.15);
+    }
+  }
+
+  .folder-icon {
+    width: 40px;
+    height: 36px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .folder-name {
+    flex: 1;
+    text-align: left;
+    max-width: none;
+    font-size: 14px;
+  }
+
+  .folder-badge {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-left: auto;
+  }
+
+  .folder-menu-btn {
+    position: relative;
+    top: auto;
+    right: auto;
+    opacity: 1;
+    margin-left: 8px;
+  }
+
+  .folder-menu {
+    position: fixed;
+    top: auto;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    transform: none;
+    border-radius: 12px;
+    min-width: auto;
+    z-index: 2000;
+
+    button {
+      padding: 14px 20px;
+      font-size: 14px;
+    }
+  }
+}

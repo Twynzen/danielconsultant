@@ -259,6 +259,100 @@
   }
 }
 
+// ==================== MOBILE RESPONSIVE ====================
+@media screen and (max-width: 768px) {
+  .desktop-area {
+    top: 56px; // Toolbar más alto en móvil
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    padding-bottom: 100px; // Espacio extra para scroll
+
+    // En móvil, los elementos no usan position absolute
+    > app-folder,
+    > app-note {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      transform: none !important;
+    }
+
+    // Ocultar conexiones en móvil (no tienen sentido sin posicionamiento)
+    > app-connections {
+      display: none;
+    }
+  }
+
+  // Panel de estructura ocupa todo el ancho en móvil
+  .structure-panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 50vh;
+    border-radius: 16px 16px 0 0;
+    animation: slideUp 0.3s ease;
+  }
+
+  // Indicador de conexión más pequeño
+  .connection-indicator {
+    padding: 8px 16px;
+    font-size: 12px;
+
+    span {
+      font-size: 11px;
+    }
+
+    small {
+      font-size: 10px;
+    }
+  }
+
+  // Estado vacío más compacto
+  .empty-state {
+    padding: 20px;
+
+    svg {
+      width: 60px;
+      height: 60px;
+    }
+
+    h3 {
+      font-size: 16px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+
+    .empty-actions {
+      flex-direction: column;
+      gap: 8px;
+
+      .cyber-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 // ==================== PARTÍCULAS ====================
 .particle {
   position: fixed;
