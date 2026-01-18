@@ -124,6 +124,45 @@ export class ServicesDataService {
   };
 
   private servicesDetail: ServiceDetail[] = [
+    // v8.6: About Daniel - Quién Soy profile for mobile modal
+    {
+      id: 'about-daniel',
+      title: 'DANIEL CASTIBLANCO',
+      description: 'Consultor especializado en Inteligencia Artificial con enfoque en implementación práctica de soluciones de IA para empresas. Experiencia en orquestación de agentes, RAG systems, LLMs locales y automatización inteligente.',
+      features: [
+        {
+          icon: 'brain',
+          iconType: 'lucide',
+          animation: 'pulse',
+          text: 'Especialista en LLMs y modelos de lenguaje'
+        },
+        {
+          icon: 'bot',
+          iconType: 'lucide',
+          animation: 'bounce',
+          text: 'Orquestación de agentes de IA'
+        },
+        {
+          icon: 'server',
+          iconType: 'lucide',
+          animation: 'glow',
+          text: 'Implementación de LLMs locales y privados'
+        },
+        {
+          icon: 'workflow',
+          iconType: 'lucide',
+          animation: 'rotate',
+          text: 'Automatización de procesos con IA'
+        },
+        {
+          icon: 'shield-check',
+          iconType: 'lucide',
+          animation: 'heartbeat',
+          text: 'Soluciones seguras y escalables'
+        }
+      ],
+      technologies: ['Python', 'LangChain', 'LangGraph', 'Angular', 'FastAPI', 'Docker', 'Supabase']
+    },
     {
       id: 'rag-systems',
       title: 'RAG SYSTEMS',
