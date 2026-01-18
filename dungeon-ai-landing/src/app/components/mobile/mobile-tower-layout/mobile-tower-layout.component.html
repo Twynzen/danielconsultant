@@ -4,42 +4,47 @@
   <!-- Fixed Header -->
   <header class="tower-header">
     <div class="header-content">
-      <h1 class="title">CONSULTOR IA</h1>
-      <button class="desktop-link" (click)="goToDesktop()" aria-label="Ver versión desktop">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="2" y="3" width="20" height="14" rx="2"/>
-          <line x1="8" y1="21" x2="16" y2="21"/>
-          <line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
-      </button>
+      <h1 class="title">DESARROLLADOR IA</h1>
     </div>
     <div class="header-glow"></div>
   </header>
 
   <!-- Main Tower Area with Elevator -->
   <main class="tower-main">
-    <!-- Elevator Shaft (left side) -->
+    <!-- Elevator Shaft with markers -->
     <div class="elevator-shaft">
-      <div class="shaft-track">
-        <!-- Elevator car (Sendell indicator) -->
+      <!-- Track rails -->
+      <div class="shaft-rail left"></div>
+      <div class="shaft-rail right"></div>
+
+      <!-- Floor markers (dots) -->
+      @for (floor of floors(); track floor.id; let i = $index) {
         <div
-          class="elevator-car"
-          [class.moving]="isRobotMoving()"
-          [style.top.%]="getElevatorPosition()"
-        >
-          <div class="car-glow"></div>
-          <div class="car-body">
-            <span class="car-icon">◆</span>
+          class="floor-marker"
+          [class.active]="isRobotOnFloor(i)"
+          [style.--floor-index]="i"
+        ></div>
+      }
+
+      <!-- Elevator cabin with robot -->
+      <div
+        class="elevator-cabin"
+        [class.moving]="isRobotMoving()"
+        [style.--floor-index]="elevatorFloorIndex()"
+      >
+        <div class="cabin-glow"></div>
+        <div class="cabin-box">
+          <!-- Mini robot inside -->
+          <div class="mini-robot">
+            <div class="robot-head">
+              <div class="robot-eye left"></div>
+              <div class="robot-eye right"></div>
+            </div>
+            <div class="robot-body"></div>
           </div>
         </div>
-        <!-- Track markers -->
-        @for (floor of floors(); track floor.id; let i = $index) {
-          <div
-            class="track-marker"
-            [class.active]="isRobotOnFloor(i)"
-            [style.top.%]="(i / (floors().length - 1)) * 100"
-          ></div>
-        }
+        <!-- Cabin floor line -->
+        <div class="cabin-floor"></div>
       </div>
     </div>
 
