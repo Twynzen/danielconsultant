@@ -1,4 +1,4 @@
-<!-- Mobile Tower Layout v8.2 - Elevator Design -->
+<!-- Mobile Tower Layout v8.3 - Elevator with Stickman -->
 <div class="mobile-tower-wrapper">
 
   <!-- Fixed Header -->
@@ -9,95 +9,99 @@
     <div class="header-glow"></div>
   </header>
 
-  <!-- Main Tower Area with Elevator -->
+  <!-- Main Tower Area -->
   <main class="tower-main">
-    <!-- Elevator Shaft with markers -->
-    <div class="elevator-shaft">
-      <!-- Track rails -->
-      <div class="shaft-rail left"></div>
-      <div class="shaft-rail right"></div>
+    <!-- Scrollable container with elevator + floors -->
+    <div class="tower-container" #towerContainer>
+      <div class="tower-content">
 
-      <!-- Floor markers (dots) -->
-      @for (floor of floors(); track floor.id; let i = $index) {
-        <div
-          class="floor-marker"
-          [class.active]="isRobotOnFloor(i)"
-          [style.--floor-index]="i"
-        ></div>
-      }
+        <!-- Elevator Shaft (scrolls with floors) -->
+        <div class="elevator-shaft">
+          <div class="shaft-rail"></div>
 
-      <!-- Elevator cabin with robot -->
-      <div
-        class="elevator-cabin"
-        [class.moving]="isRobotMoving()"
-        [style.--floor-index]="elevatorFloorIndex()"
-      >
-        <div class="cabin-glow"></div>
-        <div class="cabin-box">
-          <!-- Mini robot inside -->
-          <div class="mini-robot">
-            <div class="robot-head">
-              <div class="robot-eye left"></div>
-              <div class="robot-eye right"></div>
+          <!-- Floor level indicators -->
+          @for (floor of floors(); track floor.id; let i = $index) {
+            <div
+              class="level-dot"
+              [class.active]="isRobotOnFloor(i)"
+            ></div>
+          }
+
+          <!-- Elevator cabin with stickman -->
+          <div
+            class="elevator-cabin"
+            [class.moving]="isRobotMoving()"
+            [style.--target-floor]="elevatorFloorIndex()"
+            [style.--total-floors]="floors().length"
+          >
+            <div class="cabin-glow"></div>
+            <div class="cabin-box">
+              <!-- Stickman Sendell (tiny green figure) -->
+              <div class="stickman">
+                <div class="stick-head">
+                  <div class="stick-eye left"></div>
+                  <div class="stick-eye right"></div>
+                </div>
+                <div class="stick-neck"></div>
+                <div class="stick-body"></div>
+                <div class="stick-arm left"></div>
+                <div class="stick-arm right"></div>
+                <div class="stick-leg left"></div>
+                <div class="stick-leg right"></div>
+              </div>
             </div>
-            <div class="robot-body"></div>
           </div>
         </div>
-        <!-- Cabin floor line -->
-        <div class="cabin-floor"></div>
-      </div>
-    </div>
 
-    <!-- Scrollable Tower Floors -->
-    <div class="tower-container" #towerContainer>
-      <div class="tower-shaft">
-        <!-- Tower floors (simplified) -->
-        @for (floor of floors(); track floor.id; let i = $index) {
-          <div
-            class="floor-card"
-            [class.active]="isRobotOnFloor(i)"
-            [class.highlighted]="highlightedFloorId() === floor.id"
-            [class.dimmed]="!isRobotOnFloor(i)"
-            [style.--floor-color]="floor.color"
-            (click)="onFloorTapped(floor, i)"
-          >
-            <!-- Icon -->
-            <div class="floor-icon" [innerHTML]="getFloorIcon(floor)"></div>
+        <!-- Floor cards column -->
+        <div class="floors-column">
+          @for (floor of floors(); track floor.id; let i = $index) {
+            <div
+              class="floor-card"
+              [class.active]="isRobotOnFloor(i)"
+              [class.highlighted]="highlightedFloorId() === floor.id"
+              [style.--floor-color]="floor.color"
+              (click)="onFloorTapped(floor, i)"
+            >
+              <!-- Icon -->
+              <div class="floor-icon" [innerHTML]="getFloorIcon(floor)"></div>
 
-            <!-- Info -->
-            <div class="floor-info">
-              <h3 class="floor-label">{{ floor.label }}</h3>
-              @if (floor.description) {
-                <p class="floor-desc">{{ floor.description }}</p>
+              <!-- Info -->
+              <div class="floor-info">
+                <h3 class="floor-label">{{ floor.label }}</h3>
+                @if (floor.description) {
+                  <p class="floor-desc">{{ floor.description }}</p>
+                }
+              </div>
+
+              <!-- Arrow -->
+              <div class="floor-action">
+                @if (isExternalFloor(floor)) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                }
+              </div>
+
+              <!-- Highlight glow -->
+              @if (highlightedFloorId() === floor.id) {
+                <div class="highlight-glow"></div>
               }
             </div>
+          }
+        </div>
 
-            <!-- Arrow / External indicator -->
-            <div class="floor-action">
-              @if (isExternalFloor(floor)) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                  <polyline points="15 3 21 3 21 9"/>
-                  <line x1="10" y1="14" x2="21" y2="3"/>
-                </svg>
-              } @else {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              }
-            </div>
-
-            <!-- Highlight glow (after elevator arrives) -->
-            @if (highlightedFloorId() === floor.id) {
-              <div class="highlight-glow"></div>
-            }
-          </div>
-        }
       </div>
     </div>
   </main>
 
-  <!-- Bottom Chat Button (simplified) -->
+  <!-- Bottom Chat Button -->
   <footer class="chat-footer">
     <button
       class="chat-button"
@@ -116,7 +120,7 @@
     </button>
   </footer>
 
-  <!-- Chat Panel (slides up) -->
+  <!-- Chat Panel -->
   @if (isChatOpen()) {
     <div class="chat-panel" [class.minimized]="isChatMinimized()">
       <app-mobile-sendell
@@ -138,7 +142,7 @@
     />
   }
 
-  <!-- Ambient particles (reduced) -->
+  <!-- Ambient particles -->
   <div class="ambient-particles">
     @for (i of [1,2,3,4]; track i) {
       <div class="particle" [style.--delay]="i * 1 + 's'"></div>

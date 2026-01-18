@@ -1,15 +1,21 @@
 /**
- * Mobile Tower Layout Styles v8.2
- * Elevator Design - Minimalist Matrix theme
+ * Mobile Tower Layout Styles v8.3
+ * Elevator with Stickman - Aligned with floors
  */
 
-// Variables - Consistent with desktop
+// Variables
 $matrix-green: #00ff44;
 $matrix-green-dark: #00cc33;
 $matrix-green-glow: rgba(0, 255, 68, 0.4);
 $bg-dark: #0a0a0a;
 $bg-darker: #050505;
 $panel-bg: rgba(10, 10, 10, 0.95);
+
+// Floor dimensions - CRITICAL for alignment
+$floor-card-height: 64px;
+$floor-gap: 6px;
+$cabin-width: 32px;
+$cabin-height: 50px;
 
 // Mixins
 @mixin matrix-glow($color: $matrix-green, $intensity: 1) {
@@ -49,13 +55,13 @@ $panel-bg: rgba(10, 10, 10, 0.95);
   .header-content {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
   }
 
   .title {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: bold;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     @include matrix-glow($matrix-green, 0.8);
     margin: 0;
   }
@@ -79,208 +85,7 @@ $panel-bg: rgba(10, 10, 10, 0.95);
   position: relative;
 }
 
-// Elevator shaft - uses CSS variables for alignment
-// Floor card height ≈ 60px (14px padding × 2 + ~32px content)
-// Gap between floors = 6px
-// tower-shaft padding: 12px top, 80px bottom
-$floor-height: 60px;
-$floor-gap: 6px;
-$shaft-top-offset: 12px;
-$shaft-bottom-offset: 80px;
-$cabin-width: 36px;
-$cabin-height: 44px;
-
-.elevator-shaft {
-  width: $cabin-width + 8px;
-  flex-shrink: 0;
-  position: relative;
-  overflow: visible;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-// Vertical rails on sides
-.shaft-rail {
-  position: absolute;
-  top: $shaft-top-offset;
-  bottom: $shaft-bottom-offset;
-  width: 2px;
-  background: rgba($matrix-green, 0.15);
-
-  &.left { left: 4px; }
-  &.right { right: 4px; }
-}
-
-// Floor markers (dots beside the shaft)
-.floor-marker {
-  position: absolute;
-  right: 0;
-  width: 4px;
-  height: 4px;
-  background: rgba($matrix-green, 0.3);
-  border-radius: 50%;
-  transition: all 0.3s ease;
-
-  // Position based on floor index
-  top: calc(
-    #{$shaft-top-offset} +
-    var(--floor-index) * (#{$floor-height} + #{$floor-gap}) +
-    #{$floor-height} / 2
-  );
-
-  &.active {
-    background: $matrix-green;
-    box-shadow: 0 0 6px $matrix-green;
-    width: 6px;
-    height: 6px;
-  }
-}
-
-// Elevator cabin (rectangular box with robot)
-.elevator-cabin {
-  position: absolute;
-  left: 50%;
-  z-index: 10;
-  transform: translateX(-50%) translateY(-50%);
-  transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-
-  // Center on floor
-  top: calc(
-    #{$shaft-top-offset} +
-    var(--floor-index) * (#{$floor-height} + #{$floor-gap}) +
-    #{$floor-height} / 2
-  );
-
-  .cabin-glow {
-    position: absolute;
-    inset: -6px;
-    background: radial-gradient(circle, $matrix-green-glow, transparent);
-    opacity: 0.4;
-    animation: cabin-pulse 2s ease-in-out infinite;
-  }
-
-  .cabin-box {
-    width: $cabin-width;
-    height: $cabin-height;
-    background: $bg-dark;
-    border: 2px solid $matrix-green;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 10px $matrix-green-glow,
-                inset 0 0 15px rgba($matrix-green, 0.1);
-    position: relative;
-    overflow: hidden;
-
-    // Cabin window effect
-    &::before {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      right: 2px;
-      height: 8px;
-      background: rgba($matrix-green, 0.1);
-      border-radius: 2px 2px 0 0;
-    }
-  }
-
-  .cabin-floor {
-    position: absolute;
-    bottom: -2px;
-    left: 4px;
-    right: 4px;
-    height: 2px;
-    background: $matrix-green;
-    border-radius: 1px;
-  }
-
-  // Mini robot inside cabin
-  .mini-robot {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 6px;
-  }
-
-  .robot-head {
-    width: 16px;
-    height: 14px;
-    background: linear-gradient(180deg, rgba($matrix-green, 0.3), rgba($matrix-green, 0.1));
-    border: 1px solid $matrix-green;
-    border-radius: 4px 4px 2px 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    position: relative;
-
-    // Antenna
-    &::before {
-      content: '';
-      position: absolute;
-      top: -4px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 2px;
-      height: 4px;
-      background: $matrix-green;
-      border-radius: 1px;
-    }
-  }
-
-  .robot-eye {
-    width: 3px;
-    height: 3px;
-    background: $matrix-green;
-    border-radius: 50%;
-    box-shadow: 0 0 4px $matrix-green;
-    animation: blink 3s ease-in-out infinite;
-
-    &.right {
-      animation-delay: 0.1s;
-    }
-  }
-
-  .robot-body {
-    width: 12px;
-    height: 10px;
-    background: rgba($matrix-green, 0.2);
-    border: 1px solid rgba($matrix-green, 0.5);
-    border-radius: 2px;
-    margin-top: 1px;
-  }
-
-  // Moving state
-  &.moving {
-    .cabin-box {
-      box-shadow: 0 0 20px $matrix-green,
-                  inset 0 0 20px rgba($matrix-green, 0.2);
-    }
-
-    .cabin-glow {
-      animation: cabin-pulse 0.3s ease-in-out infinite;
-      opacity: 0.7;
-    }
-
-    .robot-eye {
-      animation: none;
-      box-shadow: 0 0 8px $matrix-green;
-    }
-  }
-}
-
-@keyframes cabin-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
-}
-
-@keyframes blink {
-  0%, 90%, 100% { opacity: 1; }
-  95% { opacity: 0.2; }
-}
-
-// Tower container (scrollable floors)
+// Scrollable container
 .tower-container {
   flex: 1;
   overflow-y: auto;
@@ -302,76 +107,341 @@ $cabin-height: 44px;
   }
 }
 
-.tower-shaft {
-  padding: 12px 12px 80px 0; // No left padding - floors touch elevator shaft
+// Content wrapper - flex row with elevator + floors
+.tower-content {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  padding: 8px 8px 80px 8px;
+  min-height: 100%;
 }
 
-// Floor cards - v8.2 with individual colors
+// ==========================================
+// ELEVATOR SHAFT - aligned with floors
+// ==========================================
+.elevator-shaft {
+  width: $cabin-width + 8px;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $floor-gap;
+}
+
+// Vertical rail line
+.shaft-rail {
+  position: absolute;
+  top: $floor-card-height / 2;
+  bottom: $floor-card-height / 2;
+  left: 50%;
+  width: 2px;
+  background: rgba($matrix-green, 0.15);
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+// Level dots - one per floor, same height as floor cards
+.level-dot {
+  height: $floor-card-height;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+
+  &::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: rgba($matrix-green, 0.25);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+
+  &.active::after {
+    background: $matrix-green;
+    box-shadow: 0 0 8px $matrix-green;
+    width: 8px;
+    height: 8px;
+  }
+}
+
+// Elevator cabin - positioned absolutely based on target floor
+.elevator-cabin {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Position calculation: (floor-index * (card-height + gap)) + (card-height/2) - (cabin-height/2)
+  top: calc(
+    var(--target-floor, 0) * (#{$floor-card-height} + #{$floor-gap}) +
+    (#{$floor-card-height} / 2) -
+    (#{$cabin-height} / 2)
+  );
+
+  .cabin-glow {
+    position: absolute;
+    inset: -6px;
+    background: radial-gradient(circle, $matrix-green-glow, transparent);
+    opacity: 0.4;
+    animation: cabin-pulse 2s ease-in-out infinite;
+    border-radius: 6px;
+  }
+
+  .cabin-box {
+    width: $cabin-width;
+    height: $cabin-height;
+    background: $bg-dark;
+    border: 2px solid $matrix-green;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px $matrix-green-glow;
+    position: relative;
+    overflow: hidden;
+
+    // Window effect at top
+    &::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      right: 3px;
+      height: 6px;
+      background: rgba($matrix-green, 0.15);
+      border-radius: 2px;
+    }
+  }
+
+  &.moving {
+    .cabin-box {
+      box-shadow: 0 0 20px $matrix-green;
+    }
+
+    .cabin-glow {
+      animation: cabin-pulse 0.3s ease-in-out infinite;
+      opacity: 0.7;
+    }
+
+    .stickman {
+      animation: stickman-bounce 0.3s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes cabin-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes stickman-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+// ==========================================
+// STICKMAN ROBOT (tiny green figure)
+// ==========================================
+.stickman {
+  position: relative;
+  width: 16px;
+  height: 28px;
+  margin-top: 4px;
+}
+
+.stick-head {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: rgba($matrix-green, 0.3);
+  border: 1px solid $matrix-green;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.stick-eye {
+  width: 2px;
+  height: 2px;
+  background: $matrix-green;
+  border-radius: 50%;
+  box-shadow: 0 0 3px $matrix-green;
+  animation: blink 3s ease-in-out infinite;
+
+  &.right { animation-delay: 0.1s; }
+}
+
+.stick-neck {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 3px;
+  background: $matrix-green;
+}
+
+.stick-body {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 10px;
+  background: $matrix-green;
+  box-shadow: 0 0 2px $matrix-green;
+}
+
+.stick-arm {
+  position: absolute;
+  top: 12px;
+  width: 6px;
+  height: 1px;
+  background: $matrix-green;
+
+  &.left {
+    right: 50%;
+    transform-origin: right center;
+    transform: rotate(-20deg);
+  }
+
+  &.right {
+    left: 50%;
+    transform-origin: left center;
+    transform: rotate(20deg);
+  }
+}
+
+.stick-leg {
+  position: absolute;
+  top: 21px;
+  width: 1px;
+  height: 7px;
+  background: $matrix-green;
+
+  &.left {
+    left: calc(50% - 3px);
+    transform-origin: top center;
+    transform: rotate(-10deg);
+  }
+
+  &.right {
+    left: calc(50% + 2px);
+    transform-origin: top center;
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes blink {
+  0%, 90%, 100% { opacity: 1; }
+  95% { opacity: 0.2; }
+}
+
+// ==========================================
+// FLOOR CARDS COLUMN
+// ==========================================
+.floors-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $floor-gap;
+}
+
+// Floor card - fixed height for alignment
 .floor-card {
+  height: $floor-card-height;
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px;
-  background: rgba(10, 10, 10, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 3px solid var(--floor-color, $matrix-green);
+  gap: 10px;
+  padding: 0 12px;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(80, 80, 80, 0.3);
+  border-left: 3px solid rgba(80, 80, 80, 0.4);
   border-radius: 0 8px 8px 0;
   cursor: pointer;
   transition: all 0.3s ease;
+
+  // Default state: gray/dimmed
+  .floor-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    color: rgba(150, 150, 150, 0.5);
+    transition: all 0.3s ease;
+
+    :deep(svg) {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .floor-label {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: rgba(180, 180, 180, 0.6);
+    margin: 0 0 2px 0;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.3s ease;
+  }
+
+  .floor-desc {
+    font-size: 0.65rem;
+    color: rgba(120, 120, 120, 0.5);
+    margin: 0;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .floor-action {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+
+    svg {
+      width: 100%;
+      height: 100%;
+      color: rgba(100, 100, 100, 0.4);
+      transition: all 0.3s ease;
+    }
+  }
 
   &:active {
     transform: scale(0.98);
   }
 
-  // Dimmed state (elevator not here)
-  &.dimmed {
-    opacity: 0.45;
-    border-left-color: var(--floor-color, $matrix-green);
-
-    .floor-icon {
-      color: var(--floor-color, $matrix-green);
-      opacity: 0.5;
-    }
-
-    .floor-label {
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .floor-desc {
-      color: rgba(255, 255, 255, 0.3);
-    }
-
-    .floor-action svg {
-      color: rgba(255, 255, 255, 0.3);
-    }
-  }
-
-  // Active state (elevator is here)
+  // ACTIVE state - elevator is here, show color
   &.active {
-    opacity: 1;
+    background: rgba(15, 15, 15, 0.95);
     border-color: var(--floor-color, $matrix-green);
     border-left-width: 4px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5),
-                inset 0 0 30px rgba(0, 0, 0, 0.3);
-    background: rgba(15, 15, 15, 0.95);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(0, 0, 0, 0.3);
 
     .floor-icon {
       color: var(--floor-color, $matrix-green);
-      filter: drop-shadow(0 0 8px var(--floor-color, $matrix-green));
-      opacity: 1;
+      filter: drop-shadow(0 0 6px var(--floor-color, $matrix-green));
     }
 
     .floor-label {
       color: var(--floor-color, $matrix-green);
-      text-shadow: 0 0 10px var(--floor-color, $matrix-green);
+      text-shadow: 0 0 8px var(--floor-color, $matrix-green);
     }
 
     .floor-desc {
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(200, 200, 200, 0.6);
     }
 
     .floor-action svg {
@@ -379,22 +449,21 @@ $cabin-height: 44px;
     }
   }
 
-  // Highlighted state (ready for second click)
+  // HIGHLIGHTED state - pulsing, ready for click
   &.highlighted {
-    opacity: 1;
     border-color: var(--floor-color, $matrix-green);
-    box-shadow: 0 0 25px var(--floor-color, $matrix-green),
-                0 0 50px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 20px var(--floor-color, $matrix-green),
+                0 0 40px rgba(0, 0, 0, 0.5);
     animation: highlight-pulse 1s ease-in-out infinite;
 
     .floor-icon {
       color: var(--floor-color, $matrix-green);
-      filter: drop-shadow(0 0 12px var(--floor-color, $matrix-green));
+      filter: drop-shadow(0 0 10px var(--floor-color, $matrix-green));
     }
 
     .floor-label {
       color: var(--floor-color, $matrix-green);
-      text-shadow: 0 0 15px var(--floor-color, $matrix-green);
+      text-shadow: 0 0 12px var(--floor-color, $matrix-green);
     }
 
     .floor-action svg {
@@ -405,16 +474,15 @@ $cabin-height: 44px;
 
 @keyframes highlight-pulse {
   0%, 100% {
-    box-shadow: 0 0 25px var(--floor-color, $matrix-green),
-                0 0 50px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 20px var(--floor-color, $matrix-green),
+                0 0 40px rgba(0, 0, 0, 0.5);
   }
   50% {
-    box-shadow: 0 0 35px var(--floor-color, $matrix-green),
-                0 0 70px var(--floor-color, $matrix-green);
+    box-shadow: 0 0 30px var(--floor-color, $matrix-green),
+                0 0 60px var(--floor-color, $matrix-green);
   }
 }
 
-// Highlight glow overlay
 .highlight-glow {
   position: absolute;
   inset: -2px;
@@ -425,25 +493,10 @@ $cabin-height: 44px;
 }
 
 @keyframes glow-border {
-  0%, 100% {
-    opacity: 0.8;
-  }
+  0%, 100% { opacity: 0.7; }
   50% {
     opacity: 1;
-    box-shadow: inset 0 0 20px var(--floor-color, $matrix-green);
-  }
-}
-
-.floor-icon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  color: var(--floor-color, $matrix-green);
-  transition: all 0.3s ease;
-
-  :deep(svg) {
-    width: 100%;
-    height: 100%;
+    box-shadow: inset 0 0 15px var(--floor-color, $matrix-green);
   }
 }
 
@@ -452,41 +505,9 @@ $cabin-height: 44px;
   min-width: 0;
 }
 
-.floor-label {
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: $matrix-green;
-  margin: 0 0 2px 0;
-  letter-spacing: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.floor-desc {
-  font-size: 0.7rem;
-  color: rgba($matrix-green, 0.5);
-  margin: 0;
-  line-height: 1.2;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.floor-action {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  color: rgba($matrix-green, 0.4);
-
-  svg {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-// Chat footer
+// ==========================================
+// CHAT FOOTER & PANEL
+// ==========================================
 .chat-footer {
   position: fixed;
   bottom: 0;
@@ -542,25 +563,14 @@ $cabin-height: 44px;
   &.active {
     background: rgba($matrix-green, 0.15);
     border-color: $matrix-green;
-
-    .chat-icon svg {
-      fill: rgba($matrix-green, 0.2);
-    }
   }
 }
 
 @keyframes pulse-ring {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.1);
-  }
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
 }
 
-// Chat panel
 .chat-panel {
   position: fixed;
   bottom: 72px;
@@ -580,17 +590,13 @@ $cabin-height: 44px;
 }
 
 @keyframes slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-// Ambient particles (reduced)
+// ==========================================
+// AMBIENT PARTICLES
+// ==========================================
 .ambient-particles {
   position: fixed;
   inset: 0;
@@ -616,30 +622,21 @@ $cabin-height: 44px;
 }
 
 @keyframes float-particle {
-  0% {
-    transform: translateY(100vh) scale(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.3;
-    transform: translateY(90vh) scale(1);
-  }
-  90% {
-    opacity: 0.2;
-  }
-  100% {
-    transform: translateY(-10vh) scale(0.5);
-    opacity: 0;
-  }
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 0.3; transform: translateY(90vh) scale(1); }
+  90% { opacity: 0.2; }
+  100% { transform: translateY(-10vh) scale(0.5); opacity: 0; }
 }
 
-// Responsive
+// ==========================================
+// RESPONSIVE
+// ==========================================
 @media (max-height: 600px) {
   .tower-header {
     padding: 8px 12px;
 
     .title {
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
   }
 
@@ -657,23 +654,23 @@ $cabin-height: 44px;
 }
 
 @media (min-width: 500px) {
-  // Tablet optimizations
-  .tower-shaft {
+  .tower-content {
     max-width: 450px;
     margin: 0 auto;
   }
 
   .floor-card {
-    padding: 18px;
+    height: 70px;
+    padding: 0 16px;
   }
 
   .floor-icon {
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
   }
 
   .floor-label {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .chat-panel {
