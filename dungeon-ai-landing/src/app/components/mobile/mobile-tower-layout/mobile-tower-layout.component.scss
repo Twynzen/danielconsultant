@@ -1,6 +1,6 @@
 /**
- * Mobile Tower Layout Styles v8.3
- * Elevator with Stickman - Aligned with floors
+ * Mobile Tower Layout Styles v8.5
+ * Creative Elevator with Dynamic Colors + Responsive CSS Custom Properties
  */
 
 // Variables
@@ -11,11 +11,18 @@ $bg-dark: #0a0a0a;
 $bg-darker: #050505;
 $panel-bg: rgba(10, 10, 10, 0.95);
 
-// Floor dimensions - CRITICAL for alignment
+// Floor dimensions - base values (overridden via CSS custom properties)
 $floor-card-height: 64px;
 $floor-gap: 6px;
 $cabin-width: 32px;
 $cabin-height: 50px;
+
+// CSS Custom Properties for responsive alignment
+:host {
+  --floor-height: 64px;
+  --floor-gap: 6px;
+  --cabin-height: 50px;
+}
 
 // Mixins
 @mixin matrix-glow($color: $matrix-green, $intensity: 1) {
@@ -166,11 +173,11 @@ $cabin-height: 50px;
   z-index: 10;
   transition: top 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-  // Position aligned with floors
+  // Position aligned with floors (uses CSS custom properties for responsive)
   top: calc(
-    var(--target-floor, 0) * (#{$floor-card-height} + #{$floor-gap}) +
-    (#{$floor-card-height} / 2) -
-    (#{$cabin-height} / 2)
+    var(--target-floor, 0) * (var(--floor-height) + var(--floor-gap)) +
+    (var(--floor-height) / 2) -
+    (var(--cabin-height) / 2)
   );
 
   // Arrival pulse - expanding rings
@@ -387,12 +394,12 @@ $cabin-height: 50px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: $floor-gap;
+  gap: var(--floor-gap);
 }
 
-// Floor card - fixed height for alignment
+// Floor card - height from CSS custom property for responsive alignment
 .floor-card {
-  height: $floor-card-height;
+  height: var(--floor-height);
   position: relative;
   display: flex;
   align-items: center;
@@ -666,8 +673,10 @@ $cabin-height: 50px;
 }
 
 // ==========================================
-// RESPONSIVE
+// RESPONSIVE - Optimized for various devices
 // ==========================================
+
+// Small height screens (landscape or small phones)
 @media (max-height: 600px) {
   .tower-header {
     padding: 8px 12px;
@@ -690,24 +699,206 @@ $cabin-height: 50px;
   }
 }
 
-@media (min-width: 500px) {
+// Medium phones (375px - 430px) - iPhone SE to iPhone 14 Pro Max
+@media (min-width: 375px) {
+  :host {
+    --floor-height: 68px;
+    --floor-gap: 7px;
+    --cabin-height: 54px;
+  }
+
   .tower-content {
-    max-width: 450px;
-    margin: 0 auto;
+    padding: 12px 12px 80px 12px;
+  }
+
+  .floors-column {
+    gap: var(--floor-gap);
   }
 
   .floor-card {
-    height: 70px;
-    padding: 0 16px;
+    padding: 0 14px;
+    gap: 12px;
+
+    .floor-icon {
+      width: 34px;
+      height: 34px;
+    }
+
+    .floor-label {
+      font-size: 0.9rem;
+    }
+
+    .floor-desc {
+      font-size: 0.7rem;
+    }
   }
 
-  .floor-icon {
-    width: 36px;
-    height: 36px;
+  .elevator-shaft {
+    width: 48px;
+    margin-right: 8px;
   }
 
-  .floor-label {
-    font-size: 0.95rem;
+  .cabin-frame {
+    width: 38px !important;
+    height: var(--cabin-height) !important;
+  }
+
+  .cabin-led {
+    width: 10px;
+    height: 4px;
+  }
+}
+
+// Large phones (430px+) - iPhone Pro Max, large Android
+@media (min-width: 430px) {
+  :host {
+    --floor-height: 74px;
+    --floor-gap: 8px;
+    --cabin-height: 60px;
+  }
+
+  .tower-header {
+    padding: 16px 20px;
+
+    .title {
+      font-size: 1.4rem;
+      letter-spacing: 4px;
+    }
+  }
+
+  .tower-content {
+    padding: 16px 16px 90px 16px;
+  }
+
+  .floors-column {
+    gap: var(--floor-gap);
+  }
+
+  .floor-card {
+    padding: 0 18px;
+    gap: 14px;
+    border-radius: 0 12px 12px 0;
+
+    .floor-icon {
+      width: 38px;
+      height: 38px;
+    }
+
+    .floor-label {
+      font-size: 0.95rem;
+      letter-spacing: 1.5px;
+    }
+
+    .floor-desc {
+      font-size: 0.72rem;
+    }
+
+    .floor-action {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .elevator-shaft {
+    width: 54px;
+    margin-right: 10px;
+  }
+
+  .cabin-frame {
+    width: 42px !important;
+    border-radius: 8px;
+  }
+
+  .cabin-led {
+    width: 12px;
+    height: 4px;
+    top: 5px;
+  }
+
+  .cabin-window {
+    top: 14px !important;
+    bottom: 12px !important;
+    left: 5px !important;
+    right: 5px !important;
+  }
+
+  .chat-footer {
+    padding: 14px 20px;
+  }
+
+  .chat-button {
+    padding: 16px 24px;
+    border-radius: 12px;
+
+    .chat-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .chat-text {
+      font-size: 0.9rem;
+      letter-spacing: 3px;
+    }
+  }
+}
+
+// Tablet-ish sizes (500px+)
+@media (min-width: 500px) {
+  :host {
+    --floor-height: 78px;
+    --floor-gap: 10px;
+    --cabin-height: 64px;
+  }
+
+  .tower-content {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 20px 100px 20px;
+  }
+
+  .floors-column {
+    gap: var(--floor-gap);
+  }
+
+  .floor-card {
+    padding: 0 18px;
+    gap: 16px;
+
+    .floor-icon {
+      width: 40px;
+      height: 40px;
+    }
+
+    .floor-label {
+      font-size: 1rem;
+      letter-spacing: 2px;
+    }
+
+    .floor-desc {
+      font-size: 0.75rem;
+      -webkit-line-clamp: 2;
+    }
+
+    .floor-action {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .elevator-shaft {
+    width: 60px;
+    margin-right: 12px;
+  }
+
+  .cabin-frame {
+    width: 46px !important;
+    border-radius: 8px;
+  }
+
+  .cabin-led {
+    width: 14px;
+    height: 5px;
+    top: 6px;
   }
 
   .chat-panel {
