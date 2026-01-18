@@ -343,6 +343,14 @@ export class MobileTowerLayoutComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   /**
+   * Get color of current floor (for elevator dynamic color)
+   */
+  getCurrentFloorColor(): string {
+    const floor = this.getCurrentFloor();
+    return floor?.color || '#00ff44';
+  }
+
+  /**
    * v8.1: Handle chat action requests (from Smart Responses)
    */
   onChatActionRequested(action: RobotAction): void {

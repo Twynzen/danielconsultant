@@ -115,232 +115,269 @@ $cabin-height: 50px;
 }
 
 // ==========================================
-// ELEVATOR SHAFT - aligned with floors
+// ELEVATOR SHAFT - Creative Design v8.4
 // ==========================================
 .elevator-shaft {
-  width: $cabin-width + 8px;
+  width: $cabin-width + 12px;
   flex-shrink: 0;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: $floor-gap;
+  margin-right: 4px;
 }
 
-// Vertical rail line
-.shaft-rail {
+// Rail doors - split apart when elevator arrives (like real elevator doors)
+.rail-door {
   position: absolute;
   top: $floor-card-height / 2;
   bottom: $floor-card-height / 2;
-  left: 50%;
   width: 2px;
-  background: rgba($matrix-green, 0.15);
-  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba($matrix-green, 0.3) 10%,
+    rgba($matrix-green, 0.3) 90%,
+    transparent 100%
+  );
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.4s ease;
   z-index: 1;
-}
 
-// Level dots - one per floor, same height as floor cards
-.level-dot {
-  height: $floor-card-height;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 2;
-
-  &::after {
-    content: '';
-    width: 6px;
-    height: 6px;
-    background: rgba($matrix-green, 0.25);
-    border-radius: 50%;
-    transition: all 0.3s ease;
+  &.left {
+    left: calc(50% - 1px);
+    transform-origin: left center;
   }
 
-  &.active::after {
-    background: $matrix-green;
-    box-shadow: 0 0 8px $matrix-green;
-    width: 8px;
-    height: 8px;
+  &.right {
+    right: calc(50% - 1px);
+    transform-origin: right center;
+  }
+
+  // Doors open state
+  &.open {
+    &.left { transform: translateX(-8px); opacity: 0.5; }
+    &.right { transform: translateX(8px); opacity: 0.5; }
   }
 }
 
-// Elevator cabin - positioned absolutely based on target floor
+// Elevator cabin - elegant minimalist design
 .elevator-cabin {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
-  transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: top 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-  // Position calculation: (floor-index * (card-height + gap)) + (card-height/2) - (cabin-height/2)
+  // Position aligned with floors
   top: calc(
     var(--target-floor, 0) * (#{$floor-card-height} + #{$floor-gap}) +
     (#{$floor-card-height} / 2) -
     (#{$cabin-height} / 2)
   );
 
-  .cabin-glow {
+  // Arrival pulse - expanding rings
+  .arrival-pulse {
     position: absolute;
-    inset: -6px;
-    background: radial-gradient(circle, $matrix-green-glow, transparent);
-    opacity: 0.4;
-    animation: cabin-pulse 2s ease-in-out infinite;
-    border-radius: 6px;
-  }
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
 
-  .cabin-box {
-    width: $cabin-width;
-    height: $cabin-height;
-    background: $bg-dark;
-    border: 2px solid $matrix-green;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 10px $matrix-green-glow;
-    position: relative;
-    overflow: hidden;
-
-    // Window effect at top
-    &::before {
+    &::before, &::after {
       content: '';
       position: absolute;
-      top: 2px;
-      left: 3px;
-      right: 3px;
-      height: 6px;
-      background: rgba($matrix-green, 0.15);
-      border-radius: 2px;
+      inset: 0;
+      border: 2px solid var(--cabin-color, $matrix-green);
+      border-radius: 50%;
+      opacity: 0;
     }
   }
 
+  // Cabin frame - the elevator box
+  .cabin-frame {
+    width: $cabin-width;
+    height: $cabin-height;
+    background: $bg-darker;
+    border: 2px solid var(--cabin-color, $matrix-green);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  // Top LED indicator
+  .cabin-led {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 3px;
+    background: var(--cabin-color, $matrix-green);
+    border-radius: 2px;
+    box-shadow: 0 0 6px var(--cabin-color, $matrix-green);
+    transition: background 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  // Window/display area
+  .cabin-window {
+    position: absolute;
+    top: 12px;
+    left: 4px;
+    right: 4px;
+    bottom: 10px;
+    background: linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(20, 20, 20, 0.9) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  // Window reflection shine
+  .window-reflection {
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.03),
+      transparent
+    );
+    transform: skewX(-20deg);
+    animation: reflection-move 4s ease-in-out infinite;
+  }
+
+  // Bottom detail line
+  .cabin-base {
+    position: absolute;
+    bottom: 3px;
+    left: 6px;
+    right: 6px;
+    height: 2px;
+    background: var(--cabin-color, $matrix-green);
+    opacity: 0.4;
+    border-radius: 1px;
+    transition: background 0.4s ease;
+  }
+
+  // Glow effect
+  .cabin-glow {
+    position: absolute;
+    inset: -8px;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 255, 68, 0.2) 0%,
+      transparent 70%
+    );
+    opacity: 0.4;
+    border-radius: 10px;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  // === STATES ===
+
+  // Moving state - cabin is traveling
   &.moving {
-    .cabin-box {
-      box-shadow: 0 0 20px $matrix-green;
+    .cabin-frame {
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8),
+                  0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .cabin-led {
+      animation: led-blink 0.15s ease-in-out infinite;
     }
 
     .cabin-glow {
-      animation: cabin-pulse 0.3s ease-in-out infinite;
       opacity: 0.7;
+      animation: glow-pulse 0.3s ease-in-out infinite;
     }
 
-    .stickman {
-      animation: stickman-bounce 0.3s ease-in-out infinite;
+    .window-reflection {
+      animation: reflection-fast 0.5s linear infinite;
+    }
+  }
+
+  // Arrived state - play arrival animation
+  &.arrived {
+    .cabin-frame {
+      box-shadow: 0 0 15px var(--cabin-color, $matrix-green),
+                  0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .cabin-glow {
+      background: radial-gradient(
+        ellipse at center,
+        var(--cabin-color, $matrix-green) 0%,
+        transparent 70%
+      );
+      opacity: 0.3;
+    }
+
+    // Trigger pulse animation
+    .arrival-pulse {
+      animation: pulse-rings 1s ease-out;
     }
   }
 }
 
-@keyframes cabin-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
+// === ANIMATIONS ===
+
+@keyframes reflection-move {
+  0%, 100% { left: -50%; }
+  50% { left: 120%; }
 }
 
-@keyframes stickman-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+@keyframes reflection-fast {
+  0% { left: -50%; }
+  100% { left: 120%; }
 }
 
-// ==========================================
-// STICKMAN ROBOT (tiny green figure)
-// ==========================================
-.stickman {
-  position: relative;
-  width: 16px;
-  height: 28px;
-  margin-top: 4px;
+@keyframes led-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-.stick-head {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
-  background: rgba($matrix-green, 0.3);
-  border: 1px solid $matrix-green;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
 }
 
-.stick-eye {
-  width: 2px;
-  height: 2px;
-  background: $matrix-green;
-  border-radius: 50%;
-  box-shadow: 0 0 3px $matrix-green;
-  animation: blink 3s ease-in-out infinite;
-
-  &.right { animation-delay: 0.1s; }
-}
-
-.stick-neck {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1px;
-  height: 3px;
-  background: $matrix-green;
-}
-
-.stick-body {
-  position: absolute;
-  top: 11px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1px;
-  height: 10px;
-  background: $matrix-green;
-  box-shadow: 0 0 2px $matrix-green;
-}
-
-.stick-arm {
-  position: absolute;
-  top: 12px;
-  width: 6px;
-  height: 1px;
-  background: $matrix-green;
-
-  &.left {
-    right: 50%;
-    transform-origin: right center;
-    transform: rotate(-20deg);
+@keyframes pulse-rings {
+  0% {
+    opacity: 1;
   }
-
-  &.right {
-    left: 50%;
-    transform-origin: left center;
-    transform: rotate(20deg);
+  100% {
+    opacity: 0;
   }
 }
 
-.stick-leg {
-  position: absolute;
-  top: 21px;
-  width: 1px;
-  height: 7px;
-  background: $matrix-green;
-
-  &.left {
-    left: calc(50% - 3px);
-    transform-origin: top center;
-    transform: rotate(-10deg);
-  }
-
-  &.right {
-    left: calc(50% + 2px);
-    transform-origin: top center;
-    transform: rotate(10deg);
-  }
+// Pulse rings pseudo-elements animation
+.elevator-cabin.arrived .arrival-pulse::before {
+  animation: ring-expand 0.8s ease-out forwards;
 }
 
-@keyframes blink {
-  0%, 90%, 100% { opacity: 1; }
-  95% { opacity: 0.2; }
+.elevator-cabin.arrived .arrival-pulse::after {
+  animation: ring-expand 0.8s ease-out 0.15s forwards;
+}
+
+@keyframes ring-expand {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
 }
 
 // ==========================================

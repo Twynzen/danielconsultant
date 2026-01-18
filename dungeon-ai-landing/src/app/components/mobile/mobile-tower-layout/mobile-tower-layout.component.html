@@ -17,39 +17,37 @@
 
         <!-- Elevator Shaft (scrolls with floors) -->
         <div class="elevator-shaft">
-          <div class="shaft-rail"></div>
+          <!-- Rail doors (split when elevator arrives) -->
+          <div class="rail-door left" [class.open]="!isRobotMoving()"></div>
+          <div class="rail-door right" [class.open]="!isRobotMoving()"></div>
 
-          <!-- Floor level indicators -->
-          @for (floor of floors(); track floor.id; let i = $index) {
-            <div
-              class="level-dot"
-              [class.active]="isRobotOnFloor(i)"
-            ></div>
-          }
-
-          <!-- Elevator cabin with stickman -->
+          <!-- Elevator cabin -->
           <div
             class="elevator-cabin"
             [class.moving]="isRobotMoving()"
+            [class.arrived]="!isRobotMoving()"
             [style.--target-floor]="elevatorFloorIndex()"
-            [style.--total-floors]="floors().length"
+            [style.--cabin-color]="getCurrentFloorColor()"
           >
-            <div class="cabin-glow"></div>
-            <div class="cabin-box">
-              <!-- Stickman Sendell (tiny green figure) -->
-              <div class="stickman">
-                <div class="stick-head">
-                  <div class="stick-eye left"></div>
-                  <div class="stick-eye right"></div>
-                </div>
-                <div class="stick-neck"></div>
-                <div class="stick-body"></div>
-                <div class="stick-arm left"></div>
-                <div class="stick-arm right"></div>
-                <div class="stick-leg left"></div>
-                <div class="stick-leg right"></div>
+            <!-- Arrival pulse effect -->
+            <div class="arrival-pulse"></div>
+
+            <!-- Cabin frame -->
+            <div class="cabin-frame">
+              <!-- Top LED indicator -->
+              <div class="cabin-led"></div>
+
+              <!-- Window/display area -->
+              <div class="cabin-window">
+                <div class="window-reflection"></div>
               </div>
+
+              <!-- Bottom detail -->
+              <div class="cabin-base"></div>
             </div>
+
+            <!-- Glow effect -->
+            <div class="cabin-glow"></div>
           </div>
         </div>
 
