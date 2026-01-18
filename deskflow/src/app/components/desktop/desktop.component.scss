@@ -34,6 +34,23 @@
   &.transition-in {
     animation: zoomIn 0.3s ease forwards;
   }
+
+  // ==================== MOBILE RESPONSIVE GRID ====================
+  @media (max-width: 768px) {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    // Grid container for folders/notes
+    &::after {
+      content: '';
+      display: block;
+      min-height: 100px; // Space at bottom for scrolling
+    }
+  }
 }
 
 @keyframes zoomOut {

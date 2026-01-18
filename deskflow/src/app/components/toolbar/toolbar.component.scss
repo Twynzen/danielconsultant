@@ -416,3 +416,63 @@
     opacity: 0.7;
   }
 }
+
+// ==================== MOBILE RESPONSIVE ====================
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .breadcrumb {
+    max-width: 50%;
+
+    .breadcrumb-item {
+      padding: 6px 6px;
+      font-size: 11px;
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .separator {
+        width: 8px;
+        height: 8px;
+        margin: 0 2px;
+      }
+    }
+  }
+
+  .toolbar-actions {
+    gap: 4px;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .separator-line {
+    margin: 0 2px;
+    height: 20px;
+  }
+
+  .user-btn {
+    padding: 4px 8px !important;
+
+    .user-name {
+      display: none;
+    }
+  }
+
+  // Hide less important buttons on mobile
+  .mcp-token-btn {
+    display: none;
+  }
+}

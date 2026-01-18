@@ -345,3 +345,44 @@
 :host {
   animation: note-appear 0.2s ease-out;
 }
+
+// ==================== MOBILE RESPONSIVE ====================
+@media (max-width: 768px) {
+  .note {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    min-width: auto;
+    min-height: auto;
+    max-height: none;
+
+    &.minimized {
+      .note-content {
+        display: none;
+      }
+    }
+  }
+
+  .note-header {
+    cursor: default;
+    padding: 10px 12px;
+
+    &:active {
+      cursor: default;
+    }
+  }
+
+  .note-content {
+    min-height: 100px;
+  }
+
+  .note-textarea {
+    min-height: 60px;
+  }
+
+  // Hide resize handles on mobile
+  .resize-handle {
+    display: none;
+  }
+}
