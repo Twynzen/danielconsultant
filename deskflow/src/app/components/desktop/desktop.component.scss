@@ -271,18 +271,30 @@
     padding: 12px;
     padding-bottom: 100px; // Espacio extra para scroll
 
-    // En móvil, los elementos no usan position absolute
-    > app-folder,
-    > app-note {
-      position: relative !important;
-      left: auto !important;
-      top: auto !important;
-      transform: none !important;
-    }
+    // Usar ::ng-deep para afectar componentes hijos
+    // Esto es necesario porque Angular encapsula los estilos
+    ::ng-deep {
+      app-folder,
+      app-note {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        transform: none !important;
+        display: block;
+        width: 100%;
+      }
 
-    // Ocultar conexiones en móvil (no tienen sentido sin posicionamiento)
-    > app-connections {
-      display: none;
+      app-folder .folder,
+      app-note .note {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        width: 100% !important;
+      }
+
+      app-connections {
+        display: none !important;
+      }
     }
   }
 
