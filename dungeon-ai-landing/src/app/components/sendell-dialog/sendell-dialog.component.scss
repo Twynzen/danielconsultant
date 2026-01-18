@@ -1378,3 +1378,49 @@ $matrix-border: rgba(0, 255, 68, 0.5);
     transform: scale(0.9);
   }
 }
+
+// ==================== v7.1: AI Download Footer ====================
+
+.ai-download-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: rgba(0, 255, 68, 0.05);
+  border-top: 1px solid rgba(0, 255, 68, 0.2);
+  border-radius: 0 0 6px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: rgba(0, 255, 68, 0.6);
+
+  .download-text {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .download-progress-mini {
+    flex: 1;
+    height: 4px;
+    background: rgba(0, 255, 68, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 60px;
+
+    .download-bar {
+      height: 100%;
+      background: linear-gradient(90deg, $matrix-green-dim, $matrix-green);
+      border-radius: 2px;
+      transition: width 0.3s ease-out;
+      box-shadow: 0 0 4px $matrix-green-glow;
+    }
+  }
+
+  .download-percent {
+    flex-shrink: 0;
+    min-width: 30px;
+    text-align: right;
+    color: $matrix-green-dim;
+    font-weight: bold;
+  }
+}

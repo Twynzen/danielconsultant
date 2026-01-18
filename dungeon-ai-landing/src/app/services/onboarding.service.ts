@@ -59,6 +59,8 @@ export interface OnboardingState {
 
 // v2.0: Import LLM service for background preloading
 import { LLMService } from './llm.service';
+// v7.0: Background loader for deferred AI downloads
+import { BackgroundLoaderService } from './background-loader.service';
 
 @Injectable({
   providedIn: 'root'
@@ -66,6 +68,8 @@ import { LLMService } from './llm.service';
 export class OnboardingService {
   // v2.0: LLM service for background preloading
   private llmService = inject(LLMService);
+  // v7.0: Background loader service
+  private backgroundLoader = inject(BackgroundLoaderService);
 
   // v2.0: LLM preloading state (separate from onboarding state)
   private _llmPreloadStarted = signal(false);
@@ -81,6 +85,12 @@ export class OnboardingService {
   );
   readonly isLLMReady = computed(() => this._llmPreloadProgress() >= 100);
   readonly isWebGPUSupported = computed(() => this._isWebGPUSupported());
+
+  // v7.0: Background loader signals (deferred downloads)
+  readonly backgroundDownloadProgress = computed(() => this.backgroundLoader.totalProgress());
+  readonly backgroundDownloadStatus = computed(() => this.backgroundLoader.status());
+  readonly isBackgroundDownloading = computed(() => this.backgroundLoader.isDownloading());
+  readonly isBackgroundReady = computed(() => this.backgroundLoader.isReady());
 
   // Internal state
   private state = signal<OnboardingState>({
@@ -219,46 +229,31 @@ export class OnboardingService {
 
   /**
    * v5.1: Animate loading bar from 0 to 100
-   * v2.0: Also starts LLM preloading in background
-   * v3.0: Hybrid loading - minimum time + real LLM progress
+   * v7.0: OPTIMIZED - No longer waits for LLM during loading phase
+   * LLM downloads will start during PRESENTATION phase (when user watches dialogs)
    */
   private startLoadingAnimation(): void {
     const startTime = performance.now();
     const minDuration = ONBOARDING_TIMING.LOADING_DURATION_MS; // 3500ms minimum
 
-    // v2.0: Start LLM preloading in background (non-blocking)
-    this.startLLMPreloading();
+    // v7.0: DON'T start LLM preloading here anymore
+    // It will start during advanceToNextPhase() when entering PRESENTATION
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const timeProgress = Math.min((elapsed / minDuration) * 100, 100);
-      const llmProgress = this._llmPreloadProgress();
 
-      // v3.0: Hybrid progress calculation
-      // During first 3.5s: show time-based progress (smooth UX)
-      // After 3.5s: show real LLM progress if still loading
-      let displayProgress: number;
-
-      if (elapsed < minDuration) {
-        // First 3.5s: use time-based progress (faster visually)
-        displayProgress = timeProgress;
-      } else {
-        // After 3.5s: use real LLM progress if not complete
-        displayProgress = Math.max(timeProgress, llmProgress);
-      }
-
+      // v7.0: Just show time-based progress (no LLM dependency)
       this.state.update(s => ({
         ...s,
-        loadingProgress: displayProgress
+        loadingProgress: timeProgress
       }));
 
-      // v3.0: Exit condition - BOTH time AND LLM must be ready
+      // v7.0: Exit condition - ONLY time based (instant loading UX!)
       const timeComplete = elapsed >= minDuration;
-      const llmComplete = this._llmPreloadProgress() >= 100 ||
-                          this._isWebGPUSupported() === false; // fallback mode OK
 
-      if (timeComplete && llmComplete) {
-        // Both conditions met, advance to welcome
+      if (timeComplete) {
+        // Time complete, advance to welcome immediately
         this.loadingAnimationId = null;
         this.state.update(s => ({
           ...s,
@@ -379,6 +374,8 @@ export class OnboardingService {
           phase: OnboardingPhase.PRESENTATION,
           currentDialogIndex: 0
         }));
+        // v7.0: Start background downloads NOW (user is watching dialogs, ~25-30s window)
+        this.backgroundLoader.startBackgroundDownload();
         break;
 
       case OnboardingPhase.PRESENTATION:
