@@ -608,8 +608,533 @@ const objects = await detector(image);
   }
 ];
 
+// Models 21-30 - High Innovation LLMs
+export const MODELS_21_30: ModelConfig[] = [
+  {
+    id: 'hermes-3-llama',
+    name: 'Hermes-3-Llama-3.2-3B',
+    rank: 21,
+    category: 'llm',
+    size: '3B parámetros',
+    vram: '~2.9GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo optimizado para function calling y structured output.',
+    whyTop: 'Excelente para crear agentes que necesitan llamar APIs, generar JSON estructurado, y seguir instrucciones complejas.',
+    useCases: ['Function calling', 'JSON mode', 'Agentes AI', 'APIs'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Hermes-3-Llama-3.2-3B-q4f16_1-MLC");
+
+// Function calling
+const tools = [{
+  type: "function",
+  function: {
+    name: "get_weather",
+    parameters: { type: "object", properties: { city: { type: "string" } } }
+  }
+}];
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "What's the weather in Madrid?" }],
+  tools
+});`,
+    modelId: 'Hermes-3-Llama-3.2-3B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/NousResearch/Hermes-3-Llama-3.2-3B',
+    demoType: 'text'
+  },
+  {
+    id: 'mistral-7b',
+    name: 'Mistral-7B-v0.3',
+    rank: 22,
+    category: 'llm',
+    size: '7B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo general de alto rendimiento de Mistral AI.',
+    whyTop: 'Balance perfecto entre calidad y velocidad. Requiere GPU potente pero ofrece respuestas de alta calidad para tareas generales.',
+    useCases: ['Chat general', 'Escritura creativa', 'Análisis', 'Resumen'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Mistral-7B-Instruct-v0.3-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Write a haiku about coding" }],
+  temperature: 0.7
+});`,
+    modelId: 'Mistral-7B-Instruct-v0.3-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3',
+    demoType: 'text'
+  },
+  {
+    id: 'qwen2-5-3b',
+    name: 'Qwen2.5-3B-Instruct',
+    rank: 23,
+    category: 'llm',
+    size: '3B parámetros',
+    vram: '~2.5GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo multilingüe con excelente soporte para chino e inglés.',
+    whyTop: 'El mejor modelo para aplicaciones multilingües, especialmente chino. Calidad comparable a modelos más grandes.',
+    useCases: ['Multilingüe', 'Chino-Inglés', 'Traducción', 'Chat'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Qwen2.5-3B-Instruct-q4f16_1-MLC");
+
+// Multilingüe
+const reply = await engine.chat.completions.create({
+  messages: [
+    { role: "user", content: "Translate to Chinese: Hello, how are you?" }
+  ]
+});`,
+    modelId: 'Qwen2.5-3B-Instruct-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/Qwen/Qwen2.5-3B-Instruct',
+    demoType: 'text'
+  },
+  {
+    id: 'phi-4-mini',
+    name: 'Phi-4-mini-reasoning',
+    rank: 24,
+    category: 'llm',
+    size: '3.8B parámetros',
+    vram: '~2GB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Modelo de razonamiento sintético de Microsoft.',
+    whyTop: 'Entrenado con datos sintéticos de alta calidad para tareas de razonamiento. Excelente para matemáticas y lógica.',
+    useCases: ['Razonamiento', 'Matemáticas', 'Lógica', 'Problemas'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const generator = await pipeline(
+  "text-generation",
+  "onnx-community/Phi-4-mini-reasoning",
+  { device: "webgpu" }
+);
+
+const result = await generator(
+  "Solve: A train travels 120km in 2 hours. What is its speed?",
+  { max_new_tokens: 200 }
+);`,
+    modelId: 'onnx-community/Phi-4-mini-reasoning',
+    docsUrl: 'https://huggingface.co/microsoft/Phi-4-mini-instruct',
+    demoType: 'text'
+  },
+  {
+    id: 'deepseek-r1-llama-8b',
+    name: 'DeepSeek-R1-Distill-Llama-8B',
+    rank: 25,
+    category: 'llm',
+    size: '8B parámetros',
+    vram: '~5-6GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Versión más grande del modelo de razonamiento DeepSeek.',
+    whyTop: 'Razonamiento avanzado con mayor capacidad. Requiere GPU potente pero ofrece pensamiento más profundo.',
+    useCases: ['Razonamiento complejo', 'Análisis', 'Problemas difíciles', 'Código'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: "Think step by step: If 5 machines can make 5 widgets in 5 minutes..."
+  }]
+});`,
+    modelId: 'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
+    demoType: 'text'
+  },
+  {
+    id: 'hermes-2-pro',
+    name: 'Hermes-2-Pro-Llama-3-8B',
+    rank: 26,
+    category: 'llm',
+    size: '8B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo avanzado para tool use y agentes.',
+    whyTop: 'Especializado en uso de herramientas con formato estructurado. Ideal para construir agentes AI complejos.',
+    useCases: ['Tool use', 'Agentes', 'Automatización', 'Multi-step tasks'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC");
+
+// Tool use avanzado
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Search for flights and book the cheapest one" }],
+  tools: [/* flight tools definition */]
+});`,
+    modelId: 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/NousResearch/Hermes-2-Pro-Llama-3-8B',
+    demoType: 'text'
+  },
+  {
+    id: 'neuralhermes',
+    name: 'NeuralHermes-2.5-Mistral-7B',
+    rank: 27,
+    category: 'llm',
+    size: '7B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Fine-tune creativo de Mistral para escritura.',
+    whyTop: 'Optimizado para generación creativa y storytelling. Excelente para escritura de ficción y contenido.',
+    useCases: ['Escritura creativa', 'Storytelling', 'Ficción', 'Contenido'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("NeuralHermes-2.5-Mistral-7B-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: "Write a short story about a robot learning to paint"
+  }],
+  temperature: 0.9
+});`,
+    modelId: 'NeuralHermes-2.5-Mistral-7B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/mlabonne/NeuralHermes-2.5-Mistral-7B',
+    demoType: 'text'
+  },
+  {
+    id: 'openhermes',
+    name: 'OpenHermes-2.5-Mistral-7B',
+    rank: 28,
+    category: 'llm',
+    size: '7B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Modelo general entrenado con datos curados.',
+    whyTop: 'Entrenado con dataset curado de alta calidad. Bueno para instrucciones generales y tareas variadas.',
+    useCases: ['Instrucciones', 'General purpose', 'Q&A', 'Asistente'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("OpenHermes-2.5-Mistral-7B-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Explain photosynthesis simply" }]
+});`,
+    modelId: 'OpenHermes-2.5-Mistral-7B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B',
+    demoType: 'text'
+  },
+  {
+    id: 'gemma-2-9b',
+    name: 'Gemma-2-9b-it',
+    rank: 29,
+    category: 'llm',
+    size: '9B parámetros',
+    vram: '~6.4GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo grande de Google con calidad Gemini.',
+    whyTop: 'La mejor calidad de la familia Gemma. Requiere más VRAM pero ofrece respuestas más sofisticadas.',
+    useCases: ['Alta calidad', 'Análisis complejo', 'Escritura', 'Razonamiento'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("gemma-2-9b-it-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: "Analyze the pros and cons of remote work"
+  }]
+});`,
+    modelId: 'gemma-2-9b-it-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/google/gemma-2-9b-it',
+    demoType: 'text'
+  },
+  {
+    id: 'llama-3-1-8b',
+    name: 'Llama-3.1-8B-Instruct',
+    rank: 30,
+    category: 'llm',
+    size: '8B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo con contexto 128K y tool use nativo.',
+    whyTop: 'Contexto ultra largo de 128K tokens. Ideal para RAG con documentos extensos y conversaciones largas.',
+    useCases: ['Contexto largo', 'RAG', 'Documentos', 'Tool use'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Llama-3.1-8B-Instruct-q4f16_1-MLC");
+
+// Contexto largo - hasta 128K tokens
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: \`Summarize this long document: \${longDocument}\`
+  }]
+});`,
+    modelId: 'Llama-3.1-8B-Instruct-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct',
+    demoType: 'text'
+  }
+];
+
+// Models 31-40 - Vision Models
+export const MODELS_31_40: ModelConfig[] = [
+  {
+    id: 'clip',
+    name: 'CLIP (OpenAI)',
+    rank: 31,
+    category: 'multimodal',
+    size: '428M parámetros',
+    vram: '~500MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Embeddings imagen-texto de OpenAI.',
+    whyTop: 'Revolucionó la conexión entre imágenes y texto. Permite búsqueda de imágenes por texto y clasificación zero-shot.',
+    useCases: ['Image search', 'Zero-shot classification', 'Embeddings multimodal', 'Similarity'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "zero-shot-image-classification",
+  "Xenova/clip-vit-base-patch32"
+);
+
+const result = await classifier(image, ["a cat", "a dog", "a bird"]);
+// Returns probabilities for each label`,
+    modelId: 'Xenova/clip-vit-base-patch32',
+    docsUrl: 'https://huggingface.co/openai/clip-vit-base-patch32',
+    demoType: 'multimodal'
+  },
+  {
+    id: 'siglip',
+    name: 'SigLIP',
+    rank: 32,
+    category: 'multimodal',
+    size: '400M parámetros',
+    vram: '~500MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Versión mejorada de CLIP por Google.',
+    whyTop: 'Mejor que CLIP original en tareas de clasificación y retrieval. Función sigmoid en lugar de softmax.',
+    useCases: ['Image classification', 'Retrieval mejorado', 'Zero-shot', 'Fine-tuning'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "zero-shot-image-classification",
+  "Xenova/siglip-base-patch16-224"
+);
+
+const result = await classifier(image, ["photo", "drawing", "painting"]);`,
+    modelId: 'Xenova/siglip-base-patch16-224',
+    docsUrl: 'https://huggingface.co/google/siglip-base-patch16-224',
+    demoType: 'multimodal'
+  },
+  {
+    id: 'dinov2',
+    name: 'DINOv2',
+    rank: 33,
+    category: 'vision',
+    size: '300M parámetros',
+    vram: '~400MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Feature extraction visual self-supervised de Meta.',
+    whyTop: 'Extrae features visuales universales sin necesidad de texto. Ideal para clustering de imágenes y similitud visual.',
+    useCases: ['Feature extraction', 'Image clustering', 'Visual similarity', 'Transfer learning'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "image-feature-extraction",
+  "Xenova/dinov2-small"
+);
+
+const features = await extractor(image);
+// 384-dimensional feature vector`,
+    modelId: 'Xenova/dinov2-small',
+    docsUrl: 'https://huggingface.co/facebook/dinov2-small',
+    demoType: 'image'
+  },
+  {
+    id: 'qwen2-vl-2b',
+    name: 'Qwen2-VL-2B',
+    rank: 34,
+    category: 'multimodal',
+    size: '2B parámetros',
+    vram: '~2GB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Modelo vision-language multilingüe de Alibaba.',
+    whyTop: 'VQA multilingüe con soporte nativo para chino. Entiende imágenes y responde preguntas en múltiples idiomas.',
+    useCases: ['VQA multilingüe', 'Descripción de imágenes', 'OCR', 'Análisis visual'],
+    codeExample: `import { Qwen2VLForConditionalGeneration } from "@huggingface/transformers";
+
+const model = await Qwen2VLForConditionalGeneration.from_pretrained(
+  "onnx-community/Qwen2-VL-2B-Instruct",
+  { device: "webgpu" }
+);
+
+const result = await model.generate({
+  image: imageElement,
+  prompt: "Describe esta imagen en español"
+});`,
+    modelId: 'onnx-community/Qwen2-VL-2B-Instruct',
+    docsUrl: 'https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct',
+    demoType: 'multimodal'
+  },
+  {
+    id: 'llava',
+    name: 'LLaVA',
+    rank: 35,
+    category: 'multimodal',
+    size: '7B+ parámetros',
+    vram: '~5GB+',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Vision-language model completo con capacidad de chat.',
+    whyTop: 'Combina visión y lenguaje para conversaciones sobre imágenes. Requiere GPU potente pero muy capaz.',
+    useCases: ['Visual chat', 'Image understanding', 'Multi-turn VQA', 'Analysis'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("llava-1.5-7b-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: [
+      { type: "image", image: imageBase64 },
+      { type: "text", text: "What's happening in this image?" }
+    ]
+  }]
+});`,
+    modelId: 'llava-1.5-7b-q4f16_1-MLC',
+    docsUrl: 'https://llava-vl.github.io/',
+    demoType: 'multimodal'
+  },
+  {
+    id: 'mobilenetv4',
+    name: 'MobileNetV4',
+    rank: 36,
+    category: 'vision',
+    size: '6M parámetros',
+    vram: '~50MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Clasificación de imágenes ultra-rápida.',
+    whyTop: 'El modelo más rápido para clasificación. Ideal para aplicaciones móviles y en tiempo real.',
+    useCases: ['Clasificación rápida', 'Mobile apps', 'Real-time', 'Edge devices'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "image-classification",
+  "onnx-community/mobilenetv4_conv_small.e2400_r224_in1k",
+  { device: "webgpu" }
+);
+
+const result = await classifier(image);
+// [{ label: "cat", score: 0.95 }, ...]`,
+    modelId: 'onnx-community/mobilenetv4_conv_small.e2400_r224_in1k',
+    docsUrl: 'https://huggingface.co/timm/mobilenetv4_conv_small.e2400_r224_in1k',
+    demoType: 'image'
+  },
+  {
+    id: 'efficientnet',
+    name: 'EfficientNet',
+    rank: 37,
+    category: 'vision',
+    size: '5-66M parámetros',
+    vram: '~50-200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Clasificación eficiente con buen balance.',
+    whyTop: 'Familia de modelos con diferentes tamaños. Elige según tus recursos: B0 para velocidad, B7 para precisión.',
+    useCases: ['Clasificación eficiente', 'Scalable', 'Production', 'Fine-tuning'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "image-classification",
+  "Xenova/efficientnet-b0"
+);
+
+const result = await classifier(image);`,
+    modelId: 'Xenova/efficientnet-b0',
+    docsUrl: 'https://huggingface.co/google/efficientnet-b0',
+    demoType: 'image'
+  },
+  {
+    id: 'vit',
+    name: 'ViT (Vision Transformer)',
+    rank: 38,
+    category: 'vision',
+    size: '86M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'El transformer original para visión.',
+    whyTop: 'Pionero en aplicar transformers a imágenes. Buen baseline para muchas tareas de visión.',
+    useCases: ['Clasificación base', 'Transfer learning', 'Feature extraction', 'Fine-tuning'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "image-classification",
+  "Xenova/vit-base-patch16-224"
+);
+
+const result = await classifier(image);`,
+    modelId: 'Xenova/vit-base-patch16-224',
+    docsUrl: 'https://huggingface.co/google/vit-base-patch16-224',
+    demoType: 'image'
+  },
+  {
+    id: 'fastvit',
+    name: 'FastViT',
+    rank: 39,
+    category: 'vision',
+    size: '50M parámetros',
+    vram: '~100MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'ViT optimizado para velocidad.',
+    whyTop: 'Combina la calidad de ViT con velocidad de MobileNet. Buen compromiso para producción.',
+    useCases: ['Fast inference', 'Production', 'Mobile', 'Real-time'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "image-classification",
+  "Xenova/fastvit-t8"
+);
+
+const result = await classifier(image);`,
+    modelId: 'Xenova/fastvit-t8',
+    docsUrl: 'https://huggingface.co/apple/fastvit-t8',
+    demoType: 'image'
+  },
+  {
+    id: 'hiera',
+    name: 'Hiera',
+    rank: 40,
+    category: 'vision',
+    size: '100M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Visión jerárquica de Meta.',
+    whyTop: 'Procesa imágenes de forma jerárquica para mejor eficiencia. Bueno para múltiples escalas.',
+    useCases: ['Multi-scale vision', 'Hierarchical features', 'Efficient processing', 'Research'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "image-classification",
+  "Xenova/hiera-small-224"
+);
+
+const result = await classifier(image);`,
+    modelId: 'Xenova/hiera-small-224',
+    docsUrl: 'https://huggingface.co/facebook/hiera-small-224',
+    demoType: 'image'
+  }
+];
+
 // All models combined for easy access
-export const ALL_MODELS: ModelConfig[] = [...TOP_10_MODELS, ...MODELS_11_20];
+export const ALL_MODELS: ModelConfig[] = [...TOP_10_MODELS, ...MODELS_11_20, ...MODELS_21_30, ...MODELS_31_40];
 
 // Category metadata
 export const MODEL_CATEGORIES: Record<ModelCategory, { label: string; icon: string; color: string }> = {
