@@ -3,12 +3,13 @@ import { LandingPageComponent } from './components/landing-page/landing-page.com
 import { deviceRedirectGuard, mobileRouteGuard, desktopRouteGuard } from './guards/device-redirect.guard';
 
 /**
- * v7.0: Updated routes with mobile tower layout
+ * v7.1: Updated routes with Model Research Platform
  *
  * Routes:
  * - '' (root): Desktop landing page (with auto-redirect for mobile devices)
  * - '/mobile': Mobile tower layout
  * - '/game': Vampire Survivors game
+ * - '/model-research': AI Model Research Platform (100+ models)
  * - '/deskflow': Served by Netlify separately
  */
 export const routes: Routes = [
@@ -29,6 +30,13 @@ export const routes: Routes = [
     path: 'game',
     loadComponent: () => import('./components/vampire-survivors-game/vampire-survivors-game.component')
       .then(m => m.VampireSurvivorsGameComponent)
+  },
+  {
+    // v7.1: Model Research Platform - lazy loaded
+    // Explore 100+ AI models for WebLLM/WebGPU with demos and documentation
+    path: 'model-research',
+    loadComponent: () => import('./components/model-research/model-research-layout/model-research-layout.component')
+      .then(m => m.ModelResearchLayoutComponent)
   },
   // DeskFlow app is served by Netlify at /deskflow (separate Angular app)
   {
