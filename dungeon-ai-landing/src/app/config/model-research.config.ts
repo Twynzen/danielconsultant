@@ -2147,6 +2147,522 @@ const reply = await engine.chat.completions.create({
   }
 ];
 
+// Models 81-90 - Translation & Multilingual
+export const MODELS_81_90: ModelConfig[] = [
+  {
+    id: 'mt5-small',
+    name: 'mT5-small',
+    rank: 81,
+    category: 'llm',
+    size: '300M parámetros',
+    vram: '~500MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'T5 multilingüe para traducción.',
+    whyTop: 'Soporta 101 idiomas. Bueno para tareas de traducción y text-to-text multilingüe.',
+    useCases: ['Translation', 'Multilingual', 'Text-to-text', 'Summarization'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const translator = await pipeline(
+  "translation",
+  "Xenova/mt5-small"
+);
+
+const result = await translator("Hello, how are you?", {
+  src_lang: "en",
+  tgt_lang: "es"
+});`,
+    modelId: 'Xenova/mt5-small',
+    docsUrl: 'https://huggingface.co/google/mt5-small',
+    demoType: 'text'
+  },
+  {
+    id: 'nllb-200',
+    name: 'NLLB-200-600M',
+    rank: 82,
+    category: 'llm',
+    size: '600M parámetros',
+    vram: '~1GB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'No Language Left Behind - 200 idiomas.',
+    whyTop: 'Meta\'s modelo que traduce entre 200 idiomas, incluyendo lenguas de bajos recursos.',
+    useCases: ['200 languages', 'Low-resource', 'Inclusive translation', 'Rare languages'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const translator = await pipeline(
+  "translation",
+  "Xenova/nllb-200-distilled-600M"
+);
+
+const result = await translator("Hello world", {
+  src_lang: "eng_Latn",
+  tgt_lang: "spa_Latn"
+});`,
+    modelId: 'Xenova/nllb-200-distilled-600M',
+    docsUrl: 'https://huggingface.co/facebook/nllb-200-distilled-600M',
+    demoType: 'text'
+  },
+  {
+    id: 'marian-mt',
+    name: 'MarianMT',
+    rank: 83,
+    category: 'llm',
+    size: '298M parámetros',
+    vram: '~400MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Traducción para pares de idiomas específicos.',
+    whyTop: 'Modelos optimizados para pares específicos. Muy rápido y preciso para idiomas soportados.',
+    useCases: ['Language pairs', 'Fast translation', 'Specific languages', 'Production'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+// English to Spanish
+const translator = await pipeline(
+  "translation",
+  "Xenova/opus-mt-en-es"
+);
+
+const result = await translator("Hello, how are you?");`,
+    modelId: 'Xenova/opus-mt-en-es',
+    docsUrl: 'https://huggingface.co/Helsinki-NLP/opus-mt-en-es',
+    demoType: 'text'
+  },
+  {
+    id: 'm2m100',
+    name: 'M2M-100-418M',
+    rank: 84,
+    category: 'llm',
+    size: '418M parámetros',
+    vram: '~700MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Many-to-many translation sin inglés como pivote.',
+    whyTop: 'Traduce directamente entre cualquier par de 100 idiomas sin pasar por inglés.',
+    useCases: ['Direct translation', 'No pivot', 'Many-to-many', '100 languages'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const translator = await pipeline(
+  "translation",
+  "Xenova/m2m100_418M"
+);
+
+// Spanish to French directly
+const result = await translator("Hola mundo", {
+  src_lang: "es",
+  tgt_lang: "fr"
+});`,
+    modelId: 'Xenova/m2m100_418M',
+    docsUrl: 'https://huggingface.co/facebook/m2m100_418M',
+    demoType: 'text'
+  },
+  {
+    id: 'helsinki-nlp',
+    name: 'Helsinki-NLP models',
+    rank: 85,
+    category: 'llm',
+    size: 'Variable',
+    vram: '~300-500MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Colección de modelos de traducción específicos.',
+    whyTop: 'Gran colección de modelos para pares de idiomas específicos. Optimizados y ligeros.',
+    useCases: ['Specific pairs', 'Optimized', 'Lightweight', 'Many options'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+// Muchos pares disponibles: en-de, en-fr, en-zh, etc.
+const translator = await pipeline(
+  "translation",
+  "Xenova/opus-mt-en-de"
+);
+
+const result = await translator("Good morning");`,
+    modelId: 'Xenova/opus-mt-en-de',
+    docsUrl: 'https://huggingface.co/Helsinki-NLP',
+    demoType: 'text'
+  },
+  {
+    id: 'twitter-sentiment',
+    name: 'Twitter-RoBERTa-Sentiment',
+    rank: 86,
+    category: 'embedding',
+    size: '125M parámetros',
+    vram: '~250MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Análisis de sentimiento para redes sociales.',
+    whyTop: 'Entrenado específicamente con tweets. Entiende emojis, hashtags, y jerga social.',
+    useCases: ['Social media', 'Twitter analysis', 'Sentiment', 'Brand monitoring'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/twitter-roberta-base-sentiment-latest"
+);
+
+const result = await classifier("This product is amazing! #love");
+// { label: "positive", score: 0.98 }`,
+    modelId: 'Xenova/twitter-roberta-base-sentiment-latest',
+    docsUrl: 'https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest',
+    demoType: 'text'
+  },
+  {
+    id: 'finbert',
+    name: 'FinBERT',
+    rank: 87,
+    category: 'embedding',
+    size: '110M parámetros',
+    vram: '~250MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Sentimiento financiero especializado.',
+    whyTop: 'Entrenado con textos financieros. Entiende terminología de mercados y earnings calls.',
+    useCases: ['Financial sentiment', 'Stock analysis', 'Earnings calls', 'Market news'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/finbert"
+);
+
+const result = await classifier("Revenue exceeded expectations this quarter");
+// { label: "positive", score: 0.95 }`,
+    modelId: 'Xenova/finbert',
+    docsUrl: 'https://huggingface.co/ProsusAI/finbert',
+    demoType: 'text'
+  },
+  {
+    id: 'toxic-bert',
+    name: 'Toxic-BERT',
+    rank: 88,
+    category: 'embedding',
+    size: '110M parámetros',
+    vram: '~250MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Detección de contenido tóxico.',
+    whyTop: 'Detecta toxicidad, insultos, amenazas, y contenido inapropiado en texto.',
+    useCases: ['Content moderation', 'Toxicity detection', 'Safe AI', 'Community guidelines'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/toxic-bert"
+);
+
+const result = await classifier("Your message here...");
+// Returns toxicity score`,
+    modelId: 'Xenova/toxic-bert',
+    docsUrl: 'https://huggingface.co/unitary/toxic-bert',
+    demoType: 'text'
+  },
+  {
+    id: 'emotion-roberta',
+    name: 'Emotion-English-DistilRoBERTa',
+    rank: 89,
+    category: 'embedding',
+    size: '82M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Detección de emociones en texto.',
+    whyTop: 'Detecta 6 emociones: joy, sadness, anger, fear, surprise, disgust.',
+    useCases: ['Emotion detection', 'Customer feedback', 'Mental health', 'User experience'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/emotion-english-distilroberta-base"
+);
+
+const result = await classifier("I'm so happy today!");
+// { label: "joy", score: 0.97 }`,
+    modelId: 'Xenova/emotion-english-distilroberta-base',
+    docsUrl: 'https://huggingface.co/j-hartmann/emotion-english-distilroberta-base',
+    demoType: 'text'
+  },
+  {
+    id: 'zero-shot',
+    name: 'Zero-Shot Classification',
+    rank: 90,
+    category: 'embedding',
+    size: '407M parámetros',
+    vram: '~600MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Clasificación sin ejemplos de entrenamiento.',
+    whyTop: 'Clasifica en cualquier categoría que definas sin necesidad de fine-tuning.',
+    useCases: ['Zero-shot', 'Custom categories', 'Flexible classification', 'No training'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "zero-shot-classification",
+  "Xenova/bart-large-mnli"
+);
+
+const result = await classifier(
+  "I want to buy a new phone",
+  { candidate_labels: ["shopping", "travel", "work", "health"] }
+);`,
+    modelId: 'Xenova/bart-large-mnli',
+    docsUrl: 'https://huggingface.co/facebook/bart-large-mnli',
+    demoType: 'text'
+  }
+];
+
+// Models 91-100 - Summarization, Q&A & NER
+export const MODELS_91_100: ModelConfig[] = [
+  {
+    id: 'flan-t5',
+    name: 'FLAN-T5-small',
+    rank: 91,
+    category: 'llm',
+    size: '77M parámetros',
+    vram: '~150MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'T5 instruction-tuned de Google.',
+    whyTop: 'Excelente seguimiento de instrucciones en tamaño pequeño. Versátil para muchas tareas.',
+    useCases: ['Instructions', 'Q&A', 'Summarization', 'Text tasks'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const generator = await pipeline(
+  "text2text-generation",
+  "Xenova/flan-t5-small"
+);
+
+const result = await generator("Summarize: " + longText);`,
+    modelId: 'Xenova/flan-t5-small',
+    docsUrl: 'https://huggingface.co/google/flan-t5-small',
+    demoType: 'text'
+  },
+  {
+    id: 'longt5',
+    name: 'LongT5',
+    rank: 92,
+    category: 'llm',
+    size: '220M parámetros',
+    vram: '~400MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'T5 para documentos largos.',
+    whyTop: 'Diseñado para procesar textos largos eficientemente. Ideal para resumir documentos extensos.',
+    useCases: ['Long documents', 'Book summarization', 'Research papers', 'Reports'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const summarizer = await pipeline(
+  "summarization",
+  "Xenova/long-t5-local-base"
+);
+
+const result = await summarizer(veryLongDocument, {
+  max_length: 200
+});`,
+    modelId: 'Xenova/long-t5-local-base',
+    docsUrl: 'https://huggingface.co/google/long-t5-local-base',
+    demoType: 'text'
+  },
+  {
+    id: 'led',
+    name: 'LED (Longformer Encoder-Decoder)',
+    rank: 93,
+    category: 'llm',
+    size: '460M parámetros',
+    vram: '~700MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Encoder-decoder para contexto largo.',
+    whyTop: 'Hasta 16K tokens de contexto. Bueno para resumir documentos muy largos.',
+    useCases: ['Very long context', 'Document summarization', '16K tokens', 'Legal docs'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const summarizer = await pipeline(
+  "summarization",
+  "Xenova/led-base-16384"
+);
+
+const result = await summarizer(legalDocument);`,
+    modelId: 'Xenova/led-base-16384',
+    docsUrl: 'https://huggingface.co/allenai/led-base-16384',
+    demoType: 'text'
+  },
+  {
+    id: 'bart-cnn',
+    name: 'BART-large-CNN',
+    rank: 94,
+    category: 'llm',
+    size: '406M parámetros',
+    vram: '~600MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Resumen de noticias estilo CNN.',
+    whyTop: 'Fine-tuned para resumir artículos de noticias. Produce resúmenes concisos y coherentes.',
+    useCases: ['News summarization', 'Article summary', 'Journalism', 'Content'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const summarizer = await pipeline(
+  "summarization",
+  "Xenova/bart-large-cnn"
+);
+
+const result = await summarizer(newsArticle, {
+  max_length: 130,
+  min_length: 30
+});`,
+    modelId: 'Xenova/bart-large-cnn',
+    docsUrl: 'https://huggingface.co/facebook/bart-large-cnn',
+    demoType: 'text'
+  },
+  {
+    id: 't5-small',
+    name: 'T5-small',
+    rank: 95,
+    category: 'llm',
+    size: '60M parámetros',
+    vram: '~150MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Text-to-text transfer transformer original.',
+    whyTop: 'El modelo que popularizó text-to-text. Versátil para traducción, resumen, Q&A.',
+    useCases: ['Text-to-text', 'Multi-task', 'Baseline', 'Education'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const generator = await pipeline(
+  "text2text-generation",
+  "Xenova/t5-small"
+);
+
+const result = await generator("translate English to German: Hello");`,
+    modelId: 'Xenova/t5-small',
+    docsUrl: 'https://huggingface.co/t5-small',
+    demoType: 'text'
+  },
+  {
+    id: 'bert-ner',
+    name: 'BERT-base-NER',
+    rank: 96,
+    category: 'embedding',
+    size: '110M parámetros',
+    vram: '~250MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Extracción de entidades nombradas.',
+    whyTop: 'Identifica personas, organizaciones, lugares, y más en texto.',
+    useCases: ['NER', 'Entity extraction', 'Information extraction', 'Knowledge graphs'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const ner = await pipeline(
+  "token-classification",
+  "Xenova/bert-base-NER"
+);
+
+const result = await ner("Bill Gates founded Microsoft in Seattle");
+// [{ entity: "PER", word: "Bill Gates" }, ...]`,
+    modelId: 'Xenova/bert-base-NER',
+    docsUrl: 'https://huggingface.co/dslim/bert-base-NER',
+    demoType: 'text'
+  },
+  {
+    id: 'spacy-transformers',
+    name: 'SpaCy-Transformers-en',
+    rank: 97,
+    category: 'embedding',
+    size: 'Variable',
+    vram: '~300MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'NER y parsing con transformers.',
+    whyTop: 'Combina la practicidad de spaCy con el poder de transformers.',
+    useCases: ['NLP pipeline', 'Parsing', 'NER', 'Production NLP'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const ner = await pipeline(
+  "token-classification",
+  "Xenova/bert-base-NER-uncased"
+);
+
+const entities = await ner(text);`,
+    modelId: 'Xenova/bert-base-NER-uncased',
+    docsUrl: 'https://spacy.io/usage/embeddings-transformers',
+    demoType: 'text'
+  },
+  {
+    id: 'keyphrase',
+    name: 'Keyphrase-Extraction',
+    rank: 98,
+    category: 'embedding',
+    size: '66M parámetros',
+    vram: '~150MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Extracción de keywords y frases clave.',
+    whyTop: 'Extrae automáticamente las palabras clave más importantes de un texto.',
+    useCases: ['Keyphrase extraction', 'SEO', 'Tagging', 'Summarization'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "token-classification",
+  "Xenova/keyphrase-extraction-kbir-inspec"
+);
+
+const keyphrases = await extractor(text);`,
+    modelId: 'Xenova/keyphrase-extraction-kbir-inspec',
+    docsUrl: 'https://huggingface.co/ml6team/keyphrase-extraction-kbir-inspec',
+    demoType: 'text'
+  },
+  {
+    id: 'question-gen',
+    name: 'Question-Generation',
+    rank: 99,
+    category: 'llm',
+    size: '440M parámetros',
+    vram: '~650MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Genera preguntas a partir de texto.',
+    whyTop: 'Útil para crear quizzes, FAQs automáticas, y sistemas de estudio.',
+    useCases: ['Quiz generation', 'FAQ', 'Education', 'Study tools'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const qg = await pipeline(
+  "text2text-generation",
+  "Xenova/t5-base-finetuned-question-generation-ap"
+);
+
+const question = await qg("generate question: " + context);`,
+    modelId: 'Xenova/t5-base-finetuned-question-generation-ap',
+    docsUrl: 'https://huggingface.co/mrm8488/t5-base-finetuned-question-generation-ap',
+    demoType: 'text'
+  },
+  {
+    id: 'multilabel',
+    name: 'Text-Classification-Multilabel',
+    rank: 100,
+    category: 'embedding',
+    size: '125M parámetros',
+    vram: '~250MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Clasificación multi-etiqueta.',
+    whyTop: 'Asigna múltiples etiquetas a un texto, no solo una. Útil para categorización compleja.',
+    useCases: ['Multi-label', 'Complex categorization', 'Tagging', 'Content classification'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/distilbert-base-uncased-go-emotions"
+);
+
+// Puede retornar múltiples emociones
+const result = await classifier("I'm happy but also a bit nervous", {
+  top_k: 3
+});`,
+    modelId: 'Xenova/distilbert-base-uncased-go-emotions',
+    docsUrl: 'https://huggingface.co/SamLowe/roberta-base-go_emotions',
+    demoType: 'text'
+  }
+];
+
 // All models combined for easy access
 export const ALL_MODELS: ModelConfig[] = [
   ...TOP_10_MODELS,
@@ -2156,7 +2672,9 @@ export const ALL_MODELS: ModelConfig[] = [
   ...MODELS_41_50,
   ...MODELS_51_60,
   ...MODELS_61_70,
-  ...MODELS_71_80
+  ...MODELS_71_80,
+  ...MODELS_81_90,
+  ...MODELS_91_100
 ];
 
 // Category metadata
