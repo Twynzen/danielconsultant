@@ -66,6 +66,21 @@ export class StorageService {
             n.updatedAt = new Date(n.updatedAt);
           });
         });
+
+        // MIGRATION: Sync Desktop names with Folder names
+        // This fixes historical data where Desktop.name was "Nueva Carpeta"
+        for (const desktop of parsed.desktops) {
+          for (const parentDesktop of parsed.desktops) {
+            const folderPointingToThis = parentDesktop.folders?.find(
+              (f: Folder) => f.desktopId === desktop.id
+            );
+            if (folderPointingToThis && folderPointingToThis.name !== desktop.name) {
+              desktop.name = folderPointingToThis.name;
+              break;
+            }
+          }
+        }
+
         return parsed;
       }
     } catch (e) {
@@ -214,9 +229,12 @@ export class StorageService {
   }
 
   updateFolder(folderId: string, updates: Partial<Folder>): void {
-    this.updateState(state => ({
-      ...state,
-      desktops: state.desktops.map(d =>
+    // Obtener el folder actual para encontrar el desktopId asociado
+    const currentDesktop = this.currentDesktop();
+    const folder = currentDesktop?.folders.find(f => f.id === folderId);
+
+    this.updateState(state => {
+      let newDesktops = state.desktops.map(d =>
         d.id === state.currentDesktopId
           ? {
               ...d,
@@ -225,8 +243,19 @@ export class StorageService {
               )
             }
           : d
-      )
-    }));
+      );
+
+      // Si se actualizó el nombre, sincronizar con el Desktop asociado
+      if (updates.name && folder) {
+        newDesktops = newDesktops.map(d =>
+          d.id === folder.desktopId
+            ? { ...d, name: updates.name! }
+            : d
+        );
+      }
+
+      return { ...state, desktops: newDesktops };
+    });
   }
 
   deleteFolder(folderId: string): void {

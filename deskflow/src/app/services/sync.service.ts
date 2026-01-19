@@ -326,6 +326,20 @@ export class SyncService {
         });
       }
 
+      // MIGRATION: Sync Desktop names with Folder names
+      // This fixes historical data where Desktop.name was "Nueva Carpeta"
+      for (const desktop of desktops) {
+        // Find any folder that points to this desktop
+        for (const parentDesktop of desktops) {
+          const folderPointingToThis = parentDesktop.folders.find(f => f.desktopId === desktop.id);
+          if (folderPointingToThis && folderPointingToThis.name !== desktop.name) {
+            // Use the Folder name as the authoritative name
+            desktop.name = folderPointingToThis.name;
+            break;
+          }
+        }
+      }
+
       // Find root desktop (no parent) or first desktop
       const rootDesktop = desktops.find(d => !d.parentId) || desktops[0];
 
