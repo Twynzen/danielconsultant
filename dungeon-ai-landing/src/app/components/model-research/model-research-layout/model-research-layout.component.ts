@@ -3,9 +3,9 @@ import {
   OnInit,
   OnDestroy,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   inject,
-  signal,
-  computed
+  signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -29,6 +29,7 @@ import {
 })
 export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
   readonly modelService = inject(ModelResearchService);
 
   // Local UI state
@@ -36,6 +37,10 @@ export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
   readonly showDemo = signal(false);
   readonly demoInput = signal('');
   readonly activeTab = signal<'grid' | 'list'>('grid');
+  readonly selectedFile = signal<File | null>(null);
+  readonly filePreview = signal<string | null>(null);
+  readonly isProcessing = signal(false);
+  readonly copiedCode = signal(false);
 
   // Category and framework options
   readonly categories = Object.entries(MODEL_CATEGORIES) as [ModelCategory, { label: string; icon: string; color: string }][];
@@ -48,7 +53,6 @@ export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
   readonly particles = signal<Array<{ id: number; x: number; y: number; size: number; speed: number; opacity: number }>>([]);
 
   private animationFrame: number | null = null;
-  private particleInterval: number | null = null;
 
   ngOnInit(): void {
     this.initParticles();
@@ -59,8 +63,10 @@ export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
-    if (this.particleInterval) {
-      clearInterval(this.particleInterval);
+    // Clear file preview URL
+    const preview = this.filePreview();
+    if (preview) {
+      URL.revokeObjectURL(preview);
     }
   }
 
@@ -122,39 +128,96 @@ export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
     this.modelService.selectModel(model);
     this.showDemo.set(true);
     this.demoInput.set('');
+    this.selectedFile.set(null);
+    this.filePreview.set(null);
   }
 
   closeDemo(): void {
     this.showDemo.set(false);
     this.modelService.selectModel(null);
+    this.selectedFile.set(null);
+    const preview = this.filePreview();
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    this.filePreview.set(null);
+  }
+
+  // File handling
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.selectedFile.set(file);
+
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const preview = this.filePreview();
+        if (preview) {
+          URL.revokeObjectURL(preview);
+        }
+        this.filePreview.set(URL.createObjectURL(file));
+      } else {
+        this.filePreview.set(null);
+      }
+      this.cdr.markForCheck();
+    }
+  }
+
+  clearFile(): void {
+    this.selectedFile.set(null);
+    const preview = this.filePreview();
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    this.filePreview.set(null);
   }
 
   async loadAndRunDemo(): Promise<void> {
     const model = this.modelService.selectedModel();
     if (!model) return;
 
+    this.isProcessing.set(true);
+    this.cdr.markForCheck();
+
     try {
       await this.modelService.loadModel(model);
-      if (this.demoInput()) {
-        await this.modelService.runDemo(this.demoInput());
+      // Auto-run if we have input
+      const input = this.demoInput();
+      const file = this.selectedFile();
+      if (input || file) {
+        await this.modelService.runDemo(input, file || undefined);
       }
     } catch (error) {
       console.error('Error running demo:', error);
+    } finally {
+      this.isProcessing.set(false);
+      this.cdr.markForCheck();
     }
   }
 
   async runDemo(): Promise<void> {
-    if (!this.demoInput()) return;
+    const input = this.demoInput();
+    const file = this.selectedFile();
+
+    if (!input && !file) return;
+
+    this.isProcessing.set(true);
+    this.cdr.markForCheck();
 
     try {
-      await this.modelService.runDemo(this.demoInput());
+      await this.modelService.runDemo(input, file || undefined);
     } catch (error) {
       console.error('Error running demo:', error);
+    } finally {
+      this.isProcessing.set(false);
+      this.cdr.markForCheck();
     }
   }
 
   async clearCache(): Promise<void> {
     await this.modelService.clearModelCache();
+    this.cdr.markForCheck();
   }
 
   // View toggle
@@ -181,6 +244,8 @@ export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
   async copyCode(code: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(code);
+      this.copiedCode.set(true);
+      setTimeout(() => this.copiedCode.set(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -190,6 +255,28 @@ export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
   openDocs(url: string | undefined): void {
     if (url) {
       window.open(url, '_blank');
+    }
+  }
+
+  // Check if model needs file input
+  needsFileInput(): boolean {
+    const model = this.modelService.selectedModel();
+    if (!model) return false;
+    return ['image', 'audio', 'multimodal'].includes(model.demoType);
+  }
+
+  // Get file input accept type
+  getFileAccept(): string {
+    const model = this.modelService.selectedModel();
+    if (!model) return '*/*';
+    switch (model.demoType) {
+      case 'image':
+      case 'multimodal':
+        return 'image/*';
+      case 'audio':
+        return 'audio/*';
+      default:
+        return '*/*';
     }
   }
 }

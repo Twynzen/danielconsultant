@@ -18,6 +18,10 @@ export interface ModelFilter {
 
 export type LoadingState = 'idle' | 'loading' | 'ready' | 'error';
 
+// Dynamic imports for the AI libraries
+type Pipeline = any;
+type PipelineType = string;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -48,6 +52,10 @@ export class ModelResearchService {
   // Demo result
   private readonly _demoResult = signal<string | null>(null);
 
+  // Actual loaded pipeline/engine
+  private _currentPipeline: Pipeline | null = null;
+  private _currentEngine: any = null;
+
   // Public readonly signals
   readonly models = this._models.asReadonly();
   readonly filter = this._filter.asReadonly();
@@ -64,22 +72,15 @@ export class ModelResearchService {
     const models = this._models();
 
     return models.filter(model => {
-      // Category filter
       if (filter.category !== 'all' && model.category !== filter.category) {
         return false;
       }
-
-      // Framework filter
       if (filter.framework !== 'all' && model.framework !== filter.framework) {
         return false;
       }
-
-      // Rank filter
       if (model.rank < filter.minRank || model.rank > filter.maxRank) {
         return false;
       }
-
-      // Search filter
       if (filter.search) {
         const searchLower = filter.search.toLowerCase();
         return (
@@ -88,7 +89,6 @@ export class ModelResearchService {
           model.useCases.some(uc => uc.toLowerCase().includes(searchLower))
         );
       }
-
       return true;
     }).sort((a, b) => a.rank - b.rank);
   });
@@ -109,22 +109,18 @@ export class ModelResearchService {
     };
   });
 
-  // Get category metadata
   getCategoryMeta(category: ModelCategory) {
     return MODEL_CATEGORIES[category];
   }
 
-  // Get framework metadata
   getFrameworkMeta(framework: ModelFramework) {
     return FRAMEWORKS[framework];
   }
 
-  // Update filter
   setFilter(partial: Partial<ModelFilter>): void {
     this._filter.update(current => ({ ...current, ...partial }));
   }
 
-  // Reset filter
   resetFilter(): void {
     this._filter.set({
       category: 'all',
@@ -135,54 +131,90 @@ export class ModelResearchService {
     });
   }
 
-  // Select model for demo
   selectModel(model: ModelConfig | null): void {
     this._selectedModel.set(model);
     this._demoResult.set(null);
   }
 
-  // Clear previously loaded model cache
+  // Clear model from memory and cache
   async clearModelCache(): Promise<void> {
-    const currentLoaded = this._loadedModelId();
-    if (currentLoaded) {
-      // Clear from cache API
-      if ('caches' in window) {
-        try {
-          const cacheNames = await caches.keys();
-          for (const name of cacheNames) {
-            if (name.includes('transformers') || name.includes('onnx') || name.includes('webllm')) {
-              await caches.delete(name);
-            }
-          }
-        } catch (e) {
-          console.warn('Error clearing cache:', e);
+    // Dispose current pipeline/engine
+    if (this._currentPipeline) {
+      try {
+        if (this._currentPipeline.dispose) {
+          await this._currentPipeline.dispose();
         }
+      } catch (e) {
+        console.warn('Error disposing pipeline:', e);
       }
-
-      // Clear IndexedDB if used
-      if ('indexedDB' in window) {
-        try {
-          const databases = await indexedDB.databases();
-          for (const db of databases) {
-            if (db.name && (db.name.includes('transformers') || db.name.includes('webllm'))) {
-              indexedDB.deleteDatabase(db.name);
-            }
-          }
-        } catch (e) {
-          console.warn('Error clearing IndexedDB:', e);
-        }
-      }
-
-      this._loadedModelId.set(null);
-      this._loadingMessage.set('Cache cleared successfully');
+      this._currentPipeline = null;
     }
+
+    if (this._currentEngine) {
+      try {
+        if (this._currentEngine.unload) {
+          await this._currentEngine.unload();
+        }
+      } catch (e) {
+        console.warn('Error unloading engine:', e);
+      }
+      this._currentEngine = null;
+    }
+
+    // Clear browser caches
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) {
+          if (name.includes('transformers') || name.includes('onnx') || name.includes('webllm') || name.includes('huggingface')) {
+            await caches.delete(name);
+            console.log(`Cleared cache: ${name}`);
+          }
+        }
+      } catch (e) {
+        console.warn('Error clearing caches:', e);
+      }
+    }
+
+    // Clear IndexedDB
+    if ('indexedDB' in window) {
+      try {
+        const databases = await indexedDB.databases();
+        for (const db of databases) {
+          if (db.name && (
+            db.name.includes('transformers') ||
+            db.name.includes('webllm') ||
+            db.name.includes('onnx') ||
+            db.name.includes('huggingface')
+          )) {
+            indexedDB.deleteDatabase(db.name);
+            console.log(`Deleted IndexedDB: ${db.name}`);
+          }
+        }
+      } catch (e) {
+        console.warn('Error clearing IndexedDB:', e);
+      }
+    }
+
+    this._loadedModelId.set(null);
+    this._loadingState.set('idle');
+    this._loadingProgress.set(0);
+    this._loadingMessage.set('Cache cleared');
   }
 
-  // Simulate model loading (actual implementation depends on framework)
+  // Load a real model
   async loadModel(model: ModelConfig): Promise<void> {
-    // Clear previous model first
+    // Clear previous model first (only 1 at a time)
     if (this._loadedModelId() && this._loadedModelId() !== model.id) {
+      this._loadingMessage.set('Clearing previous model...');
       await this.clearModelCache();
+      await this.delay(500);
+    }
+
+    // If already loaded, skip
+    if (this._loadedModelId() === model.id && this._currentPipeline) {
+      this._loadingState.set('ready');
+      return;
     }
 
     this._loadingState.set('loading');
@@ -190,68 +222,180 @@ export class ModelResearchService {
     this._loadingMessage.set(`Initializing ${model.name}...`);
 
     try {
-      // Simulate download progress (in real implementation, connect to actual loader)
-      const steps = [
-        { progress: 10, message: 'Checking cache...' },
-        { progress: 30, message: 'Downloading model weights...' },
-        { progress: 60, message: 'Loading into WebGPU...' },
-        { progress: 80, message: 'Compiling shaders...' },
-        { progress: 95, message: 'Warming up model...' },
-        { progress: 100, message: 'Ready!' }
-      ];
-
-      for (const step of steps) {
-        await this.delay(500 + Math.random() * 500);
-        this._loadingProgress.set(step.progress);
-        this._loadingMessage.set(step.message);
+      if (model.framework === 'Transformers.js') {
+        await this.loadTransformersModel(model);
+      } else if (model.framework === 'WebLLM') {
+        await this.loadWebLLMModel(model);
+      } else {
+        // ONNX Runtime - show instructions
+        this._loadingMessage.set('ONNX Runtime requires manual setup. See code example.');
+        this._loadingProgress.set(100);
+        this._loadingState.set('ready');
+        this._loadedModelId.set(model.id);
       }
-
-      this._loadedModelId.set(model.id);
-      this._loadingState.set('ready');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error loading model:', error);
       this._loadingState.set('error');
-      this._loadingMessage.set(`Error loading model: ${error}`);
+      this._loadingMessage.set(`Error: ${error.message || 'Failed to load model'}`);
       throw error;
     }
   }
 
+  // Load model using Transformers.js
+  private async loadTransformersModel(model: ModelConfig): Promise<void> {
+    this._loadingMessage.set('Loading Transformers.js library...');
+    this._loadingProgress.set(5);
+
+    // Dynamic import of transformers
+    const { pipeline, env } = await import('@huggingface/transformers');
+
+    // Configure for browser
+    env.allowLocalModels = false;
+    env.useBrowserCache = true;
+
+    this._loadingMessage.set('Downloading model weights...');
+    this._loadingProgress.set(10);
+
+    // Determine pipeline type based on model
+    const pipelineType = this.getPipelineType(model);
+
+    // Progress callback
+    const progressCallback = (progress: any) => {
+      if (progress.status === 'download') {
+        const pct = progress.progress || 0;
+        this._loadingProgress.set(10 + Math.floor(pct * 0.8));
+        this._loadingMessage.set(`Downloading: ${Math.floor(pct * 100)}%`);
+      } else if (progress.status === 'init') {
+        this._loadingProgress.set(90);
+        this._loadingMessage.set('Initializing model...');
+      } else if (progress.status === 'ready') {
+        this._loadingProgress.set(100);
+        this._loadingMessage.set('Model ready!');
+      }
+    };
+
+    // Create pipeline with WebGPU if available
+    const device = await this.getOptimalDevice();
+
+    // Cast to any to satisfy TypeScript - pipelineType is dynamically determined
+    this._currentPipeline = await pipeline(pipelineType as any, model.modelId, {
+      device,
+      progress_callback: progressCallback,
+    });
+
+    this._loadingProgress.set(100);
+    this._loadingMessage.set('Model ready!');
+    this._loadedModelId.set(model.id);
+    this._loadingState.set('ready');
+  }
+
+  // Load model using WebLLM (MLC)
+  private async loadWebLLMModel(model: ModelConfig): Promise<void> {
+    this._loadingMessage.set('Loading WebLLM library...');
+    this._loadingProgress.set(5);
+
+    // Dynamic import of web-llm
+    const { CreateMLCEngine } = await import('@mlc-ai/web-llm');
+
+    this._loadingMessage.set('Downloading model...');
+
+    // Progress callback
+    const initProgressCallback = (progress: any) => {
+      if (typeof progress === 'object') {
+        const pct = progress.progress || 0;
+        this._loadingProgress.set(Math.floor(pct * 100));
+        this._loadingMessage.set(progress.text || `Loading: ${Math.floor(pct * 100)}%`);
+      }
+    };
+
+    this._currentEngine = await CreateMLCEngine(model.modelId, {
+      initProgressCallback,
+    });
+
+    this._loadingProgress.set(100);
+    this._loadingMessage.set('Model ready!');
+    this._loadedModelId.set(model.id);
+    this._loadingState.set('ready');
+  }
+
+  // Get optimal device (WebGPU > WASM)
+  private async getOptimalDevice(): Promise<'webgpu' | 'wasm'> {
+    if ('gpu' in navigator) {
+      try {
+        const adapter = await (navigator as any).gpu.requestAdapter();
+        if (adapter) {
+          return 'webgpu';
+        }
+      } catch (e) {
+        console.warn('WebGPU not available, falling back to WASM');
+      }
+    }
+    return 'wasm';
+  }
+
+  // Determine pipeline type from model config
+  private getPipelineType(model: ModelConfig): PipelineType {
+    // Map demo types to pipeline types
+    const typeMap: Record<string, string> = {
+      'text': 'text-generation',
+      'embedding': 'feature-extraction',
+      'image': 'image-classification',
+      'audio': 'automatic-speech-recognition',
+      'multimodal': 'image-to-text',
+    };
+
+    // Special cases based on model ID
+    if (model.modelId.includes('whisper')) return 'automatic-speech-recognition';
+    if (model.modelId.includes('embed') || model.modelId.includes('MiniLM') || model.modelId.includes('bge') || model.modelId.includes('gte')) return 'feature-extraction';
+    if (model.modelId.includes('detr') || model.modelId.includes('yolo')) return 'object-detection';
+    if (model.modelId.includes('depth')) return 'depth-estimation';
+    if (model.modelId.includes('segment') || model.modelId.includes('sam')) return 'image-segmentation';
+    if (model.modelId.includes('classification') || model.modelId.includes('sentiment') || model.modelId.includes('emotion') || model.modelId.includes('toxic')) return 'text-classification';
+    if (model.modelId.includes('ner') || model.modelId.includes('NER')) return 'token-classification';
+    if (model.modelId.includes('fill-mask') || model.modelId.includes('bert-base-uncased')) return 'fill-mask';
+    if (model.modelId.includes('summarization') || model.modelId.includes('bart-large-cnn')) return 'summarization';
+    if (model.modelId.includes('translation') || model.modelId.includes('opus-mt') || model.modelId.includes('nllb') || model.modelId.includes('m2m') || model.modelId.includes('mt5')) return 'translation';
+    if (model.modelId.includes('t5') || model.modelId.includes('flan')) return 'text2text-generation';
+    if (model.modelId.includes('tts') || model.modelId.includes('speecht5')) return 'text-to-speech';
+    if (model.modelId.includes('zero-shot')) return 'zero-shot-classification';
+    if (model.modelId.includes('question-answering') || model.modelId.includes('deberta')) return 'question-answering';
+    if (model.modelId.includes('vit') || model.modelId.includes('mobilenet') || model.modelId.includes('efficientnet') || model.modelId.includes('convnext') || model.modelId.includes('swin') || model.modelId.includes('hiera')) return 'image-classification';
+    if (model.modelId.includes('clip') || model.modelId.includes('siglip')) return 'zero-shot-image-classification';
+    if (model.modelId.includes('dino')) return 'image-feature-extraction';
+    if (model.modelId.includes('musicgen')) return 'text-to-audio';
+    if (model.modelId.includes('trocr')) return 'image-to-text';
+    if (model.modelId.includes('wav2vec') || model.modelId.includes('wavlm') || model.modelId.includes('unispeech')) return 'automatic-speech-recognition';
+    if (model.modelId.includes('clap')) return 'zero-shot-audio-classification';
+    if (model.modelId.includes('florence') || model.modelId.includes('SmolVLM') || model.modelId.includes('moondream') || model.modelId.includes('Qwen2-VL') || model.modelId.includes('llava')) return 'image-to-text';
+
+    return typeMap[model.demoType] || 'text-generation';
+  }
+
   // Run demo with loaded model
-  async runDemo(input: string): Promise<string> {
+  async runDemo(input: string, imageInput?: File | Blob): Promise<string> {
     const model = this._selectedModel();
     if (!model) {
       throw new Error('No model selected');
     }
 
     if (this._loadedModelId() !== model.id) {
-      throw new Error('Model not loaded');
+      throw new Error('Model not loaded. Please load the model first.');
     }
 
-    // Simulate inference (in real implementation, connect to actual model)
     this._loadingMessage.set('Processing...');
-
-    await this.delay(1000 + Math.random() * 1000);
-
-    // Generate mock result based on model type
     let result: string;
 
-    switch (model.demoType) {
-      case 'text':
-        result = this.generateMockTextResult(model, input);
-        break;
-      case 'embedding':
-        result = this.generateMockEmbeddingResult(input);
-        break;
-      case 'image':
-        result = this.generateMockImageResult(model, input);
-        break;
-      case 'audio':
-        result = this.generateMockAudioResult(model, input);
-        break;
-      case 'multimodal':
-        result = this.generateMockMultimodalResult(model, input);
-        break;
-      default:
-        result = 'Demo not available for this model type';
+    try {
+      if (model.framework === 'WebLLM' && this._currentEngine) {
+        result = await this.runWebLLMDemo(input);
+      } else if (model.framework === 'Transformers.js' && this._currentPipeline) {
+        result = await this.runTransformersDemo(model, input, imageInput);
+      } else {
+        result = 'Model not properly loaded. Please reload.';
+      }
+    } catch (error: any) {
+      console.error('Demo error:', error);
+      result = `Error: ${error.message || 'Failed to run demo'}`;
     }
 
     this._demoResult.set(result);
@@ -259,201 +403,156 @@ export class ModelResearchService {
     return result;
   }
 
-  private generateMockTextResult(model: ModelConfig, input: string): string {
-    const responses: Record<string, string> = {
-      'deepseek-r1-qwen': `<think>
-Let me analyze this step by step...
-1. First, I'll consider the main question: "${input.substring(0, 50)}..."
-2. Breaking down the problem into components...
-3. Applying logical reasoning...
-</think>
+  // Run demo with WebLLM engine
+  private async runWebLLMDemo(input: string): Promise<string> {
+    const response = await this._currentEngine.chat.completions.create({
+      messages: [{ role: 'user', content: input }],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
 
-Based on my analysis, here's my response:
-This is a demonstration of the DeepSeek-R1 reasoning model running in your browser.
-The model shows its thinking process before providing an answer.
-
-In a real implementation, you would see actual AI reasoning here.`,
-
-      'qwen2-5': `Based on your input: "${input.substring(0, 50)}..."
-
-Here's a helpful response from Qwen2.5:
-This is a demonstration of the Qwen2.5 model running locally in your browser using WebGPU acceleration.
-
-Key features demonstrated:
-- Low latency responses (~60 tokens/second)
-- No data sent to external servers
-- Full context understanding
-
-In production, this would be real AI output.`,
-
-      'phi-3-mini': `Response from Phi-3.5-mini:
-
-Your query: "${input.substring(0, 50)}..."
-
-This model supports up to 128K context tokens, making it ideal for:
-- Processing long documents
-- Maintaining extended conversations
-- Complex reasoning tasks
-
-This is a demo - actual inference would happen with the real model.`,
-
-      'llama-3-2': `Llama-3.2-1B Response:
-
-Input received: "${input.substring(0, 50)}..."
-
-Meta's Llama 3.2 is running directly in your browser!
-Features:
-- 128K context window
-- Excellent instruction following
-- Large community of fine-tunes available
-
-[Demo mode - connect actual model for real inference]`,
-
-      'minithinky': `MiniThinky Analysis:
-
-Thinking about: "${input.substring(0, 50)}..."
-
-Step 1: Parsing input...
-Step 2: Applying reasoning...
-Step 3: Generating response...
-
-This model is optimized for fast browser inference at ~60 tokens/second.
-
-[Demo mode - actual model would provide real reasoning]`
-    };
-
-    return responses[model.id] || `Demo response for ${model.name}:\n\nInput: "${input}"\n\nThis is a placeholder response. In production, the actual model would generate real output.`;
+    return response.choices[0]?.message?.content || 'No response generated';
   }
 
-  private generateMockEmbeddingResult(input: string): string {
-    const dims = 384;
-    const embedding = Array.from({ length: 8 }, () => (Math.random() * 2 - 1).toFixed(4));
+  // Run demo with Transformers.js pipeline
+  private async runTransformersDemo(model: ModelConfig, input: string, imageInput?: File | Blob): Promise<string> {
+    const pipelineType = this.getPipelineType(model);
 
-    return `Embedding generated for: "${input.substring(0, 50)}..."
+    switch (pipelineType) {
+      case 'text-generation':
+        const textResult = await this._currentPipeline(input, {
+          max_new_tokens: 200,
+          temperature: 0.7,
+        });
+        return Array.isArray(textResult)
+          ? textResult[0]?.generated_text || JSON.stringify(textResult)
+          : textResult?.generated_text || JSON.stringify(textResult);
 
-Dimensions: ${dims}
-First 8 values: [${embedding.join(', ')}...]
+      case 'feature-extraction':
+        const embedResult = await this._currentPipeline(input, { pooling: 'mean', normalize: true });
+        const embedArray = Array.from(embedResult.data || embedResult[0]?.data || []).slice(0, 10);
+        return `Embedding generated (${embedResult.dims?.[1] || 'N/A'} dimensions)\n\nFirst 10 values:\n[${embedArray.map((v: any) => v.toFixed(4)).join(', ')}...]`;
 
-Embedding vector characteristics:
-- Normalized: Yes
-- Pooling: Mean
-- Suitable for: Semantic search, RAG, similarity matching
+      case 'text-classification':
+        const classResult = await this._currentPipeline(input);
+        return `Classification Result:\n\n${JSON.stringify(classResult, null, 2)}`;
 
-[Demo mode - actual embeddings would be computed by the model]`;
-  }
+      case 'token-classification':
+        const nerResult = await this._currentPipeline(input);
+        return `Named Entities:\n\n${JSON.stringify(nerResult, null, 2)}`;
 
-  private generateMockImageResult(model: ModelConfig, input: string): string {
-    const results: Record<string, string> = {
-      'florence-2': `Florence-2 Analysis Results:
+      case 'fill-mask':
+        const maskResult = await this._currentPipeline(input);
+        return `Fill Mask Results:\n\n${JSON.stringify(maskResult.slice(0, 5), null, 2)}`;
 
-Caption: "A scene depicting ${input || 'the uploaded image content'}"
+      case 'summarization':
+        const summaryResult = await this._currentPipeline(input, { max_length: 130, min_length: 30 });
+        return `Summary:\n\n${summaryResult[0]?.summary_text || JSON.stringify(summaryResult)}`;
 
-Detected Objects:
-- Object 1: person (confidence: 0.95)
-- Object 2: background elements (confidence: 0.87)
+      case 'translation':
+        const transResult = await this._currentPipeline(input);
+        return `Translation:\n\n${transResult[0]?.translation_text || JSON.stringify(transResult)}`;
 
-OCR Text Found: [No text detected in demo]
+      case 'text2text-generation':
+        const t2tResult = await this._currentPipeline(input, { max_new_tokens: 200 });
+        return `Result:\n\n${t2tResult[0]?.generated_text || JSON.stringify(t2tResult)}`;
 
-[Demo mode - upload an image to see real analysis]`,
+      case 'question-answering':
+        // For QA, we need context and question
+        const qaResult = await this._currentPipeline({
+          question: input,
+          context: 'Please provide context in the input field. Format: "Question: ... Context: ..."'
+        });
+        return `Answer:\n\n${JSON.stringify(qaResult, null, 2)}`;
 
-      'trocr': `TrOCR Recognition Results:
+      case 'zero-shot-classification':
+        const labels = ['positive', 'negative', 'neutral', 'question', 'statement'];
+        const zeroResult = await this._currentPipeline(input, { candidate_labels: labels });
+        return `Zero-Shot Classification:\n\n${JSON.stringify(zeroResult, null, 2)}`;
 
-Extracted Text:
-"${input || 'Sample handwritten text would appear here'}"
+      case 'automatic-speech-recognition':
+        if (imageInput) {
+          const asrResult = await this._currentPipeline(imageInput);
+          return `Transcription:\n\n${asrResult?.text || JSON.stringify(asrResult)}`;
+        }
+        return 'Please provide an audio file for transcription.';
 
-Confidence: 0.92
-Language: English
-Type: Handwritten
+      case 'image-classification':
+        if (imageInput) {
+          const imgClassResult = await this._currentPipeline(imageInput);
+          return `Image Classification:\n\n${JSON.stringify(imgClassResult, null, 2)}`;
+        }
+        return 'Please provide an image for classification.';
 
-[Demo mode - upload handwritten text image for real OCR]`,
+      case 'object-detection':
+        if (imageInput) {
+          const detectResult = await this._currentPipeline(imageInput);
+          return `Detected Objects:\n\n${JSON.stringify(detectResult, null, 2)}`;
+        }
+        return 'Please provide an image for object detection.';
 
-      'depth-pro': `Depth Pro Estimation:
+      case 'image-to-text':
+        if (imageInput) {
+          const captionResult = await this._currentPipeline(imageInput);
+          return `Image Description:\n\n${captionResult[0]?.generated_text || JSON.stringify(captionResult)}`;
+        }
+        return 'Please provide an image for analysis.';
 
-Depth Map Generated:
-- Near plane: 0.5m
-- Far plane: 10.0m
-- Average depth: 3.2m
+      case 'depth-estimation':
+        if (imageInput) {
+          const depthResult = await this._currentPipeline(imageInput);
+          return `Depth Estimation Complete!\n\nDepth map generated. In a real app, this would display as a grayscale depth image.`;
+        }
+        return 'Please provide an image for depth estimation.';
 
-The depth map shows relative distances in the scene.
-Lighter areas = closer to camera
-Darker areas = further away
+      case 'image-segmentation':
+        if (imageInput) {
+          const segResult = await this._currentPipeline(imageInput);
+          return `Segmentation:\n\n${JSON.stringify(segResult, null, 2)}`;
+        }
+        return 'Please provide an image for segmentation.';
 
-[Demo mode - upload image to generate actual depth map]`,
+      case 'zero-shot-image-classification':
+        if (imageInput) {
+          const clipLabels = input.split(',').map(l => l.trim()).filter(l => l);
+          const clipResult = await this._currentPipeline(imageInput, clipLabels.length ? clipLabels : ['photo', 'drawing', 'painting']);
+          return `Image Classification:\n\n${JSON.stringify(clipResult, null, 2)}`;
+        }
+        return 'Please provide an image. You can also enter comma-separated labels to classify against.';
 
-      'detr': `DETR Object Detection Results:
+      case 'image-feature-extraction':
+        if (imageInput) {
+          const imgFeatResult = await this._currentPipeline(imageInput);
+          const imgFeatArray = Array.from(imgFeatResult.data || []).slice(0, 10);
+          return `Image Features (${imgFeatResult.dims?.[1] || 'N/A'} dimensions)\n\nFirst 10 values:\n[${imgFeatArray.map((v: any) => v.toFixed(4)).join(', ')}...]`;
+        }
+        return 'Please provide an image for feature extraction.';
 
-Detected 3 objects:
-1. person - 95% confidence - bbox: [100, 50, 200, 300]
-2. car - 87% confidence - bbox: [250, 100, 400, 200]
-3. tree - 72% confidence - bbox: [50, 0, 150, 250]
+      case 'text-to-audio':
+        const audioResult = await this._currentPipeline(input, { max_new_tokens: 500 });
+        return `Audio Generated!\n\nIn a full implementation, this would return playable audio data.\nPrompt: "${input}"`;
 
-[Demo mode - upload image for real object detection]`
-    };
+      case 'text-to-speech':
+        const ttsResult = await this._currentPipeline(input);
+        return `Speech Generated!\n\nIn a full implementation, this would return playable audio.\nText: "${input}"`;
 
-    return results[model.id] || `Image analysis demo for ${model.name}:\n\n[Upload an image to see actual results]`;
-  }
+      case 'zero-shot-audio-classification':
+        if (imageInput) {
+          const audioLabels = input.split(',').map(l => l.trim()).filter(l => l);
+          const audioClassResult = await this._currentPipeline(imageInput, audioLabels.length ? audioLabels : ['music', 'speech', 'noise']);
+          return `Audio Classification:\n\n${JSON.stringify(audioClassResult, null, 2)}`;
+        }
+        return 'Please provide an audio file. You can also enter comma-separated labels.';
 
-  private generateMockAudioResult(model: ModelConfig, input: string): string {
-    if (model.id === 'whisper') {
-      return `Whisper Transcription:
-
-"${input || 'This is a sample transcription of spoken audio content...'}"
-
-Language: English (detected)
-Duration: 0:00 (demo mode)
-Confidence: 0.94
-
-[Demo mode - record or upload audio for real transcription]`;
+      default:
+        // Generic attempt
+        try {
+          const genericResult = await this._currentPipeline(input);
+          return `Result:\n\n${JSON.stringify(genericResult, null, 2)}`;
+        } catch {
+          return `Pipeline type "${pipelineType}" executed. Check console for detailed output.`;
+        }
     }
-
-    if (model.id === 'musicgen') {
-      return `MusicGen Output:
-
-Generating music for prompt: "${input || 'upbeat electronic music'}"
-
-Style: Electronic
-Duration: 10 seconds
-Sample rate: 32kHz
-
-[Audio generated - demo mode]
-[In production, actual audio would be playable here]`;
-    }
-
-    return `Audio demo for ${model.name}:\n\n[Provide audio input for actual results]`;
-  }
-
-  private generateMockMultimodalResult(model: ModelConfig, input: string): string {
-    const results: Record<string, string> = {
-      'smolvlm': `SmolVLM Analysis:
-
-Image Description:
-"The image shows ${input || 'a scene that requires an actual image to analyze'}"
-
-Visual Elements Identified:
-- Main subject: Detected
-- Background: Analyzed
-- Text content: None found
-
-Q&A Mode Available - ask questions about the image!
-
-[Demo mode - upload image for real VLM analysis]`,
-
-      'moondream2': `Moondream2 Analysis:
-
-Image Understanding:
-"${input || 'Upload an image for detailed analysis'}"
-
-Special Features:
-- Gaze Detection: [Requires face in image]
-- UI Understanding: [Requires screenshot]
-- OCR: [Requires text in image]
-
-Output Format: JSON/XML available
-
-[Demo mode - upload image for real analysis]`
-    };
-
-    return results[model.id] || `Multimodal demo for ${model.name}:\n\n[Upload image and/or text for actual results]`;
   }
 
   private delay(ms: number): Promise<void> {

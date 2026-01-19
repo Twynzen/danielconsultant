@@ -256,8 +256,8 @@
             <section class="info-section code-section">
               <h3>
                 CÓDIGO DE EJEMPLO
-                <button class="copy-btn" (click)="copyCode(modelService.selectedModel()!.codeExample)">
-                  📋 COPIAR
+                <button class="copy-btn" [class.copied]="copiedCode()" (click)="copyCode(modelService.selectedModel()!.codeExample)">
+                  {{ copiedCode() ? '✓ COPIADO' : '📋 COPIAR' }}
                 </button>
               </h3>
               <pre class="code-block"><code>{{ modelService.selectedModel()!.codeExample }}</code></pre>
@@ -288,12 +288,46 @@
               <!-- Input Area -->
               @if (modelService.loadingState() !== 'loading') {
                 <div class="demo-input-area">
+                  <!-- File input for image/audio/multimodal -->
+                  @if (needsFileInput()) {
+                    <div class="file-upload-area">
+                      @if (selectedFile()) {
+                        <div class="file-selected">
+                          @if (filePreview()) {
+                            <img [src]="filePreview()" alt="Preview" class="file-preview" />
+                          } @else {
+                            <span class="file-icon">📁</span>
+                          }
+                          <span class="file-name">{{ selectedFile()!.name }}</span>
+                          <button class="clear-file-btn" (click)="clearFile()">✕</button>
+                        </div>
+                      } @else {
+                        <label class="file-drop-zone">
+                          <input
+                            type="file"
+                            [accept]="getFileAccept()"
+                            (change)="onFileSelected($event)"
+                            class="hidden-input"
+                          />
+                          @if (modelService.selectedModel()!.demoType === 'audio') {
+                            <span class="drop-icon">🎤</span>
+                            <span class="drop-text">Click o arrastra un archivo de audio</span>
+                          } @else {
+                            <span class="drop-icon">📷</span>
+                            <span class="drop-text">Click o arrastra una imagen</span>
+                          }
+                        </label>
+                      }
+                    </div>
+                  }
+
+                  <!-- Text input -->
                   @switch (modelService.selectedModel()!.demoType) {
                     @case ('text') {
                       <textarea
                         class="demo-textarea"
                         [(ngModel)]="demoInput"
-                        placeholder="Escribe tu prompt aquí..."
+                        placeholder="Escribe tu prompt aquí... Ejemplo: 'Explain quantum computing in simple terms'"
                         rows="4">
                       </textarea>
                     }
@@ -301,49 +335,47 @@
                       <textarea
                         class="demo-textarea"
                         [(ngModel)]="demoInput"
-                        placeholder="Texto para generar embedding..."
+                        placeholder="Texto para generar embedding... Ejemplo: 'Machine learning is a subset of AI'"
                         rows="3">
                       </textarea>
                     }
                     @case ('image') {
-                      <div class="file-upload">
-                        <p>📷 Sube una imagen para analizar</p>
-                        <input type="file" accept="image/*" class="file-input" />
-                        <textarea
-                          class="demo-textarea"
-                          [(ngModel)]="demoInput"
-                          placeholder="O describe la imagen que quieres generar..."
-                          rows="2">
-                        </textarea>
-                      </div>
+                      <textarea
+                        class="demo-textarea"
+                        [(ngModel)]="demoInput"
+                        placeholder="Opcional: etiquetas separadas por coma para clasificación..."
+                        rows="2">
+                      </textarea>
                     }
                     @case ('audio') {
-                      <div class="file-upload">
-                        <p>🎤 Graba o sube audio</p>
-                        <button class="record-btn">⏺ GRABAR</button>
-                        <input type="file" accept="audio/*" class="file-input" />
-                      </div>
+                      <textarea
+                        class="demo-textarea"
+                        [(ngModel)]="demoInput"
+                        placeholder="Opcional: etiquetas para clasificación de audio (music, speech, noise)..."
+                        rows="2">
+                      </textarea>
                     }
                     @case ('multimodal') {
-                      <div class="multimodal-input">
-                        <div class="file-upload">
-                          <p>📷 Sube una imagen</p>
-                          <input type="file" accept="image/*" class="file-input" />
-                        </div>
-                        <textarea
-                          class="demo-textarea"
-                          [(ngModel)]="demoInput"
-                          placeholder="Pregunta sobre la imagen..."
-                          rows="3">
-                        </textarea>
-                      </div>
+                      <textarea
+                        class="demo-textarea"
+                        [(ngModel)]="demoInput"
+                        placeholder="Pregunta sobre la imagen... Ejemplo: 'What do you see in this image?'"
+                        rows="3">
+                      </textarea>
                     }
                   }
 
                   <div class="demo-actions">
                     @if (modelService.loadedModelId() !== modelService.selectedModel()!.id) {
-                      <button class="action-btn primary" (click)="loadAndRunDemo()">
-                        📥 DESCARGAR Y PROBAR
+                      <button
+                        class="action-btn primary"
+                        (click)="loadAndRunDemo()"
+                        [disabled]="isProcessing()">
+                        @if (isProcessing()) {
+                          ⏳ DESCARGANDO...
+                        } @else {
+                          📥 DESCARGAR Y PROBAR
+                        }
                       </button>
                       @if (modelService.loadedModelId()) {
                         <p class="cache-warning">
@@ -354,10 +386,17 @@
                       <button
                         class="action-btn primary"
                         (click)="runDemo()"
-                        [disabled]="!demoInput()">
-                        ▶ EJECUTAR
+                        [disabled]="isProcessing() || (!demoInput() && !selectedFile())">
+                        @if (isProcessing()) {
+                          ⏳ PROCESANDO...
+                        } @else {
+                          ▶ EJECUTAR
+                        }
                       </button>
-                      <button class="action-btn secondary" (click)="clearCache()">
+                      <button
+                        class="action-btn secondary"
+                        (click)="clearCache()"
+                        [disabled]="isProcessing()">
                         🗑️ LIMPIAR CACHE
                       </button>
                     }
