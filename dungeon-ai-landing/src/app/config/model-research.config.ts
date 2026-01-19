@@ -1133,8 +1133,526 @@ const result = await classifier(image);`,
   }
 ];
 
+// Models 41-50 - Audio Models
+export const MODELS_41_50: ModelConfig[] = [
+  {
+    id: 'whisper-medium',
+    name: 'Whisper-medium',
+    rank: 41,
+    category: 'audio',
+    size: '769M parámetros',
+    vram: '~1.5GB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Transcripción de alta calidad con mejor precisión.',
+    whyTop: 'Balance perfecto entre calidad y velocidad. Mejor que tiny/base para audio difícil o acentos.',
+    useCases: ['Transcripción precisa', 'Acentos', 'Audio difícil', 'Multiidioma'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const transcriber = await pipeline(
+  "automatic-speech-recognition",
+  "onnx-community/whisper-medium",
+  { device: "webgpu" }
+);
+
+const result = await transcriber(audioBlob, {
+  language: "spanish",
+  task: "transcribe"
+});`,
+    modelId: 'onnx-community/whisper-medium',
+    docsUrl: 'https://huggingface.co/openai/whisper-medium',
+    demoType: 'audio'
+  },
+  {
+    id: 'whisper-large-v3',
+    name: 'Whisper-large-v3',
+    rank: 42,
+    category: 'audio',
+    size: '1.5B parámetros',
+    vram: '~3GB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Máxima calidad de transcripción de OpenAI.',
+    whyTop: 'El mejor modelo de transcripción disponible. Requiere más recursos pero ofrece precisión profesional.',
+    useCases: ['Máxima precisión', 'Profesional', '100+ idiomas', 'Subtítulos'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const transcriber = await pipeline(
+  "automatic-speech-recognition",
+  "onnx-community/whisper-large-v3",
+  { device: "webgpu" }
+);
+
+const result = await transcriber(audioBlob);`,
+    modelId: 'onnx-community/whisper-large-v3',
+    docsUrl: 'https://huggingface.co/openai/whisper-large-v3',
+    demoType: 'audio'
+  },
+  {
+    id: 'moonshine',
+    name: 'Moonshine',
+    rank: 43,
+    category: 'audio',
+    size: '130M parámetros',
+    vram: '~300MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Transcripción en vivo ultra-rápida.',
+    whyTop: 'Optimizado para streaming en tiempo real. 5x más rápido que Whisper con calidad comparable.',
+    useCases: ['Streaming', 'Tiempo real', 'Baja latencia', 'Live captions'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const transcriber = await pipeline(
+  "automatic-speech-recognition",
+  "onnx-community/moonshine-base",
+  { device: "webgpu" }
+);
+
+// Real-time streaming
+const stream = await transcriber.transcribe(audioStream, {
+  return_timestamps: true
+});`,
+    modelId: 'onnx-community/moonshine-base',
+    docsUrl: 'https://huggingface.co/UsefulSensors/moonshine',
+    demoType: 'audio'
+  },
+  {
+    id: 'voxtral-mini',
+    name: 'Voxtral-Mini-3B',
+    rank: 44,
+    category: 'audio',
+    size: '3B parámetros',
+    vram: '~2GB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Audio understanding + transcripción de Mistral.',
+    whyTop: 'No solo transcribe, entiende el contenido del audio. Puede responder preguntas sobre lo que escucha.',
+    useCases: ['Audio understanding', 'Audio Q&A', 'Análisis de podcasts', 'Meeting summaries'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const audioModel = await pipeline(
+  "audio-text",
+  "onnx-community/voxtral-mini-3b"
+);
+
+const result = await audioModel({
+  audio: audioBlob,
+  prompt: "Summarize the main points discussed"
+});`,
+    modelId: 'onnx-community/voxtral-mini-3b',
+    docsUrl: 'https://huggingface.co/mistralai/Voxtral-Mini-3B',
+    demoType: 'audio'
+  },
+  {
+    id: 'clap',
+    name: 'CLAP',
+    rank: 45,
+    category: 'audio',
+    size: '200M parámetros',
+    vram: '~400MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Embeddings texto-audio como CLIP para imágenes.',
+    whyTop: 'Permite buscar audio por texto y clasificar sonidos zero-shot. Como CLIP pero para audio.',
+    useCases: ['Audio search', 'Sound classification', 'Audio-text matching', 'Zero-shot audio'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "zero-shot-audio-classification",
+  "Xenova/clap-htsat-unfused"
+);
+
+const result = await classifier(audio, ["music", "speech", "noise"]);`,
+    modelId: 'Xenova/clap-htsat-unfused',
+    docsUrl: 'https://huggingface.co/laion/clap-htsat-unfused',
+    demoType: 'audio'
+  },
+  {
+    id: 'wavlm',
+    name: 'WavLM',
+    rank: 46,
+    category: 'audio',
+    size: '95M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Extracción de features de voz de Microsoft.',
+    whyTop: 'Features de alta calidad para downstream tasks. Bueno para speaker verification y emotion detection.',
+    useCases: ['Speech features', 'Speaker ID', 'Emotion detection', 'Voice cloning prep'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/wavlm-base"
+);
+
+const features = await extractor(audio);`,
+    modelId: 'Xenova/wavlm-base',
+    docsUrl: 'https://huggingface.co/microsoft/wavlm-base',
+    demoType: 'audio'
+  },
+  {
+    id: 'wav2vec2',
+    name: 'Wav2Vec2',
+    rank: 47,
+    category: 'audio',
+    size: '95M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'ASR y representación de voz de Meta.',
+    whyTop: 'Modelo base para muchas tareas de voz. Puede fine-tunearse para diferentes idiomas.',
+    useCases: ['ASR base', 'Speech representation', 'Fine-tuning', 'Multilingual ASR'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const transcriber = await pipeline(
+  "automatic-speech-recognition",
+  "Xenova/wav2vec2-base-960h"
+);
+
+const result = await transcriber(audio);`,
+    modelId: 'Xenova/wav2vec2-base-960h',
+    docsUrl: 'https://huggingface.co/facebook/wav2vec2-base-960h',
+    demoType: 'audio'
+  },
+  {
+    id: 'speecht5',
+    name: 'SpeechT5',
+    rank: 48,
+    category: 'audio',
+    size: '144M parámetros',
+    vram: '~300MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Modelo unificado para TTS y más.',
+    whyTop: 'Un solo modelo para text-to-speech, speech-to-text, y voice conversion. Muy versátil.',
+    useCases: ['Text-to-speech', 'Voice conversion', 'Speech enhancement', 'TTS apps'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const synthesizer = await pipeline(
+  "text-to-speech",
+  "Xenova/speecht5_tts"
+);
+
+const audio = await synthesizer("Hello, this is a test.");
+// Returns audio waveform`,
+    modelId: 'Xenova/speecht5_tts',
+    docsUrl: 'https://huggingface.co/microsoft/speecht5_tts',
+    demoType: 'audio'
+  },
+  {
+    id: 'pyannote',
+    name: 'PyAnnote (Speaker Diarization)',
+    rank: 49,
+    category: 'audio',
+    size: '100M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Identifica quién habla en audio.',
+    whyTop: 'Segmenta audio por hablante. Esencial para transcripciones de reuniones y podcasts.',
+    useCases: ['Speaker diarization', 'Meeting transcription', 'Podcasts', 'Multi-speaker'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const diarizer = await pipeline(
+  "automatic-speech-recognition",
+  "Xenova/pyannote-speaker-diarization"
+);
+
+const result = await diarizer(audio);
+// Returns: [{ speaker: "SPEAKER_1", start: 0, end: 2.5 }, ...]`,
+    modelId: 'Xenova/pyannote-speaker-diarization',
+    docsUrl: 'https://huggingface.co/pyannote/speaker-diarization',
+    demoType: 'audio'
+  },
+  {
+    id: 'unispeech',
+    name: 'UniSpeech',
+    rank: 50,
+    category: 'audio',
+    size: '95M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Representación universal de voz.',
+    whyTop: 'Pre-entrenado para múltiples tareas de voz. Buen punto de partida para proyectos de audio.',
+    useCases: ['Speech representation', 'Pre-training', 'Transfer learning', 'Audio tasks'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/unispeech-sat-base"
+);
+
+const features = await extractor(audio);`,
+    modelId: 'Xenova/unispeech-sat-base',
+    docsUrl: 'https://huggingface.co/microsoft/unispeech-sat-base',
+    demoType: 'audio'
+  }
+];
+
+// Models 51-60 - Specialized NLP Models
+export const MODELS_51_60: ModelConfig[] = [
+  {
+    id: 'bge-base',
+    name: 'BGE-base-en-v1.5',
+    rank: 51,
+    category: 'embedding',
+    size: '109M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Embeddings optimizados para retrieval.',
+    whyTop: 'BAAI General Embedding - top performer en benchmarks de retrieval. Ideal para RAG.',
+    useCases: ['RAG', 'Document retrieval', 'Semantic search', 'Question answering'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/bge-base-en-v1.5"
+);
+
+// Para queries, añadir prefijo
+const queryEmbed = await extractor("Represent this query: " + query);
+const docEmbed = await extractor(document);`,
+    modelId: 'Xenova/bge-base-en-v1.5',
+    docsUrl: 'https://huggingface.co/BAAI/bge-base-en-v1.5',
+    demoType: 'embedding'
+  },
+  {
+    id: 'e5-large',
+    name: 'E5-large',
+    rank: 52,
+    category: 'embedding',
+    size: '335M parámetros',
+    vram: '~500MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Embeddings multilingües de Microsoft.',
+    whyTop: 'Excelente para búsqueda multilingüe. Soporta 100+ idiomas con alta calidad.',
+    useCases: ['Multilingual search', 'Cross-lingual retrieval', 'International apps', 'Translation search'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/multilingual-e5-large"
+);
+
+// Funciona con múltiples idiomas
+const embed = await extractor("query: buscar documentos");`,
+    modelId: 'Xenova/multilingual-e5-large',
+    docsUrl: 'https://huggingface.co/intfloat/multilingual-e5-large',
+    demoType: 'embedding'
+  },
+  {
+    id: 'gte-large',
+    name: 'GTE-large',
+    rank: 53,
+    category: 'embedding',
+    size: '335M parámetros',
+    vram: '~500MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'General Text Embeddings de Alibaba.',
+    whyTop: 'Alto rendimiento en múltiples benchmarks. Buena alternativa a BGE y E5.',
+    useCases: ['General embeddings', 'Text similarity', 'Clustering', 'Classification'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/gte-large"
+);
+
+const embedding = await extractor(text, { pooling: "mean" });`,
+    modelId: 'Xenova/gte-large',
+    docsUrl: 'https://huggingface.co/thenlper/gte-large',
+    demoType: 'embedding'
+  },
+  {
+    id: 'mxbai-embed',
+    name: 'mxbai-embed-xsmall-v1',
+    rank: 54,
+    category: 'embedding',
+    size: '22M parámetros',
+    vram: '~50MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Embeddings ultra-pequeños.',
+    whyTop: 'El más pequeño de alta calidad. Para cuando cada MB cuenta.',
+    useCases: ['Ultra-light apps', 'Mobile', 'Edge devices', 'Fast embeddings'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/mxbai-embed-xsmall-v1"
+);
+
+const embed = await extractor(text);`,
+    modelId: 'Xenova/mxbai-embed-xsmall-v1',
+    docsUrl: 'https://huggingface.co/mixedbread-ai/mxbai-embed-xsmall-v1',
+    demoType: 'embedding'
+  },
+  {
+    id: 'distilbert',
+    name: 'DistilBERT',
+    rank: 55,
+    category: 'embedding',
+    size: '66M parámetros',
+    vram: '~150MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'BERT destilado para clasificación.',
+    whyTop: '60% más rápido que BERT con 97% de su rendimiento. Ideal para clasificación de texto.',
+    useCases: ['Text classification', 'Sentiment', 'NLU', 'Fast inference'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/distilbert-base-uncased-finetuned-sst-2-english"
+);
+
+const result = await classifier("I love this product!");
+// { label: "POSITIVE", score: 0.99 }`,
+    modelId: 'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
+    docsUrl: 'https://huggingface.co/distilbert-base-uncased',
+    demoType: 'text'
+  },
+  {
+    id: 'roberta',
+    name: 'RoBERTa',
+    rank: 56,
+    category: 'embedding',
+    size: '125M parámetros',
+    vram: '~250MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'BERT optimizado para NLU.',
+    whyTop: 'Mejor entrenamiento que BERT original. Standard para muchas tareas de NLU.',
+    useCases: ['NLU', 'Text understanding', 'Fine-tuning', 'Classification'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/roberta-base"
+);
+
+const result = await classifier(text);`,
+    modelId: 'Xenova/roberta-base',
+    docsUrl: 'https://huggingface.co/roberta-base',
+    demoType: 'text'
+  },
+  {
+    id: 'bert-base',
+    name: 'BERT-base',
+    rank: 57,
+    category: 'embedding',
+    size: '110M parámetros',
+    vram: '~250MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'El modelo NLU clásico.',
+    whyTop: 'El que empezó todo. Sigue siendo útil como baseline y para tareas específicas.',
+    useCases: ['NLU baseline', 'Fine-tuning', 'Education', 'Comparison'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const fillMask = await pipeline(
+  "fill-mask",
+  "Xenova/bert-base-uncased"
+);
+
+const result = await fillMask("Paris is the [MASK] of France.");
+// [{ token_str: "capital", score: 0.99 }, ...]`,
+    modelId: 'Xenova/bert-base-uncased',
+    docsUrl: 'https://huggingface.co/bert-base-uncased',
+    demoType: 'text'
+  },
+  {
+    id: 'xlm-roberta',
+    name: 'XLM-RoBERTa',
+    rank: 58,
+    category: 'embedding',
+    size: '278M parámetros',
+    vram: '~400MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'RoBERTa multilingüe.',
+    whyTop: 'El estándar para NLU multilingüe. Soporta 100+ idiomas.',
+    useCases: ['Multilingual NLU', 'Cross-lingual', 'International apps', 'Translation'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/xlm-roberta-base"
+);
+
+// Funciona con cualquier idioma
+const result = await classifier("Este producto es excelente");`,
+    modelId: 'Xenova/xlm-roberta-base',
+    docsUrl: 'https://huggingface.co/xlm-roberta-base',
+    demoType: 'text'
+  },
+  {
+    id: 'deberta',
+    name: 'DeBERTa',
+    rank: 59,
+    category: 'embedding',
+    size: '184M parámetros',
+    vram: '~350MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'BERT mejorado de Microsoft.',
+    whyTop: 'Mejor que BERT y RoBERTa en muchos benchmarks. Atención mejorada.',
+    useCases: ['Advanced NLU', 'Question answering', 'NLI', 'High-accuracy tasks'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const qa = await pipeline(
+  "question-answering",
+  "Xenova/deberta-v3-base"
+);
+
+const result = await qa({
+  question: "What is the capital?",
+  context: "Paris is the capital of France."
+});`,
+    modelId: 'Xenova/deberta-v3-base',
+    docsUrl: 'https://huggingface.co/microsoft/deberta-v3-base',
+    demoType: 'text'
+  },
+  {
+    id: 'electra',
+    name: 'ELECTRA',
+    rank: 60,
+    category: 'embedding',
+    size: '14M-335M parámetros',
+    vram: '~50-500MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Detección de tokens reemplazados.',
+    whyTop: 'Entrenamiento más eficiente que BERT. Buenos resultados con menos compute.',
+    useCases: ['Efficient NLU', 'Token detection', 'Pre-training', 'Research'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "text-classification",
+  "Xenova/electra-small-discriminator"
+);
+
+const result = await classifier(text);`,
+    modelId: 'Xenova/electra-small-discriminator',
+    docsUrl: 'https://huggingface.co/google/electra-small-discriminator',
+    demoType: 'text'
+  }
+];
+
 // All models combined for easy access
-export const ALL_MODELS: ModelConfig[] = [...TOP_10_MODELS, ...MODELS_11_20, ...MODELS_21_30, ...MODELS_31_40];
+export const ALL_MODELS: ModelConfig[] = [
+  ...TOP_10_MODELS,
+  ...MODELS_11_20,
+  ...MODELS_21_30,
+  ...MODELS_31_40,
+  ...MODELS_41_50,
+  ...MODELS_51_60
+];
 
 // Category metadata
 export const MODEL_CATEGORIES: Record<ModelCategory, { label: string; icon: string; color: string }> = {
