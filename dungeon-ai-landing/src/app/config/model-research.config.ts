@@ -1644,6 +1644,509 @@ const result = await classifier(text);`,
   }
 ];
 
+// Models 61-70 - Code Models
+export const MODELS_61_70: ModelConfig[] = [
+  {
+    id: 'codellama-7b',
+    name: 'CodeLlama-7B',
+    rank: 61,
+    category: 'llm',
+    size: '7B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo especializado en generación de código de Meta.',
+    whyTop: 'El estándar para generación de código en local. Soporta múltiples lenguajes y completado de código.',
+    useCases: ['Code generation', 'Code completion', 'Debugging', 'Refactoring'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("CodeLlama-7b-hf-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: "Write a Python function to find prime numbers"
+  }]
+});`,
+    modelId: 'CodeLlama-7b-hf-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/codellama/CodeLlama-7b-hf',
+    demoType: 'text'
+  },
+  {
+    id: 'deepseek-coder',
+    name: 'DeepSeek-Coder-1.3B',
+    rank: 62,
+    category: 'llm',
+    size: '1.3B parámetros',
+    vram: '~1.2GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo de código ligero y potente.',
+    whyTop: 'Excelente relación calidad/tamaño para código. Puede correr en GPUs modestas.',
+    useCases: ['Lightweight code', 'Fast completion', 'Edge coding', 'Mobile dev'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("DeepSeek-Coder-1.3B-Instruct-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: "Implement a binary search in JavaScript"
+  }]
+});`,
+    modelId: 'DeepSeek-Coder-1.3B-Instruct-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/deepseek-ai/deepseek-coder-1.3b-instruct',
+    demoType: 'text'
+  },
+  {
+    id: 'starcoder-1b',
+    name: 'StarCoder-1B',
+    rank: 63,
+    category: 'llm',
+    size: '1B parámetros',
+    vram: '~1GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Modelo de código base de BigCode.',
+    whyTop: 'Entrenado con The Stack - código open source. Bueno para autocompletado.',
+    useCases: ['Code completion', 'Infill', 'Auto-complete', 'IDE integration'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("StarCoder-1B-q4f16_1-MLC");
+
+// Completado de código
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: "def fibonacci(n):"
+  }]
+});`,
+    modelId: 'StarCoder-1B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/bigcode/starcoder',
+    demoType: 'text'
+  },
+  {
+    id: 'codestral-mini',
+    name: 'Codestral-mini',
+    rank: 64,
+    category: 'llm',
+    size: '3B parámetros',
+    vram: '~2.5GB',
+    framework: 'WebLLM',
+    innovationScore: 4,
+    description: 'Modelo de código de Mistral AI.',
+    whyTop: 'Balance entre tamaño y calidad de Mistral. Bueno para generación y explicación de código.',
+    useCases: ['Code generation', 'Code explanation', 'Documentation', 'Reviews'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Codestral-mini-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{
+    role: "user",
+    content: "Explain this code and suggest improvements: ..."
+  }]
+});`,
+    modelId: 'Codestral-mini-q4f16_1-MLC',
+    docsUrl: 'https://mistral.ai/news/codestral/',
+    demoType: 'text'
+  },
+  {
+    id: 'granite-code',
+    name: 'Granite-code-3b',
+    rank: 65,
+    category: 'llm',
+    size: '3B parámetros',
+    vram: '~2.5GB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Modelo de código de IBM.',
+    whyTop: 'Entrenado con enfoque enterprise. Bueno para código de producción.',
+    useCases: ['Enterprise code', 'Production code', 'Best practices', 'Security'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const generator = await pipeline(
+  "text-generation",
+  "onnx-community/granite-3b-code-instruct",
+  { device: "webgpu" }
+);
+
+const result = await generator(
+  "Write a secure authentication function"
+);`,
+    modelId: 'onnx-community/granite-3b-code-instruct',
+    docsUrl: 'https://huggingface.co/ibm-granite/granite-3b-code-instruct',
+    demoType: 'text'
+  },
+  {
+    id: 'clipseg',
+    name: 'CLIPSeg',
+    rank: 66,
+    category: 'vision',
+    size: '200M parámetros',
+    vram: '~400MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Segmentación guiada por texto.',
+    whyTop: 'Segmenta imágenes usando prompts de texto. "Segmenta el gato" y lo hace.',
+    useCases: ['Text-guided segmentation', 'Interactive editing', 'Object isolation', 'Creative tools'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const segmenter = await pipeline(
+  "image-segmentation",
+  "Xenova/clipseg-rd64-refined"
+);
+
+const result = await segmenter(image, {
+  candidate_labels: ["cat", "dog", "background"]
+});`,
+    modelId: 'Xenova/clipseg-rd64-refined',
+    docsUrl: 'https://huggingface.co/CIDAS/clipseg-rd64-refined',
+    demoType: 'image'
+  },
+  {
+    id: 'sapiens',
+    name: 'Sapiens (Body Estimation)',
+    rank: 67,
+    category: 'vision',
+    size: '300M parámetros',
+    vram: '~500MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Estimación de pose y parsing corporal de Meta.',
+    whyTop: 'Modelo avanzado para análisis corporal: pose, depth, normal maps, segmentación de partes.',
+    useCases: ['Pose estimation', 'Body parsing', 'Fitness apps', 'AR/VR'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const poseEstimator = await pipeline(
+  "image-to-image",
+  "Xenova/sapiens-pose-1b"
+);
+
+const pose = await poseEstimator(image);
+// Returns keypoints and body parts`,
+    modelId: 'Xenova/sapiens-pose-1b',
+    docsUrl: 'https://huggingface.co/facebook/sapiens',
+    demoType: 'image'
+  },
+  {
+    id: 'depth-anything',
+    name: 'DepthAnything',
+    rank: 68,
+    category: 'vision',
+    size: '300M parámetros',
+    vram: '~500MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Estimación de profundidad robusta.',
+    whyTop: 'Funciona bien en cualquier tipo de imagen. Más robusto que Depth Pro en escenas diversas.',
+    useCases: ['Depth estimation', 'Robustness', 'Diverse scenes', '3D reconstruction'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const depthEstimator = await pipeline(
+  "depth-estimation",
+  "Xenova/depth-anything-small-hf"
+);
+
+const depth = await depthEstimator(image);`,
+    modelId: 'Xenova/depth-anything-small-hf',
+    docsUrl: 'https://huggingface.co/LiheYoung/depth-anything-small-hf',
+    demoType: 'image'
+  },
+  {
+    id: 'segformer',
+    name: 'SegFormer',
+    rank: 69,
+    category: 'vision',
+    size: '47M parámetros',
+    vram: '~100MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Segmentación semántica eficiente.',
+    whyTop: 'Modelo ligero para segmentación. Bueno para aplicaciones en tiempo real.',
+    useCases: ['Semantic segmentation', 'Scene parsing', 'Real-time', 'Autonomous driving'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const segmenter = await pipeline(
+  "image-segmentation",
+  "Xenova/segformer-b0-finetuned-ade-512-512"
+);
+
+const segments = await segmenter(image);`,
+    modelId: 'Xenova/segformer-b0-finetuned-ade-512-512',
+    docsUrl: 'https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512',
+    demoType: 'image'
+  },
+  {
+    id: 'yolos',
+    name: 'YOLOS',
+    rank: 70,
+    category: 'vision',
+    size: '86M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'YOLO con arquitectura transformer.',
+    whyTop: 'Combina la velocidad de YOLO con transformers. Bueno para detección en tiempo real.',
+    useCases: ['Object detection', 'Real-time', 'Surveillance', 'Counting'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const detector = await pipeline(
+  "object-detection",
+  "Xenova/yolos-tiny"
+);
+
+const objects = await detector(image);`,
+    modelId: 'Xenova/yolos-tiny',
+    docsUrl: 'https://huggingface.co/hustvl/yolos-tiny',
+    demoType: 'image'
+  }
+];
+
+// Models 71-80 - Advanced Vision Models
+export const MODELS_71_80: ModelConfig[] = [
+  {
+    id: 'owlvit',
+    name: 'OwlViT',
+    rank: 71,
+    category: 'vision',
+    size: '428M parámetros',
+    vram: '~600MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Detección zero-shot con texto.',
+    whyTop: 'Detecta objetos solo describiendo qué buscar. No necesita entrenar en clases específicas.',
+    useCases: ['Zero-shot detection', 'Open vocabulary', 'Custom objects', 'Flexible detection'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const detector = await pipeline(
+  "zero-shot-object-detection",
+  "Xenova/owlvit-base-patch32"
+);
+
+// Detecta cualquier cosa que describas
+const result = await detector(image, {
+  candidate_labels: ["a red car", "a person walking", "traffic sign"]
+});`,
+    modelId: 'Xenova/owlvit-base-patch32',
+    docsUrl: 'https://huggingface.co/google/owlvit-base-patch32',
+    demoType: 'image'
+  },
+  {
+    id: 'grounding-dino',
+    name: 'Grounding DINO',
+    rank: 72,
+    category: 'vision',
+    size: '200M parámetros',
+    vram: '~400MB',
+    framework: 'Transformers.js',
+    innovationScore: 4,
+    description: 'Detección con grounding de texto.',
+    whyTop: 'Combina DINO con grounding textual. Puede encontrar y localizar basado en descripciones.',
+    useCases: ['Grounded detection', 'Visual grounding', 'Referring expressions', 'Interactive'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const detector = await pipeline(
+  "zero-shot-object-detection",
+  "Xenova/grounding-dino-tiny"
+);
+
+const result = await detector(image, {
+  candidate_labels: ["the largest dog", "person on the left"]
+});`,
+    modelId: 'Xenova/grounding-dino-tiny',
+    docsUrl: 'https://github.com/IDEA-Research/GroundingDINO',
+    demoType: 'image'
+  },
+  {
+    id: 'vitmae',
+    name: 'ViTMAE',
+    rank: 73,
+    category: 'vision',
+    size: '86M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Vision Transformer auto-supervisado.',
+    whyTop: 'Pre-entrenado con masked autoencoding. Buenas representaciones visuales sin etiquetas.',
+    useCases: ['Self-supervised', 'Feature learning', 'Pre-training', 'Transfer learning'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const extractor = await pipeline(
+  "image-feature-extraction",
+  "Xenova/vit-mae-base"
+);
+
+const features = await extractor(image);`,
+    modelId: 'Xenova/vit-mae-base',
+    docsUrl: 'https://huggingface.co/facebook/vit-mae-base',
+    demoType: 'image'
+  },
+  {
+    id: 'swin',
+    name: 'Swin Transformer',
+    rank: 74,
+    category: 'vision',
+    size: '88M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'Vision transformer con ventanas deslizantes.',
+    whyTop: 'Eficiente para imágenes grandes. Buen baseline para muchas tareas de visión.',
+    useCases: ['Classification', 'Detection backbone', 'Segmentation', 'Large images'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "image-classification",
+  "Xenova/swin-tiny-patch4-window7-224"
+);
+
+const result = await classifier(image);`,
+    modelId: 'Xenova/swin-tiny-patch4-window7-224',
+    docsUrl: 'https://huggingface.co/microsoft/swin-tiny-patch4-window7-224',
+    demoType: 'image'
+  },
+  {
+    id: 'convnext',
+    name: 'ConvNeXt',
+    rank: 75,
+    category: 'vision',
+    size: '88M parámetros',
+    vram: '~200MB',
+    framework: 'Transformers.js',
+    innovationScore: 3,
+    description: 'CNN moderna que compite con transformers.',
+    whyTop: 'Demuestra que CNNs bien diseñadas pueden igualar a ViT. Más eficiente en algunos casos.',
+    useCases: ['Modern CNN', 'Efficient inference', 'Classification', 'Feature extraction'],
+    codeExample: `import { pipeline } from "@huggingface/transformers";
+
+const classifier = await pipeline(
+  "image-classification",
+  "Xenova/convnext-tiny-224"
+);
+
+const result = await classifier(image);`,
+    modelId: 'Xenova/convnext-tiny-224',
+    docsUrl: 'https://huggingface.co/facebook/convnext-tiny-224',
+    demoType: 'image'
+  },
+  {
+    id: 'redpajama',
+    name: 'RedPajama-3B',
+    rank: 76,
+    category: 'llm',
+    size: '3B parámetros',
+    vram: '~2.5GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Reproducción open source de LLaMA.',
+    whyTop: 'Completamente abierto y reproducible. Bueno para investigación y experimentación.',
+    useCases: ['Open research', 'Reproducibility', 'Experimentation', 'Fine-tuning base'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("RedPajama-INCITE-Chat-3B-v1-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Hello!" }]
+});`,
+    modelId: 'RedPajama-INCITE-Chat-3B-v1-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/togethercomputer/RedPajama-INCITE-Chat-3B-v1',
+    demoType: 'text'
+  },
+  {
+    id: 'pythia',
+    name: 'Pythia-1.4B',
+    rank: 77,
+    category: 'llm',
+    size: '1.4B parámetros',
+    vram: '~1.5GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Suite de modelos de EleutherAI.',
+    whyTop: 'Diseñado para investigación de scaling. Checkpoints disponibles durante entrenamiento.',
+    useCases: ['Research', 'Scaling studies', 'Interpretability', 'Academic'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Pythia-1.4B-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Explain neural networks" }]
+});`,
+    modelId: 'Pythia-1.4B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/EleutherAI/pythia-1.4b',
+    demoType: 'text'
+  },
+  {
+    id: 'mpt-7b',
+    name: 'MPT-7B',
+    rank: 78,
+    category: 'llm',
+    size: '7B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Modelo de MosaicML con ALiBi.',
+    whyTop: 'Usa ALiBi para extrapolación de contexto. Puede manejar secuencias más largas que su entrenamiento.',
+    useCases: ['Long context', 'ALiBi attention', 'Extrapolation', 'Enterprise'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("MPT-7B-Chat-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Hello" }]
+});`,
+    modelId: 'MPT-7B-Chat-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/mosaicml/mpt-7b',
+    demoType: 'text'
+  },
+  {
+    id: 'falcon-7b',
+    name: 'Falcon-7B',
+    rank: 79,
+    category: 'llm',
+    size: '7B parámetros',
+    vram: '~5GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Modelo de TII (Technology Innovation Institute).',
+    whyTop: 'Entrenado con RefinedWeb. Licencia permisiva para uso comercial.',
+    useCases: ['Commercial use', 'General purpose', 'Permissive license', 'Production'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Falcon-7B-Instruct-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "What is AI?" }]
+});`,
+    modelId: 'Falcon-7B-Instruct-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/tiiuae/falcon-7b-instruct',
+    demoType: 'text'
+  },
+  {
+    id: 'olmo',
+    name: 'OLMo-1B',
+    rank: 80,
+    category: 'llm',
+    size: '1B parámetros',
+    vram: '~1GB',
+    framework: 'WebLLM',
+    innovationScore: 3,
+    description: 'Modelo completamente abierto de AI2.',
+    whyTop: 'Todo abierto: código, datos, pesos, checkpoints. El más transparente disponible.',
+    useCases: ['Full transparency', 'Reproducibility', 'Research', 'Education'],
+    codeExample: `import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("OLMo-1B-q4f16_1-MLC");
+
+const reply = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Tell me about open science" }]
+});`,
+    modelId: 'OLMo-1B-q4f16_1-MLC',
+    docsUrl: 'https://huggingface.co/allenai/OLMo-1B',
+    demoType: 'text'
+  }
+];
+
 // All models combined for easy access
 export const ALL_MODELS: ModelConfig[] = [
   ...TOP_10_MODELS,
@@ -1651,7 +2154,9 @@ export const ALL_MODELS: ModelConfig[] = [
   ...MODELS_21_30,
   ...MODELS_31_40,
   ...MODELS_41_50,
-  ...MODELS_51_60
+  ...MODELS_51_60,
+  ...MODELS_61_70,
+  ...MODELS_71_80
 ];
 
 // Category metadata
