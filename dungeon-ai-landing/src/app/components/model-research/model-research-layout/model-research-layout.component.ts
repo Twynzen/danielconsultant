@@ -125,6 +125,10 @@ export class ModelResearchLayoutComponent implements OnInit, OnDestroy {
 
   // Model selection and demo
   selectModel(model: ModelConfig): void {
+    if (model.status === 'broken') {
+      alert(`MODELO NO DISPONIBLE\n\nRazón: ${model.errorMessage || 'Error desconocido'}`);
+      return;
+    }
     this.modelService.selectModel(model);
     this.showDemo.set(true);
     this.demoInput.set('');

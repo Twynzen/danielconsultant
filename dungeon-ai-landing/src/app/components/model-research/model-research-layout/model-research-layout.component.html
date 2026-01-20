@@ -2,14 +2,9 @@
   <!-- Background particles -->
   <div class="particles-container">
     @for (particle of particles(); track particle.id) {
-      <div
-        class="particle"
-        [style.left.%]="particle.x"
-        [style.top.%]="particle.y"
-        [style.width.px]="particle.size"
-        [style.height.px]="particle.size"
-        [style.opacity]="particle.opacity">
-      </div>
+    <div class="particle" [style.left.%]="particle.x" [style.top.%]="particle.y" [style.width.px]="particle.size"
+      [style.height.px]="particle.size" [style.opacity]="particle.opacity">
+    </div>
     }
   </div>
 
@@ -45,86 +40,63 @@
 
   <!-- Filters Panel -->
   @if (showFilters()) {
-    <div class="filters-panel">
-      <div class="filters-content">
-        <!-- Search -->
-        <div class="filter-group search-group">
-          <label>BUSCAR</label>
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            (input)="onSearchChange()"
-            placeholder="Buscar modelo, descripción, caso de uso..."
-            class="search-input"
-          />
-        </div>
+  <div class="filters-panel">
+    <div class="filters-content">
+      <!-- Search -->
+      <div class="filter-group search-group">
+        <label>BUSCAR</label>
+        <input type="text" [(ngModel)]="searchQuery" (input)="onSearchChange()"
+          placeholder="Buscar modelo, descripción, caso de uso..." class="search-input" />
+      </div>
 
-        <!-- Categories -->
-        <div class="filter-group">
-          <label>CATEGORÍA</label>
-          <div class="filter-chips">
-            <button
-              class="chip"
-              [class.active]="modelService.filter().category === 'all'"
-              (click)="setCategory('all')">
-              TODAS
-            </button>
-            @for (cat of categories; track cat[0]) {
-              <button
-                class="chip"
-                [class.active]="modelService.filter().category === cat[0]"
-                [style.--chip-color]="cat[1].color"
-                (click)="setCategory(cat[0])">
-                <span class="chip-icon">{{ cat[1].icon }}</span>
-                {{ cat[1].label }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Frameworks -->
-        <div class="filter-group">
-          <label>FRAMEWORK</label>
-          <div class="filter-chips">
-            <button
-              class="chip"
-              [class.active]="modelService.filter().framework === 'all'"
-              (click)="setFramework('all')">
-              TODOS
-            </button>
-            @for (fw of frameworks; track fw[0]) {
-              <button
-                class="chip"
-                [class.active]="modelService.filter().framework === fw[0]"
-                (click)="setFramework(fw[0])">
-                {{ fw[0] }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Reset -->
-        <div class="filter-actions">
-          <button class="reset-btn" (click)="resetFilters()">
-            RESET FILTROS
+      <!-- Categories -->
+      <div class="filter-group">
+        <label>CATEGORÍA</label>
+        <div class="filter-chips">
+          <button class="chip" [class.active]="modelService.filter().category === 'all'" (click)="setCategory('all')">
+            TODAS
           </button>
+          @for (cat of categories; track cat[0]) {
+          <button class="chip" [class.active]="modelService.filter().category === cat[0]"
+            [style.--chip-color]="cat[1].color" (click)="setCategory(cat[0])">
+            <span class="chip-icon">{{ cat[1].icon }}</span>
+            {{ cat[1].label }}
+          </button>
+          }
         </div>
       </div>
+
+      <!-- Frameworks -->
+      <div class="filter-group">
+        <label>FRAMEWORK</label>
+        <div class="filter-chips">
+          <button class="chip" [class.active]="modelService.filter().framework === 'all'" (click)="setFramework('all')">
+            TODOS
+          </button>
+          @for (fw of frameworks; track fw[0]) {
+          <button class="chip" [class.active]="modelService.filter().framework === fw[0]" (click)="setFramework(fw[0])">
+            {{ fw[0] }}
+          </button>
+          }
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div class="filter-actions">
+        <button class="reset-btn" (click)="resetFilters()">
+          RESET FILTROS
+        </button>
+      </div>
     </div>
+  </div>
   }
 
   <!-- View Toggle -->
   <div class="view-controls">
-    <button
-      class="view-btn"
-      [class.active]="activeTab() === 'grid'"
-      (click)="setView('grid')">
+    <button class="view-btn" [class.active]="activeTab() === 'grid'" (click)="setView('grid')">
       <span>▦</span> GRID
     </button>
-    <button
-      class="view-btn"
-      [class.active]="activeTab() === 'list'"
-      (click)="setView('list')">
+    <button class="view-btn" [class.active]="activeTab() === 'list'" (click)="setView('list')">
       <span>☰</span> LIST
     </button>
   </div>
@@ -132,289 +104,269 @@
   <!-- Models Grid/List -->
   <main class="models-container" [class.list-view]="activeTab() === 'list'">
     @if (modelService.filteredModels().length === 0) {
-      <div class="no-results">
-        <span class="icon">🔍</span>
-        <p>No se encontraron modelos</p>
-        <button class="reset-btn" (click)="resetFilters()">Resetear filtros</button>
-      </div>
+    <div class="no-results">
+      <span class="icon">🔍</span>
+      <p>No se encontraron modelos</p>
+      <button class="reset-btn" (click)="resetFilters()">Resetear filtros</button>
+    </div>
     } @else {
-      @for (model of modelService.filteredModels(); track model.id) {
-        <article
-          class="model-card"
-          [style.--card-color]="getCategoryColor(model.category)"
-          (click)="selectModel(model)">
-          <!-- Rank Badge -->
-          <div class="rank-badge">
-            <span class="rank">#{{ model.rank }}</span>
-          </div>
+    @for (model of modelService.filteredModels(); track model.id) {
+    <article class="model-card" [style.--card-color]="getCategoryColor(model.category)"
+      [class.broken-model]="model.status === 'broken'" (click)="selectModel(model)">
+      <!-- Rank Badge -->
+      <div class="rank-badge">
+        <span class="rank">#{{ model.rank }}</span>
+      </div>
 
-          <!-- Header -->
-          <div class="card-header">
-            <span class="category-icon">{{ getCategoryIcon(model.category) }}</span>
-            <div class="title-block">
-              <h3 class="model-name">{{ model.name }}</h3>
-              <span class="framework-tag">{{ model.framework }}</span>
-            </div>
-          </div>
-
-          <!-- Innovation Score -->
-          <div class="innovation-score">
-            <span class="stars">{{ getStars(model.innovationScore) }}</span>
-            <span class="label">INNOVACIÓN</span>
-          </div>
-
-          <!-- Specs -->
-          <div class="specs">
-            <div class="spec">
-              <span class="spec-label">SIZE</span>
-              <span class="spec-value">{{ model.size }}</span>
-            </div>
-            <div class="spec">
-              <span class="spec-label">VRAM</span>
-              <span class="spec-value">{{ model.vram }}</span>
-            </div>
-          </div>
-
-          <!-- Description -->
-          <p class="description">{{ model.description }}</p>
-
-          <!-- Use Cases -->
-          <div class="use-cases">
-            @for (uc of model.useCases.slice(0, 3); track uc) {
-              <span class="use-case-tag">{{ uc }}</span>
-            }
-          </div>
-
-          <!-- Action -->
-          <div class="card-footer">
-            <button class="demo-btn">
-              <span class="icon">▶</span>
-              PROBAR MODELO
-            </button>
-          </div>
-        </article>
+      @if (model.status === 'broken') {
+      <div class="error-badge">⚠️ NO DISPONIBLE</div>
       }
+
+      @if (model.status === 'broken') {
+      <div class="error-badge">⚠️ NO DISPONIBLE</div>
+      }
+
+      <!-- Header -->
+      <div class="card-header">
+        <span class="category-icon">{{ getCategoryIcon(model.category) }}</span>
+        <div class="title-block">
+          <h3 class="model-name">{{ model.name }}</h3>
+          <span class="framework-tag">{{ model.framework }}</span>
+        </div>
+      </div>
+
+      <!-- Innovation Score -->
+      <div class="innovation-score">
+        <span class="stars">{{ getStars(model.innovationScore) }}</span>
+        <span class="label">INNOVACIÓN</span>
+      </div>
+
+      <!-- Specs -->
+      <div class="specs">
+        <div class="spec">
+          <span class="spec-label">SIZE</span>
+          <span class="spec-value">{{ model.size }}</span>
+        </div>
+        <div class="spec">
+          <span class="spec-label">VRAM</span>
+          <span class="spec-value">{{ model.vram }}</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p class="description">{{ model.description }}</p>
+
+      <!-- Use Cases -->
+      <div class="use-cases">
+        @for (uc of model.useCases.slice(0, 3); track uc) {
+        <span class="use-case-tag">{{ uc }}</span>
+        }
+      </div>
+
+      <!-- Action -->
+      <div class="card-footer">
+        <button class="demo-btn">
+          <span class="icon">▶</span>
+          PROBAR MODELO
+        </button>
+      </div>
+    </article>
+    }
     }
   </main>
 
   <!-- Demo Modal -->
   @if (showDemo() && modelService.selectedModel()) {
-    <div class="demo-modal-backdrop" (click)="closeDemo()">
-      <div class="demo-modal" (click)="$event.stopPropagation()">
-        <!-- Modal Header -->
-        <div class="modal-header">
-          <div class="header-info">
-            <span class="category-icon">{{ getCategoryIcon(modelService.selectedModel()!.category) }}</span>
-            <div>
-              <h2>{{ modelService.selectedModel()!.name }}</h2>
-              <span class="rank-label">#{{ modelService.selectedModel()!.rank }} en ranking</span>
-            </div>
+  <div class="demo-modal-backdrop" (click)="closeDemo()">
+    <div class="demo-modal" (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="header-info">
+          <span class="category-icon">{{ getCategoryIcon(modelService.selectedModel()!.category) }}</span>
+          <div>
+            <h2>{{ modelService.selectedModel()!.name }}</h2>
+            <span class="rank-label">#{{ modelService.selectedModel()!.rank }} en ranking</span>
           </div>
-          <button class="close-btn" (click)="closeDemo()">✕</button>
+        </div>
+        <button class="close-btn" (click)="closeDemo()">✕</button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="modal-content">
+        <!-- Left Column: Info -->
+        <div class="info-column">
+          <section class="info-section">
+            <h3>POR QUÉ DESTACA</h3>
+            <p>{{ modelService.selectedModel()!.whyTop }}</p>
+          </section>
+
+          <section class="info-section">
+            <h3>ESPECIFICACIONES</h3>
+            <div class="specs-grid">
+              <div class="spec-item">
+                <span class="label">Tamaño</span>
+                <span class="value">{{ modelService.selectedModel()!.size }}</span>
+              </div>
+              <div class="spec-item">
+                <span class="label">VRAM</span>
+                <span class="value">{{ modelService.selectedModel()!.vram }}</span>
+              </div>
+              <div class="spec-item">
+                <span class="label">Framework</span>
+                <span class="value">{{ modelService.selectedModel()!.framework }}</span>
+              </div>
+              <div class="spec-item">
+                <span class="label">Tipo Demo</span>
+                <span class="value">{{ modelService.selectedModel()!.demoType }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-section">
+            <h3>CASOS DE USO</h3>
+            <div class="use-cases-list">
+              @for (uc of modelService.selectedModel()!.useCases; track uc) {
+              <span class="use-case">→ {{ uc }}</span>
+              }
+            </div>
+          </section>
+
+          <section class="info-section code-section">
+            <h3>
+              CÓDIGO DE EJEMPLO
+              <button class="copy-btn" [class.copied]="copiedCode()"
+                (click)="copyCode(modelService.selectedModel()!.codeExample)">
+                {{ copiedCode() ? '✓ COPIADO' : '📋 COPIAR' }}
+              </button>
+            </h3>
+            <pre class="code-block"><code>{{ modelService.selectedModel()!.codeExample }}</code></pre>
+          </section>
+
+          @if (modelService.selectedModel()!.docsUrl) {
+          <button class="docs-btn" (click)="openDocs(modelService.selectedModel()!.docsUrl)">
+            📄 VER DOCUMENTACIÓN
+          </button>
+          }
         </div>
 
-        <!-- Modal Content -->
-        <div class="modal-content">
-          <!-- Left Column: Info -->
-          <div class="info-column">
-            <section class="info-section">
-              <h3>POR QUÉ DESTACA</h3>
-              <p>{{ modelService.selectedModel()!.whyTop }}</p>
-            </section>
+        <!-- Right Column: Demo -->
+        <div class="demo-column">
+          <section class="demo-section">
+            <h3>PROBAR MODELO</h3>
 
-            <section class="info-section">
-              <h3>ESPECIFICACIONES</h3>
-              <div class="specs-grid">
-                <div class="spec-item">
-                  <span class="label">Tamaño</span>
-                  <span class="value">{{ modelService.selectedModel()!.size }}</span>
-                </div>
-                <div class="spec-item">
-                  <span class="label">VRAM</span>
-                  <span class="value">{{ modelService.selectedModel()!.vram }}</span>
-                </div>
-                <div class="spec-item">
-                  <span class="label">Framework</span>
-                  <span class="value">{{ modelService.selectedModel()!.framework }}</span>
-                </div>
-                <div class="spec-item">
-                  <span class="label">Tipo Demo</span>
-                  <span class="value">{{ modelService.selectedModel()!.demoType }}</span>
-                </div>
+            <!-- Loading State -->
+            @if (modelService.loadingState() === 'loading') {
+            <div class="loading-container">
+              <div class="loading-bar">
+                <div class="loading-progress" [style.width.%]="modelService.loadingProgress()"></div>
               </div>
-            </section>
+              <p class="loading-message">{{ modelService.loadingMessage() }}</p>
+            </div>
+            }
 
-            <section class="info-section">
-              <h3>CASOS DE USO</h3>
-              <div class="use-cases-list">
-                @for (uc of modelService.selectedModel()!.useCases; track uc) {
-                  <span class="use-case">→ {{ uc }}</span>
+            <!-- Input Area -->
+            @if (modelService.loadingState() !== 'loading') {
+            <div class="demo-input-area">
+              <!-- File input for image/audio/multimodal -->
+              @if (needsFileInput()) {
+              <div class="file-upload-area">
+                @if (selectedFile()) {
+                <div class="file-selected">
+                  @if (filePreview()) {
+                  <img [src]="filePreview()" alt="Preview" class="file-preview" />
+                  } @else {
+                  <span class="file-icon">📁</span>
+                  }
+                  <span class="file-name">{{ selectedFile()!.name }}</span>
+                  <button class="clear-file-btn" (click)="clearFile()">✕</button>
+                </div>
+                } @else {
+                <label class="file-drop-zone">
+                  <input type="file" [accept]="getFileAccept()" (change)="onFileSelected($event)"
+                    class="hidden-input" />
+                  @if (modelService.selectedModel()!.demoType === 'audio') {
+                  <span class="drop-icon">🎤</span>
+                  <span class="drop-text">Click o arrastra un archivo de audio</span>
+                  } @else {
+                  <span class="drop-icon">📷</span>
+                  <span class="drop-text">Click o arrastra una imagen</span>
+                  }
+                </label>
                 }
               </div>
-            </section>
+              }
 
-            <section class="info-section code-section">
-              <h3>
-                CÓDIGO DE EJEMPLO
-                <button class="copy-btn" [class.copied]="copiedCode()" (click)="copyCode(modelService.selectedModel()!.codeExample)">
-                  {{ copiedCode() ? '✓ COPIADO' : '📋 COPIAR' }}
+              <!-- Text input -->
+              @switch (modelService.selectedModel()!.demoType) {
+              @case ('text') {
+              <textarea class="demo-textarea" [(ngModel)]="demoInput"
+                placeholder="Escribe tu prompt aquí... Ejemplo: 'Explain quantum computing in simple terms'" rows="4">
+                      </textarea>
+              }
+              @case ('embedding') {
+              <textarea class="demo-textarea" [(ngModel)]="demoInput"
+                placeholder="Texto para generar embedding... Ejemplo: 'Machine learning is a subset of AI'" rows="3">
+                      </textarea>
+              }
+              @case ('image') {
+              <textarea class="demo-textarea" [(ngModel)]="demoInput"
+                placeholder="Opcional: etiquetas separadas por coma para clasificación..." rows="2">
+                      </textarea>
+              }
+              @case ('audio') {
+              <textarea class="demo-textarea" [(ngModel)]="demoInput"
+                placeholder="Opcional: etiquetas para clasificación de audio (music, speech, noise)..." rows="2">
+                      </textarea>
+              }
+              @case ('multimodal') {
+              <textarea class="demo-textarea" [(ngModel)]="demoInput"
+                placeholder="Pregunta sobre la imagen... Ejemplo: 'What do you see in this image?'" rows="3">
+                      </textarea>
+              }
+              }
+
+              <div class="demo-actions">
+                @if (modelService.loadedModelId() !== modelService.selectedModel()!.id) {
+                <button class="action-btn primary" (click)="loadAndRunDemo()" [disabled]="isProcessing()">
+                  @if (isProcessing()) {
+                  ⏳ DESCARGANDO...
+                  } @else {
+                  📥 DESCARGAR Y PROBAR
+                  }
                 </button>
-              </h3>
-              <pre class="code-block"><code>{{ modelService.selectedModel()!.codeExample }}</code></pre>
-            </section>
-
-            @if (modelService.selectedModel()!.docsUrl) {
-              <button class="docs-btn" (click)="openDocs(modelService.selectedModel()!.docsUrl)">
-                📄 VER DOCUMENTACIÓN
-              </button>
+                @if (modelService.loadedModelId()) {
+                <p class="cache-warning">
+                  ⚠️ Se borrará el modelo anterior del cache
+                </p>
+                }
+                } @else {
+                <button class="action-btn primary" (click)="runDemo()"
+                  [disabled]="isProcessing() || (!demoInput() && !selectedFile())">
+                  @if (isProcessing()) {
+                  ⏳ PROCESANDO...
+                  } @else {
+                  ▶ EJECUTAR
+                  }
+                </button>
+                <button class="action-btn secondary" (click)="clearCache()" [disabled]="isProcessing()">
+                  🗑️ LIMPIAR CACHE
+                </button>
+                }
+              </div>
+            </div>
             }
-          </div>
 
-          <!-- Right Column: Demo -->
-          <div class="demo-column">
-            <section class="demo-section">
-              <h3>PROBAR MODELO</h3>
-
-              <!-- Loading State -->
-              @if (modelService.loadingState() === 'loading') {
-                <div class="loading-container">
-                  <div class="loading-bar">
-                    <div class="loading-progress" [style.width.%]="modelService.loadingProgress()"></div>
-                  </div>
-                  <p class="loading-message">{{ modelService.loadingMessage() }}</p>
-                </div>
-              }
-
-              <!-- Input Area -->
-              @if (modelService.loadingState() !== 'loading') {
-                <div class="demo-input-area">
-                  <!-- File input for image/audio/multimodal -->
-                  @if (needsFileInput()) {
-                    <div class="file-upload-area">
-                      @if (selectedFile()) {
-                        <div class="file-selected">
-                          @if (filePreview()) {
-                            <img [src]="filePreview()" alt="Preview" class="file-preview" />
-                          } @else {
-                            <span class="file-icon">📁</span>
-                          }
-                          <span class="file-name">{{ selectedFile()!.name }}</span>
-                          <button class="clear-file-btn" (click)="clearFile()">✕</button>
-                        </div>
-                      } @else {
-                        <label class="file-drop-zone">
-                          <input
-                            type="file"
-                            [accept]="getFileAccept()"
-                            (change)="onFileSelected($event)"
-                            class="hidden-input"
-                          />
-                          @if (modelService.selectedModel()!.demoType === 'audio') {
-                            <span class="drop-icon">🎤</span>
-                            <span class="drop-text">Click o arrastra un archivo de audio</span>
-                          } @else {
-                            <span class="drop-icon">📷</span>
-                            <span class="drop-text">Click o arrastra una imagen</span>
-                          }
-                        </label>
-                      }
-                    </div>
-                  }
-
-                  <!-- Text input -->
-                  @switch (modelService.selectedModel()!.demoType) {
-                    @case ('text') {
-                      <textarea
-                        class="demo-textarea"
-                        [(ngModel)]="demoInput"
-                        placeholder="Escribe tu prompt aquí... Ejemplo: 'Explain quantum computing in simple terms'"
-                        rows="4">
-                      </textarea>
-                    }
-                    @case ('embedding') {
-                      <textarea
-                        class="demo-textarea"
-                        [(ngModel)]="demoInput"
-                        placeholder="Texto para generar embedding... Ejemplo: 'Machine learning is a subset of AI'"
-                        rows="3">
-                      </textarea>
-                    }
-                    @case ('image') {
-                      <textarea
-                        class="demo-textarea"
-                        [(ngModel)]="demoInput"
-                        placeholder="Opcional: etiquetas separadas por coma para clasificación..."
-                        rows="2">
-                      </textarea>
-                    }
-                    @case ('audio') {
-                      <textarea
-                        class="demo-textarea"
-                        [(ngModel)]="demoInput"
-                        placeholder="Opcional: etiquetas para clasificación de audio (music, speech, noise)..."
-                        rows="2">
-                      </textarea>
-                    }
-                    @case ('multimodal') {
-                      <textarea
-                        class="demo-textarea"
-                        [(ngModel)]="demoInput"
-                        placeholder="Pregunta sobre la imagen... Ejemplo: 'What do you see in this image?'"
-                        rows="3">
-                      </textarea>
-                    }
-                  }
-
-                  <div class="demo-actions">
-                    @if (modelService.loadedModelId() !== modelService.selectedModel()!.id) {
-                      <button
-                        class="action-btn primary"
-                        (click)="loadAndRunDemo()"
-                        [disabled]="isProcessing()">
-                        @if (isProcessing()) {
-                          ⏳ DESCARGANDO...
-                        } @else {
-                          📥 DESCARGAR Y PROBAR
-                        }
-                      </button>
-                      @if (modelService.loadedModelId()) {
-                        <p class="cache-warning">
-                          ⚠️ Se borrará el modelo anterior del cache
-                        </p>
-                      }
-                    } @else {
-                      <button
-                        class="action-btn primary"
-                        (click)="runDemo()"
-                        [disabled]="isProcessing() || (!demoInput() && !selectedFile())">
-                        @if (isProcessing()) {
-                          ⏳ PROCESANDO...
-                        } @else {
-                          ▶ EJECUTAR
-                        }
-                      </button>
-                      <button
-                        class="action-btn secondary"
-                        (click)="clearCache()"
-                        [disabled]="isProcessing()">
-                        🗑️ LIMPIAR CACHE
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
-
-              <!-- Result Area -->
-              @if (modelService.demoResult()) {
-                <div class="demo-result">
-                  <h4>RESULTADO</h4>
-                  <pre class="result-content">{{ modelService.demoResult() }}</pre>
-                </div>
-              }
-            </section>
-          </div>
+            <!-- Result Area -->
+            @if (modelService.demoResult()) {
+            <div class="demo-result">
+              <h4>RESULTADO</h4>
+              <pre class="result-content">{{ modelService.demoResult() }}</pre>
+            </div>
+            }
+          </section>
         </div>
       </div>
     </div>
+  </div>
   }
 </div>

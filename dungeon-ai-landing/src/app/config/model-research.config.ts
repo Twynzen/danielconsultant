@@ -30,6 +30,8 @@ export interface ModelConfig {
   modelId: string; // For actual loading
   docsUrl?: string;
   demoType: 'text' | 'image' | 'audio' | 'embedding' | 'multimodal';
+  status?: 'active' | 'broken';
+  errorMessage?: string;
 }
 
 // Top 10 Models - Maximum Innovation
@@ -60,7 +62,9 @@ const result = await generator(
 );`,
     modelId: 'onnx-community/DeepSeek-R1-Distill-Qwen-1.5B',
     docsUrl: 'https://huggingface.co/onnx-community/DeepSeek-R1-Distill-Qwen-1.5B',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'Inaccesible: El repositorio onnx-community requiere autenticación o es privado. (Error 401)'
   },
   {
     id: 'smolvlm',
@@ -88,7 +92,9 @@ const result = await model.generate({
 });`,
     modelId: 'onnx-community/SmolVLM-500M-Instruct',
     docsUrl: 'https://huggingface.co/onnx-community/SmolVLM-500M-Instruct',
-    demoType: 'multimodal'
+    demoType: 'multimodal',
+    status: 'broken',
+    errorMessage: 'Inaccesible: El repositorio onnx-community requiere autenticación o es privado. (Error 401)'
   },
   {
     id: 'whisper',
@@ -172,7 +178,9 @@ const objects = await model.detect(image);
 const ocr = await model.ocr(image);`,
     modelId: 'onnx-community/Florence-2-base-ft',
     docsUrl: 'https://huggingface.co/onnx-community/Florence-2-base-ft',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'Error de librería: La versión actual de Transformers.js no soporta Florence-2.'
   },
   {
     id: 'moondream2',

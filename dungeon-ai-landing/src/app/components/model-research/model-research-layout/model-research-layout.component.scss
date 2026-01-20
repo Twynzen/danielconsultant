@@ -1068,3 +1068,43 @@ $border-active: rgba(0, 255, 68, 0.6);
     }
   }
 }
+
+// Broken Model Styles
+.model-card.broken-model {
+  border-color: #ff4444 !important;
+  opacity: 0.8;
+  position: relative;
+  
+  &:hover {
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+    transform: none;
+    cursor: not-allowed;
+  }
+
+  .model-name {
+    color: #ff4444 !important;
+    text-shadow: 0 0 5px rgba(255, 68, 68, 0.5);
+  }
+
+  .demo-btn {
+    border-color: #ff4444 !important;
+    color: #ff4444 !important;
+    opacity: 0.5;
+  }
+}
+
+.error-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-5deg);
+  background: rgba(255, 0, 0, 0.9);
+  color: white;
+  padding: 8px 16px;
+  font-weight: bold;
+  border: 2px solid white;
+  z-index: 10;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
