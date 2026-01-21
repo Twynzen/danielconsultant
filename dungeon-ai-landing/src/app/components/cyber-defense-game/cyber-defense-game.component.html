@@ -1,0 +1,401 @@
+<div class="game-container">
+  <!-- Canvas -->
+  <canvas #gameCanvas></canvas>
+
+  <!-- MAP SELECT SCREEN -->
+  <div class="overlay map-select-overlay" *ngIf="gameState() === GameState.MAP_SELECT">
+    <div class="map-select-content">
+      <div class="title-section">
+        <h1 class="game-title glitch" data-text="CYBER DEFENSE">CYBER DEFENSE</h1>
+        <p class="subtitle">Datacenter Protection Protocol</p>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-icon">💰</span>
+          <span class="stat-value">{{ currency() }}</span>
+          <span class="stat-label">Credits</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🏆</span>
+          <span class="stat-value">{{ gameStats.wins }}</span>
+          <span class="stat-label">Victories</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">☠️</span>
+          <span class="stat-value">{{ gameStats.totalKills }}</span>
+          <span class="stat-label">Threats Eliminated</span>
+        </div>
+      </div>
+
+      <div class="level-grid">
+        <!-- Tutorial -->
+        <div class="difficulty-section">
+          <h3 class="difficulty-title tutorial">TUTORIAL</h3>
+          <div class="level-cards">
+            <button
+              *ngFor="let level of allLevels | slice:0:1"
+              class="level-card tutorial"
+              [class.locked]="!level.isUnlocked"
+              (click)="level.isUnlocked && selectLevel(level)"
+            >
+              <div class="level-header">
+                <span class="level-company">{{ level.company }}</span>
+                <span class="level-duration">{{ level.durationMinutes }}min</span>
+              </div>
+              <div class="level-name">{{ level.name }}</div>
+              <div class="level-location">{{ level.city }}, {{ level.country }}</div>
+              <div class="level-lock" *ngIf="!level.isUnlocked">🔒</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Easy -->
+        <div class="difficulty-section">
+          <h3 class="difficulty-title easy">EASY</h3>
+          <div class="level-cards">
+            <button
+              *ngFor="let level of allLevels | slice:1:11"
+              class="level-card easy"
+              [class.locked]="!level.isUnlocked"
+              [class.cleared]="gameStats.datacentersCleared.includes(level.id)"
+              (click)="level.isUnlocked && selectLevel(level)"
+            >
+              <div class="level-header">
+                <span class="level-company">{{ level.company }}</span>
+                <span class="level-duration">{{ level.durationMinutes }}min</span>
+              </div>
+              <div class="level-name">{{ level.name }}</div>
+              <div class="level-location">{{ level.city }}, {{ level.country }}</div>
+              <div class="level-cleared" *ngIf="gameStats.datacentersCleared.includes(level.id)">✓</div>
+              <div class="level-lock" *ngIf="!level.isUnlocked">🔒</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Medium -->
+        <div class="difficulty-section">
+          <h3 class="difficulty-title medium">MEDIUM</h3>
+          <div class="level-cards">
+            <button
+              *ngFor="let level of allLevels | slice:11:20"
+              class="level-card medium"
+              [class.locked]="!level.isUnlocked"
+              [class.cleared]="gameStats.datacentersCleared.includes(level.id)"
+              (click)="level.isUnlocked && selectLevel(level)"
+            >
+              <div class="level-header">
+                <span class="level-company">{{ level.company }}</span>
+                <span class="level-duration">{{ level.durationMinutes }}min</span>
+              </div>
+              <div class="level-name">{{ level.name }}</div>
+              <div class="level-location">{{ level.city }}, {{ level.country }}</div>
+              <div class="level-cleared" *ngIf="gameStats.datacentersCleared.includes(level.id)">✓</div>
+              <div class="level-lock" *ngIf="!level.isUnlocked">🔒</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hard -->
+        <div class="difficulty-section">
+          <h3 class="difficulty-title hard">HARD</h3>
+          <div class="level-cards">
+            <button
+              *ngFor="let level of allLevels | slice:20:35"
+              class="level-card hard"
+              [class.locked]="!level.isUnlocked"
+              [class.cleared]="gameStats.datacentersCleared.includes(level.id)"
+              (click)="level.isUnlocked && selectLevel(level)"
+            >
+              <div class="level-header">
+                <span class="level-company">{{ level.company }}</span>
+                <span class="level-duration">{{ level.durationMinutes }}min</span>
+              </div>
+              <div class="level-name">{{ level.name }}</div>
+              <div class="level-location">{{ level.city }}, {{ level.country }}</div>
+              <div class="level-cleared" *ngIf="gameStats.datacentersCleared.includes(level.id)">✓</div>
+              <div class="level-lock" *ngIf="!level.isUnlocked">🔒</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Boss -->
+        <div class="difficulty-section">
+          <h3 class="difficulty-title boss">BOSS</h3>
+          <div class="level-cards">
+            <button
+              *ngFor="let level of allLevels | slice:35:45"
+              class="level-card boss"
+              [class.locked]="!level.isUnlocked"
+              [class.cleared]="gameStats.datacentersCleared.includes(level.id)"
+              (click)="level.isUnlocked && selectLevel(level)"
+            >
+              <div class="level-header">
+                <span class="level-company">{{ level.company }}</span>
+                <span class="level-duration">{{ level.durationMinutes }}min</span>
+              </div>
+              <div class="level-name">{{ level.name }}</div>
+              <div class="level-location">{{ level.city }}, {{ level.country }}</div>
+              <div class="level-cleared" *ngIf="gameStats.datacentersCleared.includes(level.id)">✓</div>
+              <div class="level-lock" *ngIf="!level.isUnlocked">🔒</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="upgrades-section">
+        <h3 class="section-title">PERMANENT UPGRADES</h3>
+        <div class="upgrade-buttons">
+          <button
+            class="upgrade-btn"
+            [class.maxed]="permanentUpgrades.maxHealth >= 5"
+            (click)="purchaseUpgrade('maxHealth')"
+          >
+            <span class="upgrade-icon">❤️</span>
+            <span class="upgrade-name">Max Health</span>
+            <span class="upgrade-level">Lv {{ permanentUpgrades.maxHealth }}/5</span>
+            <span class="upgrade-cost" *ngIf="permanentUpgrades.maxHealth < 5">
+              💰 {{ [100, 200, 400, 800, 1600][permanentUpgrades.maxHealth] }}
+            </span>
+            <span class="upgrade-cost maxed" *ngIf="permanentUpgrades.maxHealth >= 5">MAX</span>
+          </button>
+
+          <button
+            class="upgrade-btn"
+            [class.maxed]="permanentUpgrades.bandwidth >= 5"
+            (click)="purchaseUpgrade('bandwidth')"
+          >
+            <span class="upgrade-icon">⚡</span>
+            <span class="upgrade-name">Bandwidth</span>
+            <span class="upgrade-level">Lv {{ permanentUpgrades.bandwidth }}/5</span>
+            <span class="upgrade-cost" *ngIf="permanentUpgrades.bandwidth < 5">
+              💰 {{ [150, 300, 600, 1200, 2400][permanentUpgrades.bandwidth] }}
+            </span>
+            <span class="upgrade-cost maxed" *ngIf="permanentUpgrades.bandwidth >= 5">MAX</span>
+          </button>
+
+          <button
+            class="upgrade-btn"
+            [class.maxed]="permanentUpgrades.processing >= 5"
+            (click)="purchaseUpgrade('processing')"
+          >
+            <span class="upgrade-icon">🔥</span>
+            <span class="upgrade-name">Processing</span>
+            <span class="upgrade-level">Lv {{ permanentUpgrades.processing }}/5</span>
+            <span class="upgrade-cost" *ngIf="permanentUpgrades.processing < 5">
+              💰 {{ [200, 400, 800, 1600, 3200][permanentUpgrades.processing] }}
+            </span>
+            <span class="upgrade-cost maxed" *ngIf="permanentUpgrades.processing >= 5">MAX</span>
+          </button>
+
+          <button
+            class="upgrade-btn"
+            [class.maxed]="permanentUpgrades.storage >= 5"
+            (click)="purchaseUpgrade('storage')"
+          >
+            <span class="upgrade-icon">📦</span>
+            <span class="upgrade-name">Storage</span>
+            <span class="upgrade-level">Lv {{ permanentUpgrades.storage }}/5</span>
+            <span class="upgrade-cost" *ngIf="permanentUpgrades.storage < 5">
+              💰 {{ [100, 200, 400, 800, 1600][permanentUpgrades.storage] }}
+            </span>
+            <span class="upgrade-cost maxed" *ngIf="permanentUpgrades.storage >= 5">MAX</span>
+          </button>
+
+          <button
+            class="upgrade-btn"
+            [class.maxed]="permanentUpgrades.firewall >= 5"
+            (click)="purchaseUpgrade('firewall')"
+          >
+            <span class="upgrade-icon">🛡️</span>
+            <span class="upgrade-name">Firewall</span>
+            <span class="upgrade-level">Lv {{ permanentUpgrades.firewall }}/5</span>
+            <span class="upgrade-cost" *ngIf="permanentUpgrades.firewall < 5">
+              💰 {{ [150, 300, 600, 1200, 2400][permanentUpgrades.firewall] }}
+            </span>
+            <span class="upgrade-cost maxed" *ngIf="permanentUpgrades.firewall >= 5">MAX</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="game-button secondary" (click)="exitToLanding()">
+        ← Back to Landing
+      </button>
+    </div>
+  </div>
+
+  <!-- MENU SCREEN -->
+  <div class="overlay menu-overlay" *ngIf="gameState() === GameState.MENU">
+    <div class="menu-content">
+      <div class="terminal-header">
+        <span class="terminal-title">[MISSION BRIEFING]</span>
+        <span class="terminal-dots">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </span>
+      </div>
+
+      <div class="mission-info" *ngIf="currentLevel">
+        <h2 class="datacenter-name">{{ currentLevel.name }}</h2>
+        <div class="datacenter-details">
+          <p><span class="label">COMPANY:</span> {{ currentLevel.company }}</p>
+          <p><span class="label">LOCATION:</span> {{ currentLevel.city }}, {{ currentLevel.country }}</p>
+          <p><span class="label">DIFFICULTY:</span> <span [class]="currentLevel.difficulty">{{ currentLevel.difficulty | uppercase }}</span></p>
+          <p><span class="label">DURATION:</span> {{ currentLevel.durationMinutes }} minutes</p>
+        </div>
+        <p class="description">{{ currentLevel.description }}</p>
+      </div>
+
+      <div class="controls-info">
+        <h3>CONTROLS</h3>
+        <p>WASD / Arrow Keys - Move</p>
+        <p>Auto-attack nearest threat</p>
+        <p>ESC - Pause</p>
+      </div>
+
+      <div class="menu-buttons">
+        <button class="game-button primary" (click)="startGame()">
+          INITIATE DEFENSE
+        </button>
+        <button class="game-button secondary" (click)="returnToMapSelect()">
+          ← Back to Map
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAUSED -->
+  <div class="overlay pause-overlay" *ngIf="gameState() === GameState.PAUSED">
+    <div class="pause-content">
+      <h2>⏸️ SYSTEM PAUSED</h2>
+      <div class="pause-stats">
+        <p>Level: {{ player.level }}</p>
+        <p>Score: {{ score }}</p>
+        <p>Time: {{ survivalTime }}s</p>
+        <p>Kills: {{ killCount }}</p>
+      </div>
+      <button class="game-button primary" (click)="resumeGame()">
+        RESUME
+      </button>
+      <button class="game-button secondary" (click)="returnToMapSelect()">
+        Abort Mission
+      </button>
+    </div>
+  </div>
+
+  <!-- LEVEL UP -->
+  <div class="overlay levelup-overlay" *ngIf="gameState() === GameState.LEVEL_UP">
+    <div class="levelup-content">
+      <h2>⬆️ SYSTEM UPGRADE</h2>
+      <p class="level-text">Security Level {{ player.level }}</p>
+      <p class="choose-text">Select an upgrade:</p>
+
+      <div class="upgrades-grid">
+        <button
+          *ngFor="let upgrade of availableUpgrades"
+          class="upgrade-card"
+          [class.new]="upgrade.isNew"
+          (click)="selectUpgrade(upgrade)"
+        >
+          <div class="upgrade-icon">{{ upgrade.icon }}</div>
+          <div class="upgrade-name">{{ upgrade.name }}</div>
+          <div class="upgrade-description">{{ upgrade.description }}</div>
+          <div class="upgrade-badge new" *ngIf="upgrade.isNew">NEW</div>
+          <div class="upgrade-level-indicator" *ngIf="upgrade.currentLevel">
+            Lv {{ upgrade.currentLevel }} → {{ upgrade.currentLevel! + 1 }}
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVOLUTION -->
+  <div class="overlay evolution-overlay" *ngIf="gameState() === GameState.EVOLUTION">
+    <div class="evolution-content" *ngIf="evolutionAvailable">
+      <h2>🔮 WEAPON EVOLUTION</h2>
+      <div class="evolution-visual">
+        <div class="old-weapon">
+          <span class="weapon-name">{{ evolutionAvailable.weapon.type | uppercase }}</span>
+        </div>
+        <div class="evolution-arrow">→</div>
+        <div class="new-weapon">
+          <span class="weapon-name evolved">{{ evolutionAvailable.newName }}</span>
+        </div>
+      </div>
+      <p class="evolution-description">{{ evolutionAvailable.newDescription }}</p>
+      <button class="game-button primary evolution-btn" (click)="evolveWeapon()">
+        EVOLVE WEAPON
+      </button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="overlay gameover-overlay" *ngIf="gameState() === GameState.GAME_OVER">
+    <div class="gameover-content">
+      <h2 class="gameover-title">💀 SYSTEM BREACH</h2>
+      <p class="gameover-subtitle">Defense protocol failed</p>
+
+      <div class="final-stats">
+        <div class="stat-row">
+          <span class="stat-label">Final Score:</span>
+          <span class="stat-value">{{ score }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Security Level:</span>
+          <span class="stat-value">{{ player.level }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Threats Eliminated:</span>
+          <span class="stat-value">{{ killCount }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Time Survived:</span>
+          <span class="stat-value">{{ survivalTime }}s</span>
+        </div>
+        <div class="stat-row credits">
+          <span class="stat-label">💰 Credits Earned:</span>
+          <span class="stat-value">+{{ (score + killCount * 5) / 2 | number:'1.0-0' }}</span>
+        </div>
+      </div>
+
+      <button class="game-button primary" (click)="startGame()">
+        RETRY MISSION
+      </button>
+      <button class="game-button secondary" (click)="returnToMapSelect()">
+        Return to Map
+      </button>
+    </div>
+  </div>
+
+  <!-- VICTORY -->
+  <div class="overlay victory-overlay" *ngIf="gameState() === GameState.VICTORY">
+    <div class="victory-content">
+      <h2 class="victory-title">🎉 DATACENTER SECURED</h2>
+      <p class="victory-subtitle">{{ currentLevel?.name }} is now protected</p>
+
+      <div class="final-stats">
+        <div class="stat-row">
+          <span class="stat-label">Final Score:</span>
+          <span class="stat-value">{{ score }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Security Level:</span>
+          <span class="stat-value">{{ player.level }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Threats Eliminated:</span>
+          <span class="stat-value">{{ killCount }}</span>
+        </div>
+        <div class="stat-row credits">
+          <span class="stat-label">💰 Credits Earned:</span>
+          <span class="stat-value">+{{ score + killCount * 10 + player.level * 100 }}</span>
+        </div>
+      </div>
+
+      <button class="game-button primary" (click)="returnToMapSelect()">
+        CONTINUE
+      </button>
+    </div>
+  </div>
+</div>

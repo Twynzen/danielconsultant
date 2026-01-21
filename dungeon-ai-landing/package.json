@@ -24,6 +24,7 @@
     "@huggingface/transformers": "^3.8.1",
     "@mlc-ai/web-llm": "^0.2.74",
     "lucide-angular": "^0.542.0",
+    "maplibre-gl": "^5.16.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.1"

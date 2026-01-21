@@ -3,12 +3,13 @@ import { LandingPageComponent } from './components/landing-page/landing-page.com
 import { deviceRedirectGuard, mobileRouteGuard, desktopRouteGuard } from './guards/device-redirect.guard';
 
 /**
- * v7.1: Updated routes with Model Research Platform
+ * v7.2: Updated routes with Cyber Defense Game
  *
  * Routes:
  * - '' (root): Desktop landing page (with auto-redirect for mobile devices)
  * - '/mobile': Mobile tower layout
- * - '/game': Vampire Survivors game
+ * - '/game': Original Vampire Survivors game
+ * - '/cyber-defense': NEW Cyber Defense game with datacenter levels
  * - '/model-research': AI Model Research Platform (100+ models)
  * - '/deskflow': Served by Netlify separately
  */
@@ -26,10 +27,18 @@ export const routes: Routes = [
     canActivate: [mobileRouteGuard]
   },
   {
-    // Lazy load game component to reduce initial bundle size (~35KB savings)
+    // Original Vampire Survivors game
     path: 'game',
     loadComponent: () => import('./components/vampire-survivors-game/vampire-survivors-game.component')
       .then(m => m.VampireSurvivorsGameComponent)
+  },
+  {
+    // v7.2: NEW Cyber Defense Game - Defend datacenters from cyber threats
+    // Features: 50+ real datacenter levels, 8 enemy types, 6 weapons with evolutions,
+    // meta-progression system, world map level selector
+    path: 'cyber-defense',
+    loadComponent: () => import('./components/cyber-defense-game/cyber-defense-game.component')
+      .then(m => m.CyberDefenseGameComponent)
   },
   {
     // v7.1: Model Research Platform - lazy loaded
