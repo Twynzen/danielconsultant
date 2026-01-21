@@ -90,8 +90,7 @@ export const DATACENTER_LEVELS: DatacenterLevel[] = [
     description: 'The original AWS region. Hosts much of the internet.',
     enemyModifiers: { trojan: 1.5, ransomware: 1.3 },
     durationMinutes: 10,
-    isUnlocked: false,
-    unlockRequirement: 'Clear 3 Easy levels'
+    isUnlocked: true
   },
   {
     id: 'aws-oregon',
@@ -117,7 +116,7 @@ export const DATACENTER_LEVELS: DatacenterLevel[] = [
     description: 'Primary European AWS region.',
     enemyModifiers: { rootkit: 1.5 },
     durationMinutes: 10,
-    isUnlocked: false
+    isUnlocked: true
   },
   {
     id: 'aws-tokyo',
@@ -130,7 +129,7 @@ export const DATACENTER_LEVELS: DatacenterLevel[] = [
     description: 'Busiest Asia-Pacific region.',
     enemyModifiers: { ddos: 1.8 },
     durationMinutes: 10,
-    isUnlocked: false
+    isUnlocked: true
   },
   {
     id: 'aws-saopaulo',
@@ -170,8 +169,7 @@ export const DATACENTER_LEVELS: DatacenterLevel[] = [
     description: 'One of Azure\'s largest facilities.',
     enemyModifiers: { apt: 1.3, zeroday: 1.5 },
     durationMinutes: 15,
-    isUnlocked: false,
-    unlockRequirement: 'Clear 3 Medium levels'
+    isUnlocked: true
   },
   {
     id: 'azure-quincy',
@@ -224,7 +222,7 @@ export const DATACENTER_LEVELS: DatacenterLevel[] = [
     description: 'Arctic-cooled facility near the Polar Circle.',
     enemyModifiers: { apt: 1.2 },
     durationMinutes: 15,
-    isUnlocked: false
+    isUnlocked: true
   },
   {
     id: 'meta-prineville',
@@ -249,7 +247,7 @@ export const DATACENTER_LEVELS: DatacenterLevel[] = [
     description: '11-story vertical datacenter.',
     enemyModifiers: { ddos: 1.5, trojan: 1.3 },
     durationMinutes: 15,
-    isUnlocked: false
+    isUnlocked: true
   },
 
   // ==================== FINANCIAL EXCHANGES (Boss) ====================

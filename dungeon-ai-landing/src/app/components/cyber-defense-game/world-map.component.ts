@@ -10,10 +10,25 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
   imports: [CommonModule],
   template: `
     <div class="world-map-container">
+      <!-- Loading Spinner -->
+      <div class="loading-overlay" *ngIf="isLoading">
+        <div class="loading-content">
+          <div class="cyber-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+          </div>
+          <p class="loading-text">INITIALIZING GLOBAL DEFENSE NETWORK...</p>
+          <div class="loading-bar">
+            <div class="loading-progress"></div>
+          </div>
+        </div>
+      </div>
+
       <div #mapContainer class="map-container"></div>
 
       <!-- Overlay UI -->
-      <div class="map-overlay-ui">
+      <div class="map-overlay-ui" *ngIf="!isLoading">
         <div class="title-bar">
           <h1 class="game-title">CYBER DEFENSE</h1>
           <p class="subtitle">Select a datacenter under attack</p>
@@ -21,36 +36,28 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
 
         <div class="stats-panel">
           <div class="stat">
-            <span class="icon">💰</span>
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="8"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
             <span class="value">{{ credits }}</span>
           </div>
           <div class="stat">
-            <span class="icon">🏆</span>
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L15 8H21L16 12L18 19L12 15L6 19L8 12L3 8H9L12 2Z"/>
+            </svg>
             <span class="value">{{ wins }}</span>
           </div>
           <div class="stat">
-            <span class="icon">☠️</span>
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="5"/>
+              <path d="M7 21L12 13L17 21"/>
+              <path d="M9 17h6"/>
+            </svg>
             <span class="value">{{ kills }}</span>
           </div>
         </div>
 
-        <div class="legend">
-          <div class="legend-item">
-            <span class="dot tutorial"></span> Tutorial
-          </div>
-          <div class="legend-item">
-            <span class="dot easy"></span> Easy
-          </div>
-          <div class="legend-item">
-            <span class="dot medium"></span> Medium
-          </div>
-          <div class="legend-item">
-            <span class="dot hard"></span> Hard
-          </div>
-          <div class="legend-item">
-            <span class="dot boss"></span> Boss
-          </div>
-        </div>
       </div>
 
       <!-- Selected datacenter popup -->
@@ -73,15 +80,45 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
             [disabled]="!selectedDatacenter.isUnlocked"
             (click)="startDefense()"
           >
-            {{ selectedDatacenter.isUnlocked ? 'DEFEND' : '🔒 LOCKED' }}
+            <ng-container *ngIf="selectedDatacenter.isUnlocked">DEFEND</ng-container>
+            <ng-container *ngIf="!selectedDatacenter.isUnlocked">
+              <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="11" width="14" height="10" rx="2"/>
+                <path d="M8 11V7a4 4 0 118 0v4"/>
+              </svg>
+              LOCKED
+            </ng-container>
           </button>
         </div>
       </div>
 
       <!-- Back button -->
       <button class="back-btn" (click)="goBack()">
-        ← Back to Landing
+        ← Volver al Hábitat
       </button>
+
+      <!-- Green overlay for Matrix effect -->
+      <div class="map-green-overlay"></div>
+
+      <!-- Attack Notifications Panel -->
+      <div class="attack-notifications" *ngIf="!isLoading && activeAlerts.length > 0">
+        <div
+          class="attack-notification"
+          *ngFor="let alert of activeAlerts"
+          (click)="selectDatacenter(alert)"
+        >
+          <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 22h20L12 2z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <circle cx="12" cy="17" r="1"/>
+          </svg>
+          <div class="alert-content">
+            <div class="alert-title">{{ alert.name }}</div>
+            <div class="alert-location">{{ alert.city }}, {{ alert.country }}</div>
+            <div class="alert-difficulty">{{ getDifficultyLabel(alert.difficulty) }}</div>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -91,6 +128,112 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       height: 100vh;
       background: #000;
       overflow: hidden;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .loading-content {
+      text-align: center;
+    }
+
+    .cyber-spinner {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 2rem;
+
+      .spinner-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border-radius: 50%;
+        border: 3px solid transparent;
+
+        &:nth-child(1) {
+          width: 100px;
+          height: 100px;
+          margin: -50px 0 0 -50px;
+          border-top-color: #00ff44;
+          border-bottom-color: #00ff44;
+          animation: spinRing 1.5s linear infinite;
+        }
+
+        &:nth-child(2) {
+          width: 70px;
+          height: 70px;
+          margin: -35px 0 0 -35px;
+          border-left-color: #ff3366;
+          border-right-color: #ff3366;
+          animation: spinRing 1s linear infinite reverse;
+        }
+
+        &:nth-child(3) {
+          width: 40px;
+          height: 40px;
+          margin: -20px 0 0 -20px;
+          border-top-color: #00ff00;
+          animation: spinRing 0.75s linear infinite;
+        }
+      }
+    }
+
+    @keyframes spinRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      color: #00ff44;
+      margin: 0 0 1.5rem 0;
+      letter-spacing: 0.15em;
+      animation: textFlicker 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes textFlicker {
+      from { opacity: 0.8; }
+      to { opacity: 1; }
+    }
+
+    .loading-bar {
+      width: 300px;
+      height: 4px;
+      background: rgba(0, 255, 68, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 auto;
+
+      .loading-progress {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, #00ff44, #ff3366, #00ff44);
+        background-size: 200% 100%;
+        animation: progressSlide 1.5s ease-in-out infinite;
+      }
+    }
+
+    @keyframes progressSlide {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
     }
 
     .map-container {
@@ -114,9 +257,9 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       .game-title {
         font-family: 'Courier New', monospace;
         font-size: 2.5rem;
-        color: #00ffff;
+        color: #00ff44;
         margin: 0;
-        text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+        text-shadow: 0 0 20px #00ff44, 0 0 40px #00ff44;
         letter-spacing: 0.2em;
       }
 
@@ -147,11 +290,15 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
         flex-direction: column;
         align-items: center;
         background: rgba(0, 0, 0, 0.7);
-        border: 1px solid rgba(0, 255, 255, 0.3);
+        border: 1px solid rgba(0, 255, 68, 0.3);
         padding: 0.75rem 1rem;
 
-        .icon {
-          font-size: 1.2rem;
+        .stat-icon {
+          width: 24px;
+          height: 24px;
+          color: #00ff44;
+          margin-bottom: 0.25rem;
+          filter: drop-shadow(0 0 4px #00ff44);
         }
 
         .value {
@@ -163,44 +310,11 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       }
     }
 
-    .legend {
-      position: absolute;
-      bottom: 1.5rem;
-      left: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(0, 255, 255, 0.3);
-      padding: 1rem;
-      pointer-events: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      color: #aaa;
-
-      .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-
-        .dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          animation: legendPulse 2s ease-in-out infinite;
-
-          &.tutorial { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
-          &.easy { background: #00ffff; box-shadow: 0 0 10px #00ffff; }
-          &.medium { background: #ffff00; box-shadow: 0 0 10px #ffff00; }
-          &.hard { background: #ff6600; box-shadow: 0 0 10px #ff6600; }
-          &.boss { background: #ff0066; box-shadow: 0 0 10px #ff0066; }
-        }
-      }
-    }
-
-    @keyframes legendPulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.2); opacity: 0.8; }
+    .lock-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 0.5rem;
+      vertical-align: middle;
     }
 
     .datacenter-popup {
@@ -209,8 +323,8 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       right: 2rem;
       width: 320px;
       background: rgba(10, 10, 26, 0.95);
-      border: 2px solid #00ffff;
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+      border: 2px solid #00ff44;
+      box-shadow: 0 0 30px rgba(0, 255, 68, 0.3);
       padding: 1.5rem;
       transform: translateX(400px);
       transition: transform 0.3s ease-out;
@@ -233,7 +347,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
           font-weight: bold;
 
           &.tutorial { background: rgba(0, 255, 0, 0.2); color: #00ff00; border: 1px solid #00ff00; }
-          &.easy { background: rgba(0, 255, 255, 0.2); color: #00ffff; border: 1px solid #00ffff; }
+          &.easy { background: rgba(0, 255, 68, 0.2); color: #00ff44; border: 1px solid #00ff44; }
           &.medium { background: rgba(255, 255, 0, 0.2); color: #ffff00; border: 1px solid #ffff00; }
           &.hard { background: rgba(255, 102, 0, 0.2); color: #ff6600; border: 1px solid #ff6600; }
           &.boss { background: rgba(255, 0, 102, 0.2); color: #ff0066; border: 1px solid #ff0066; }
@@ -261,7 +375,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       }
 
       .company {
-        color: #00ffff;
+        color: #00ff44;
         margin: 0.25rem 0;
         font-size: 0.9rem;
       }
@@ -320,116 +434,116 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
 
     .back-btn {
       position: absolute;
-      bottom: 1.5rem;
-      right: 1.5rem;
+      top: 1.5rem;
+      left: 1.5rem;
       padding: 0.75rem 1.5rem;
       font-family: 'Courier New', monospace;
       font-size: 0.9rem;
-      background: transparent;
-      border: 1px solid #666;
-      color: #888;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(0, 255, 68, 0.5);
+      color: #00ff44;
       cursor: pointer;
       transition: all 0.2s ease;
       z-index: 15;
 
       &:hover {
-        border-color: #00ffff;
-        color: #00ffff;
+        border-color: #00ff44;
+        background: rgba(0, 255, 68, 0.1);
+        box-shadow: 0 0 15px rgba(0, 255, 68, 0.3);
       }
     }
 
-    /* Pulsing marker styles */
-    :host ::ng-deep {
-      .marker-container {
-        cursor: pointer;
-        transition: transform 0.2s ease;
+    /* Attack Notifications */
+    .attack-notifications {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 350px;
+      z-index: 15;
+    }
 
-        &:hover {
-          transform: scale(1.3);
-        }
+    .attack-notification {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: rgba(20, 0, 0, 0.9);
+      border: 1px solid #ff3333;
+      border-left: 4px solid #ff0000;
+      font-family: 'Courier New', monospace;
+      animation: alertPulse 2s ease-in-out infinite;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(50, 0, 0, 0.95);
+        border-color: #ff5555;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
       }
 
-      .pulsing-marker {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        position: relative;
-
-        &::before {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          animation: markerPulse 2s ease-out infinite;
-        }
-
-        &::after {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: inherit;
-        }
-
-        &.tutorial {
-          background: #00ff00;
-          box-shadow: 0 0 15px #00ff00;
-          &::before { border: 2px solid #00ff00; }
-        }
-        &.easy {
-          background: #00ffff;
-          box-shadow: 0 0 15px #00ffff;
-          &::before { border: 2px solid #00ffff; }
-        }
-        &.medium {
-          background: #ffff00;
-          box-shadow: 0 0 15px #ffff00;
-          &::before { border: 2px solid #ffff00; }
-        }
-        &.hard {
-          background: #ff6600;
-          box-shadow: 0 0 15px #ff6600;
-          &::before { border: 2px solid #ff6600; }
-        }
-        &.boss {
-          background: #ff0066;
-          box-shadow: 0 0 20px #ff0066;
-          width: 26px;
-          height: 26px;
-          &::before { border: 3px solid #ff0066; }
-          &::after { width: 12px; height: 12px; }
-        }
-
-        &.locked {
-          opacity: 0.4;
-
-          &::before {
-            animation: none;
-          }
-        }
+      .alert-icon {
+        width: 24px;
+        height: 24px;
+        color: #ff3333;
+        flex-shrink: 0;
+        animation: iconBlink 1s ease-in-out infinite;
       }
 
-      @keyframes markerPulse {
-        0% {
-          width: 100%;
-          height: 100%;
-          opacity: 1;
+      .alert-content {
+        flex: 1;
+        min-width: 0;
+
+        .alert-title {
+          font-size: 0.85rem;
+          color: #ff3333;
+          font-weight: bold;
+          text-transform: uppercase;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
-        100% {
-          width: 300%;
-          height: 300%;
-          opacity: 0;
+
+        .alert-location {
+          font-size: 0.75rem;
+          color: #ff6666;
+          margin-top: 0.25rem;
+        }
+
+        .alert-difficulty {
+          font-size: 0.65rem;
+          color: #ffaa00;
+          text-transform: uppercase;
+          margin-top: 0.25rem;
         }
       }
     }
+
+    @keyframes alertPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+
+    @keyframes iconBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Green Map Overlay */
+    .map-green-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 255, 68, 0.05);
+      pointer-events: none;
+      z-index: 1;
+      mix-blend-mode: overlay;
+    }
+
   `]
 })
 export class WorldMapComponent implements OnInit, OnDestroy {
@@ -443,75 +557,82 @@ export class WorldMapComponent implements OnInit, OnDestroy {
   @Input() clearedLevels: string[] = [];
 
   private map!: maplibregl.Map;
-  private markers: maplibregl.Marker[] = [];
+  activeAlerts: DatacenterLevel[] = [];
 
   selectedDatacenter: DatacenterLevel | null = null;
   showPopup = false;
+  isLoading = true;
+
+  // Difficulty labels in Spanish
+  private difficultyLabels: Record<string, string> = {
+    tutorial: 'TUTORIAL',
+    easy: 'FÁCIL',
+    medium: 'MEDIO',
+    hard: 'DIFÍCIL',
+    boss: 'JEFE'
+  };
+
+  getDifficultyLabel(difficulty: string): string {
+    return this.difficultyLabels[difficulty] || difficulty.toUpperCase();
+  }
 
   ngOnInit(): void {
     this.initMap();
   }
 
   ngOnDestroy(): void {
-    this.markers.forEach(m => m.remove());
     if (this.map) {
       this.map.remove();
     }
   }
 
   private initMap(): void {
+    // Use MapTiler style that supports globe projection
     this.map = new maplibregl.Map({
       container: this.mapContainer.nativeElement,
       style: {
         version: 8,
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
-          'carto-dark': {
+          'carto': {
             type: 'raster',
-            tiles: [
-              'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-              'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-              'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
-            ],
-            tileSize: 256,
-            attribution: '© OpenStreetMap contributors © CARTO'
+            tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+            tileSize: 256
           }
         },
-        layers: [
-          {
-            id: 'carto-dark-layer',
-            type: 'raster',
-            source: 'carto-dark',
-            minzoom: 0,
-            maxzoom: 19
-          }
-        ],
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+        layers: [{
+          id: 'carto-tiles',
+          type: 'raster',
+          source: 'carto'
+        }],
+        projection: { type: 'globe' }
       },
       center: [0, 20],
-      zoom: 1.5,
-      minZoom: 1,
+      zoom: 1.8,
+      minZoom: 1.5,
       maxZoom: 8,
       attributionControl: false
     });
 
     this.map.on('load', () => {
-      // Enable globe projection
-      this.map.setProjection({ type: 'globe' });
-
-      // Add atmosphere effect (cast to any for types compatibility)
-      (this.map as any).setFog({
-        color: '#0a0a1a',
-        'horizon-blend': 0.1,
-        'high-color': '#0a1a2a',
-        'space-color': '#000000',
-        'star-intensity': 0.5
-      });
-
       // Add datacenter markers
       this.addDatacenterMarkers();
 
-      // Auto-rotate globe slowly
-      this.startGlobeRotation();
+      // Hide loading after a brief delay for smooth transition
+      setTimeout(() => {
+        this.isLoading = false;
+      }, 800);
+    });
+
+    // Close popup when user zooms out (any amount) with slide animation
+    let lastZoom = this.map.getZoom();
+    this.map.on('zoom', () => {
+      const currentZoom = this.map.getZoom();
+      // If zooming out and popup is visible, close it with animation
+      if (currentZoom < lastZoom && this.showPopup) {
+        this.dismissPopup();
+      }
+      lastZoom = currentZoom;
     });
 
     // Add attribution
@@ -521,51 +642,125 @@ export class WorldMapComponent implements OnInit, OnDestroy {
   }
 
   private addDatacenterMarkers(): void {
-    for (const dc of DATACENTER_LEVELS) {
-      const el = document.createElement('div');
-      el.className = 'marker-container';
+    // Get all unlocked and not cleared datacenters
+    const availableTargets = DATACENTER_LEVELS.filter(
+      dc => dc.isUnlocked && !this.clearedLevels.includes(dc.id)
+    );
 
-      const markerEl = document.createElement('div');
-      markerEl.className = `pulsing-marker ${dc.difficulty}`;
+    // Group by region based on longitude to ensure global distribution
+    const americas = availableTargets.filter(dc => dc.coordinates[0] < -30);
+    const europeAfrica = availableTargets.filter(dc => dc.coordinates[0] >= -30 && dc.coordinates[0] < 60);
+    const asiaOceania = availableTargets.filter(dc => dc.coordinates[0] >= 60);
 
-      if (!dc.isUnlocked) {
-        markerEl.classList.add('locked');
-      }
+    // Pick 1 random from each region (if available)
+    this.activeAlerts = [];
 
-      if (this.clearedLevels.includes(dc.id)) {
-        markerEl.style.background = '#00ff00';
-        markerEl.style.boxShadow = '0 0 15px #00ff00';
-      }
+    if (americas.length > 0) {
+      this.activeAlerts.push(americas[Math.floor(Math.random() * americas.length)]);
+    }
+    if (europeAfrica.length > 0) {
+      this.activeAlerts.push(europeAfrica[Math.floor(Math.random() * europeAfrica.length)]);
+    }
+    if (asiaOceania.length > 0) {
+      this.activeAlerts.push(asiaOceania[Math.floor(Math.random() * asiaOceania.length)]);
+    }
 
-      el.appendChild(markerEl);
+    // Create alert icon as image for the map
+    const alertIcon = new Image(48, 48);
+    alertIcon.onload = () => {
+      this.map.addImage('alert-icon', alertIcon);
 
-      const marker = new maplibregl.Marker({
-        element: el,
-        anchor: 'center'
-      })
-        .setLngLat(dc.coordinates)
-        .addTo(this.map);
-
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.selectDatacenter(dc);
+      // Add GeoJSON source with alert locations
+      this.map.addSource('alerts', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: this.activeAlerts.map(dc => ({
+            type: 'Feature' as const,
+            properties: { id: dc.id },
+            geometry: {
+              type: 'Point' as const,
+              coordinates: dc.coordinates
+            }
+          }))
+        }
       });
 
-      this.markers.push(marker);
-    }
+      // Add pulsing circle layer (background glow)
+      this.map.addLayer({
+        id: 'alerts-glow',
+        type: 'circle',
+        source: 'alerts',
+        paint: {
+          'circle-radius': 20,
+          'circle-color': '#ff3333',
+          'circle-opacity': 0.4,
+          'circle-blur': 1
+        }
+      });
+
+      // Add symbol layer with the alert icon
+      this.map.addLayer({
+        id: 'alerts-icon',
+        type: 'symbol',
+        source: 'alerts',
+        layout: {
+          'icon-image': 'alert-icon',
+          'icon-size': 0.7,
+          'icon-allow-overlap': true
+        }
+      });
+
+      // Handle click on alerts
+      this.map.on('click', 'alerts-icon', (e) => {
+        if (e.features && e.features.length > 0) {
+          const clickedId = e.features[0].properties?.['id'];
+          const dc = this.activeAlerts.find(a => a.id === clickedId);
+          if (dc) {
+            this.selectDatacenter(dc);
+          }
+        }
+      });
+
+      // Change cursor on hover
+      this.map.on('mouseenter', 'alerts-icon', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+      this.map.on('mouseleave', 'alerts-icon', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
+    };
+
+    // Create SVG data URL for the alert triangle
+    alertIcon.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <path d="M12 2L2 22h20L12 2z" fill="#ff3333" stroke="#ff0000" stroke-width="1" filter="url(#glow)"/>
+        <line x1="12" y1="8" x2="12" y2="14" stroke="#000" stroke-width="2"/>
+        <circle cx="12" cy="17" r="1.5" fill="#000"/>
+      </svg>
+    `);
   }
 
-  private selectDatacenter(dc: DatacenterLevel): void {
+  selectDatacenter(dc: DatacenterLevel): void {
     this.selectedDatacenter = dc;
     this.showPopup = false;
 
-    // Fly to location
+    // Fly to location with maximum zoom
     this.map.flyTo({
       center: dc.coordinates,
-      zoom: 5,
-      speed: 0.8,
+      zoom: 8, // Maximum zoom for detailed view
+      speed: 1.2,
       curve: 1.42,
-      duration: 2000
+      duration: 2500
     });
 
     // Show popup after fly animation
@@ -575,18 +770,27 @@ export class WorldMapComponent implements OnInit, OnDestroy {
   }
 
   closePopup(): void {
-    this.showPopup = false;
+    this.dismissPopup();
 
+    // Zoom back out after animation
     setTimeout(() => {
-      this.selectedDatacenter = null;
-
-      // Zoom back out
       this.map.flyTo({
         center: [0, 20],
         zoom: 1.5,
         duration: 1500
       });
-    }, 300);
+    }, 350);
+  }
+
+  // Dismiss popup with slide-out animation
+  private dismissPopup(): void {
+    if (!this.showPopup) return;
+
+    this.showPopup = false;
+    // Wait for slide-out animation (0.3s) before removing from DOM
+    setTimeout(() => {
+      this.selectedDatacenter = null;
+    }, 350);
   }
 
   startDefense(): void {
@@ -597,22 +801,5 @@ export class WorldMapComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.backClicked.emit();
-  }
-
-  private startGlobeRotation(): void {
-    const rotateGlobe = () => {
-      if (!this.map || this.selectedDatacenter) return;
-
-      const center = this.map.getCenter();
-      center.lng += 0.02;
-      this.map.setCenter(center);
-
-      requestAnimationFrame(rotateGlobe);
-    };
-
-    // Start rotation after a delay
-    setTimeout(() => {
-      requestAnimationFrame(rotateGlobe);
-    }, 2000);
   }
 }
