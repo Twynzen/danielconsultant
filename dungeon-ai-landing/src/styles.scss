@@ -1,6 +1,9 @@
 /* Global Styles - Dungeon AI Landing */
 // Font-face removido - usando Courier New nativo del sistema
 
+// MapLibre GL JS styles
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
 * {
   margin: 0;
   padding: 0;

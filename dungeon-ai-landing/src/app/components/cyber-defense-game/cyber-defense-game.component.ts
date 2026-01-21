@@ -8,11 +8,12 @@ import {
   ENEMY_CONFIGS, WEAPON_CONFIGS, PASSIVE_CONFIGS
 } from './game.types';
 import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
+import { WorldMapComponent } from './world-map.component';
 
 @Component({
   selector: 'app-cyber-defense-game',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, WorldMapComponent],
   templateUrl: './cyber-defense-game.component.html',
   styleUrl: './cyber-defense-game.component.scss'
 })
@@ -1266,6 +1267,12 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
     this.currentLevel = level;
     this.gameState.set(GameState.MENU);
     this.renderMenu();
+  }
+
+  // Called from WorldMapComponent when a level is selected
+  onLevelSelectedFromMap(level: DatacenterLevel): void {
+    this.currentLevel = level;
+    this.startGame();
   }
 
   startGame(): void {
