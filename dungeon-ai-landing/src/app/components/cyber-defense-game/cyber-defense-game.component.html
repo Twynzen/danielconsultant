@@ -57,7 +57,7 @@
   <!-- PAUSED -->
   <div class="overlay pause-overlay" *ngIf="gameState() === GameState.PAUSED">
     <div class="pause-content">
-      <h2>⏸️ SYSTEM PAUSED</h2>
+      <h2><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> SYSTEM PAUSED</h2>
       <div class="pause-stats">
         <p>Level: {{ player.level }}</p>
         <p>Score: {{ score }}</p>
@@ -76,7 +76,7 @@
   <!-- LEVEL UP -->
   <div class="overlay levelup-overlay" *ngIf="gameState() === GameState.LEVEL_UP">
     <div class="levelup-content">
-      <h2>⬆️ SYSTEM UPGRADE</h2>
+      <h2><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> SYSTEM UPGRADE</h2>
       <p class="level-text">Security Level {{ player.level }}</p>
       <p class="choose-text">Select an upgrade:</p>
 
@@ -87,7 +87,7 @@
           [class.new]="upgrade.isNew"
           (click)="selectUpgrade(upgrade)"
         >
-          <div class="upgrade-icon">{{ upgrade.icon }}</div>
+          <div class="upgrade-icon" [innerHTML]="getIconSvg(upgrade.icon)"></div>
           <div class="upgrade-name">{{ upgrade.name }}</div>
           <div class="upgrade-description">{{ upgrade.description }}</div>
           <div class="upgrade-badge new" *ngIf="upgrade.isNew">NEW</div>
@@ -102,7 +102,7 @@
   <!-- EVOLUTION -->
   <div class="overlay evolution-overlay" *ngIf="gameState() === GameState.EVOLUTION">
     <div class="evolution-content" *ngIf="evolutionAvailable">
-      <h2>🔮 WEAPON EVOLUTION</h2>
+      <h2><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22,8.5 12,15.5 2,8.5"/></svg> WEAPON EVOLUTION</h2>
       <div class="evolution-visual">
         <div class="old-weapon">
           <span class="weapon-name">{{ evolutionAvailable.weapon.type | uppercase }}</span>
@@ -122,7 +122,7 @@
   <!-- GAME OVER -->
   <div class="overlay gameover-overlay" *ngIf="gameState() === GameState.GAME_OVER">
     <div class="gameover-content">
-      <h2 class="gameover-title">💀 SYSTEM BREACH</h2>
+      <h2 class="gameover-title"><svg class="title-icon danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 22h20L12 2z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1"/></svg> SYSTEM BREACH</h2>
       <p class="gameover-subtitle">Defense protocol failed</p>
 
       <div class="final-stats">
@@ -143,7 +143,7 @@
           <span class="stat-value">{{ survivalTime }}s</span>
         </div>
         <div class="stat-row credits">
-          <span class="stat-label">💰 Credits Earned:</span>
+          <span class="stat-label"><svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 6v12M9 9h6M9 15h6"/></svg> Credits Earned:</span>
           <span class="stat-value">+{{ (score + killCount * 5) / 2 | number:'1.0-0' }}</span>
         </div>
       </div>
@@ -160,7 +160,7 @@
   <!-- VICTORY -->
   <div class="overlay victory-overlay" *ngIf="gameState() === GameState.VICTORY">
     <div class="victory-content">
-      <h2 class="victory-title">🎉 DATACENTER SECURED</h2>
+      <h2 class="victory-title"><svg class="title-icon success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9 12l2 2 4-4"/></svg> DATACENTER SECURED</h2>
       <p class="victory-subtitle">{{ currentLevel?.name }} is now protected</p>
 
       <div class="final-stats">
@@ -177,7 +177,7 @@
           <span class="stat-value">{{ killCount }}</span>
         </div>
         <div class="stat-row credits">
-          <span class="stat-label">💰 Credits Earned:</span>
+          <span class="stat-label"><svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 6v12M9 9h6M9 15h6"/></svg> Credits Earned:</span>
           <span class="stat-value">+{{ score + killCount * 10 + player.level * 100 }}</span>
         </div>
       </div>

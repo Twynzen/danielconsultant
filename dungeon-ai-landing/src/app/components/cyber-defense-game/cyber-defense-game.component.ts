@@ -80,6 +80,30 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
   private glitchIntensity = 0;
   private matrixRain: { x: number; y: number; speed: number; char: string }[] = [];
 
+  // ============ SVG ICONS MAP ============
+  readonly iconSvgMap: Record<string, string> = {
+    // Weapons
+    '🛡️': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    '🔍': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
+    '🍯': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2v4M14 2v4M8 6h8a2 2 0 012 2v10a4 4 0 01-4 4h-4a4 4 0 01-4-4V8a2 2 0 012-2z"/><path d="M10 10h4M10 14h4"/></svg>',
+    '🔐': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>',
+    '📡': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2"/></svg>',
+    '⚡': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    // Passives
+    '📶': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 20h2v-4H2v4zM7 20h2v-8H7v8zM12 20h2v-12h-2v12zM17 20h2v-16h-2v16z"/></svg>',
+    '🧠': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 017 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 017-7z"/><path d="M9 21h6M10 17v4M14 17v4"/></svg>',
+    '🎯': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+    '🔑': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+    '📊': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
+    '🚦': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="7" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="17" r="2"/></svg>',
+    '❄️': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>',
+    '⚙️': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>'
+  };
+
+  getIconSvg(icon: string): string {
+    return this.iconSvgMap[icon] || icon;
+  }
+
   constructor(private router: Router) {
     this.initMatrixRain();
   }
@@ -1155,12 +1179,16 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
       this.ctx.fill();
       this.ctx.stroke();
 
-      // Key symbol
+      // Lock symbol (drawn geometrically)
+      this.ctx.strokeStyle = '#000';
+      this.ctx.lineWidth = 1.5;
+      // Lock body
       this.ctx.fillStyle = '#000';
-      this.ctx.font = '10px monospace';
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      this.ctx.fillText('🔐', sx, sy);
+      this.ctx.fillRect(sx - 4, sy - 2, 8, 6);
+      // Lock shackle
+      this.ctx.beginPath();
+      this.ctx.arc(sx, sy - 4, 3, Math.PI, 0);
+      this.ctx.stroke();
     }
 
     this.ctx.shadowBlur = 0;
@@ -1237,7 +1265,9 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
       const config = WEAPON_CONFIGS[weapon.type];
       const text = weapon.evolved ? `${config.evolvedName}` : `${config.name} Lv${weapon.level}`;
       this.ctx.fillStyle = config.color;
-      this.ctx.fillText(`${config.icon} ${text}`, this.CANVAS_WIDTH - 15, weaponY);
+      this.ctx.fillText(text, this.CANVAS_WIDTH - 15, weaponY);
+      // Draw weapon icon
+      this.drawWeaponIcon(weapon.type, this.CANVAS_WIDTH - this.ctx.measureText(text).width - 30, weaponY - 5, config.color);
       weaponY += 20;
     }
 
@@ -1260,6 +1290,78 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
     this.ctx.fillStyle = '#fff';
     this.ctx.textAlign = 'center';
     this.ctx.fillText(`${Math.ceil(this.player.health)}/${this.player.maxHealth}`, 15 + hpBarWidth / 2, this.CANVAS_HEIGHT - 25);
+  }
+
+  // Draw geometric weapon icons for HUD
+  private drawWeaponIcon(type: WeaponType, x: number, y: number, color: string): void {
+    this.ctx.strokeStyle = color;
+    this.ctx.fillStyle = color;
+    this.ctx.lineWidth = 1.5;
+
+    switch (type) {
+      case 'firewall': // Shield
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y - 4);
+        this.ctx.lineTo(x + 6, y - 2);
+        this.ctx.lineTo(x + 6, y + 4);
+        this.ctx.lineTo(x, y + 6);
+        this.ctx.lineTo(x - 6, y + 4);
+        this.ctx.lineTo(x - 6, y - 2);
+        this.ctx.closePath();
+        this.ctx.stroke();
+        break;
+
+      case 'antivirus': // Magnifier
+        this.ctx.beginPath();
+        this.ctx.arc(x - 2, y - 2, 4, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + 1, y + 1);
+        this.ctx.lineTo(x + 5, y + 5);
+        this.ctx.stroke();
+        break;
+
+      case 'honeypot': // Jar
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - 4, y - 4);
+        this.ctx.lineTo(x + 4, y - 4);
+        this.ctx.lineTo(x + 5, y + 4);
+        this.ctx.lineTo(x - 5, y + 4);
+        this.ctx.closePath();
+        this.ctx.stroke();
+        break;
+
+      case 'encryption': // Lock
+        this.ctx.fillRect(x - 4, y, 8, 5);
+        this.ctx.beginPath();
+        this.ctx.arc(x, y - 2, 3, Math.PI, 0);
+        this.ctx.stroke();
+        break;
+
+      case 'packet-analyzer': // Radio waves
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 5, -0.5, 0.5);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 5, Math.PI - 0.5, Math.PI + 0.5);
+        this.ctx.stroke();
+        break;
+
+      case 'ddos-defender': // Lightning
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + 2, y - 5);
+        this.ctx.lineTo(x - 2, y);
+        this.ctx.lineTo(x + 1, y);
+        this.ctx.lineTo(x - 2, y + 5);
+        this.ctx.lineTo(x + 2, y);
+        this.ctx.lineTo(x - 1, y);
+        this.ctx.closePath();
+        this.ctx.fill();
+        break;
+    }
   }
 
   // ============ GAME STATE ACTIONS ============

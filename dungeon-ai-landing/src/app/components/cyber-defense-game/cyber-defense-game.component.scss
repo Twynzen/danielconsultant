@@ -921,3 +921,44 @@ $dark-bg: #0a0a0a;
     padding: 0.75rem 1.5rem;
   }
 }
+
+// ============ SVG ICONS ============
+.title-icon {
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+  stroke: $cyber-cyan;
+  filter: drop-shadow(0 0 8px $cyber-cyan);
+
+  &.danger {
+    stroke: $hot-magenta;
+    filter: drop-shadow(0 0 8px $hot-magenta);
+  }
+
+  &.success {
+    stroke: $matrix-green;
+    filter: drop-shadow(0 0 8px $matrix-green);
+  }
+}
+
+.inline-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  stroke: $neon-yellow;
+  filter: drop-shadow(0 0 4px $neon-yellow);
+}
+
+// Upgrade card icons - SVG based
+.upgrade-icon {
+  svg {
+    width: 48px;
+    height: 48px;
+    stroke: $cyber-cyan;
+    fill: none;
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 8px rgba($cyber-cyan, 0.6));
+  }
+}
