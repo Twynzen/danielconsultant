@@ -211,7 +211,9 @@ const gaze = model.point(image, "person")["points"];
 const text = await model.ocr(image);`,
     modelId: 'onnx-community/moondream2',
     docsUrl: 'https://huggingface.co/vikhyatk/moondream2',
-    demoType: 'multimodal'
+    demoType: 'multimodal',
+    status: 'broken',
+    errorMessage: 'Error 401: El repositorio onnx-community/moondream2 requiere autenticación o es privado.'
   },
   {
     id: 'phi-3-mini',
@@ -273,7 +275,9 @@ const result = await session.run({
 });`,
     modelId: 'stable-diffusion-turbo-onnx',
     docsUrl: 'https://huggingface.co/stabilityai/sd-turbo',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'ONNX Runtime: Requiere configuración manual. Demo no disponible en la plataforma.'
   },
   {
     id: 'llama-3-2',
@@ -336,7 +340,9 @@ const result = await generator(
 );`,
     modelId: 'onnx-community/MiniThinky-v2-1B',
     docsUrl: 'https://huggingface.co/onnx-community/MiniThinky-v2-1B',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Repositorio onnx-community requiere autenticación'
   }
 ];
 
@@ -399,7 +405,9 @@ const embeddings = await extractor(
 const reduced = embeddings[0].slice(0, 256);`,
     modelId: 'Xenova/nomic-embed-text-v1.5',
     docsUrl: 'https://huggingface.co/nomic-ai/nomic-embed-text-v1.5',
-    demoType: 'embedding'
+    demoType: 'embedding',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'all-minilm',
@@ -586,7 +594,9 @@ const depth = await depthEstimator(image);
 // depth.depth contiene el mapa de profundidad`,
     modelId: 'Xenova/depth-pro',
     docsUrl: 'https://huggingface.co/apple/depth-pro',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'Inaccesible: Error 401 Unauthorized al descargar config.json (Xenova/depth-pro).'
   },
   {
     id: 'detr',
@@ -727,7 +737,9 @@ const result = await generator(
 );`,
     modelId: 'onnx-community/Phi-4-mini-reasoning',
     docsUrl: 'https://huggingface.co/microsoft/Phi-4-mini-instruct',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Repositorio onnx-community requiere autenticación'
   },
   {
     id: 'deepseek-r1-llama-8b',
@@ -1065,7 +1077,9 @@ const classifier = await pipeline(
 const result = await classifier(image);`,
     modelId: 'Xenova/efficientnet-b0',
     docsUrl: 'https://huggingface.co/google/efficientnet-b0',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'vit',
@@ -1113,7 +1127,9 @@ const classifier = await pipeline(
 const result = await classifier(image);`,
     modelId: 'Xenova/fastvit-t8',
     docsUrl: 'https://huggingface.co/apple/fastvit-t8',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'hiera',
@@ -1137,7 +1153,9 @@ const classifier = await pipeline(
 const result = await classifier(image);`,
     modelId: 'Xenova/hiera-small-224',
     docsUrl: 'https://huggingface.co/facebook/hiera-small-224',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   }
 ];
 
@@ -1169,7 +1187,9 @@ const result = await transcriber(audioBlob, {
 });`,
     modelId: 'onnx-community/whisper-medium',
     docsUrl: 'https://huggingface.co/openai/whisper-medium',
-    demoType: 'audio'
+    demoType: 'audio',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Repositorio onnx-community requiere autenticación'
   },
   {
     id: 'whisper-large-v3',
@@ -1194,7 +1214,9 @@ const transcriber = await pipeline(
 const result = await transcriber(audioBlob);`,
     modelId: 'onnx-community/whisper-large-v3',
     docsUrl: 'https://huggingface.co/openai/whisper-large-v3',
-    demoType: 'audio'
+    demoType: 'audio',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Repositorio onnx-community requiere autenticación'
   },
   {
     id: 'moonshine',
@@ -1222,7 +1244,9 @@ const stream = await transcriber.transcribe(audioStream, {
 });`,
     modelId: 'onnx-community/moonshine-base',
     docsUrl: 'https://huggingface.co/UsefulSensors/moonshine',
-    demoType: 'audio'
+    demoType: 'audio',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Repositorio onnx-community requiere autenticación'
   },
   {
     id: 'voxtral-mini',
@@ -1249,7 +1273,9 @@ const result = await audioModel({
 });`,
     modelId: 'onnx-community/voxtral-mini-3b',
     docsUrl: 'https://huggingface.co/mistralai/Voxtral-Mini-3B',
-    demoType: 'audio'
+    demoType: 'audio',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Repositorio onnx-community requiere autenticación'
   },
   {
     id: 'clap',
@@ -1371,7 +1397,9 @@ const result = await diarizer(audio);
 // Returns: [{ speaker: "SPEAKER_1", start: 0, end: 2.5 }, ...]`,
     modelId: 'Xenova/pyannote-speaker-diarization',
     docsUrl: 'https://huggingface.co/pyannote/speaker-diarization',
-    demoType: 'audio'
+    demoType: 'audio',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'unispeech',
@@ -1498,7 +1526,9 @@ const extractor = await pipeline(
 const embed = await extractor(text);`,
     modelId: 'Xenova/mxbai-embed-xsmall-v1',
     docsUrl: 'https://huggingface.co/mixedbread-ai/mxbai-embed-xsmall-v1',
-    demoType: 'embedding'
+    demoType: 'embedding',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'distilbert',
@@ -1624,7 +1654,9 @@ const result = await qa({
 });`,
     modelId: 'Xenova/deberta-v3-base',
     docsUrl: 'https://huggingface.co/microsoft/deberta-v3-base',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'electra',
@@ -1784,7 +1816,9 @@ const result = await generator(
 );`,
     modelId: 'onnx-community/granite-3b-code-instruct',
     docsUrl: 'https://huggingface.co/ibm-granite/granite-3b-code-instruct',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Repositorio onnx-community requiere autenticación'
   },
   {
     id: 'clipseg',
@@ -1835,7 +1869,9 @@ const pose = await poseEstimator(image);
 // Returns keypoints and body parts`,
     modelId: 'Xenova/sapiens-pose-1b',
     docsUrl: 'https://huggingface.co/facebook/sapiens',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'depth-anything',
@@ -1964,7 +2000,9 @@ const result = await detector(image, {
 });`,
     modelId: 'Xenova/grounding-dino-tiny',
     docsUrl: 'https://github.com/IDEA-Research/GroundingDINO',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'vitmae',
@@ -1988,7 +2026,9 @@ const extractor = await pipeline(
 const features = await extractor(image);`,
     modelId: 'Xenova/vit-mae-base',
     docsUrl: 'https://huggingface.co/facebook/vit-mae-base',
-    demoType: 'image'
+    demoType: 'image',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'swin',
@@ -2387,7 +2427,9 @@ const result = await classifier("I'm so happy today!");
 // { label: "joy", score: 0.97 }`,
     modelId: 'Xenova/emotion-english-distilroberta-base',
     docsUrl: 'https://huggingface.co/j-hartmann/emotion-english-distilroberta-base',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'zero-shot',
@@ -2492,7 +2534,9 @@ const summarizer = await pipeline(
 const result = await summarizer(legalDocument);`,
     modelId: 'Xenova/led-base-16384',
     docsUrl: 'https://huggingface.co/allenai/led-base-16384',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'bart-cnn',
@@ -2616,7 +2660,9 @@ const extractor = await pipeline(
 const keyphrases = await extractor(text);`,
     modelId: 'Xenova/keyphrase-extraction-kbir-inspec',
     docsUrl: 'https://huggingface.co/ml6team/keyphrase-extraction-kbir-inspec',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'question-gen',
@@ -2640,7 +2686,9 @@ const qg = await pipeline(
 const question = await qg("generate question: " + context);`,
     modelId: 'Xenova/t5-base-finetuned-question-generation-ap',
     docsUrl: 'https://huggingface.co/mrm8488/t5-base-finetuned-question-generation-ap',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   },
   {
     id: 'multilabel',
@@ -2667,7 +2715,9 @@ const result = await classifier("I'm happy but also a bit nervous", {
 });`,
     modelId: 'Xenova/distilbert-base-uncased-go-emotions',
     docsUrl: 'https://huggingface.co/SamLowe/roberta-base-go_emotions',
-    demoType: 'text'
+    demoType: 'text',
+    status: 'broken',
+    errorMessage: 'HTTP 401: Modelo Xenova no accesible públicamente'
   }
 ];
 
