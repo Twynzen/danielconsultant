@@ -3,6 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ThemeService, ThemeColors } from '../../services/theme.service';
+import { environment } from '../../../environments/environment';
+
+function devLog(...args: any[]): void {
+  if (!environment.production) {
+    console.log(...args);
+  }
+}
+
+function devError(...args: any[]): void {
+  if (!environment.production) {
+    console.error(...args);
+  }
+}
 import { AuthService } from '../../services/auth.service';
 import { SyncService } from '../../services/sync.service';
 import { StorageService } from '../../services/storage.service';
@@ -135,21 +148,21 @@ export class ToolbarComponent {
   async onLoadFromCloud(): Promise<void> {
     this.showMenu.set(false);
     if (confirm('¿Cargar datos desde la nube? Los cambios locales no guardados se perderán.')) {
-      console.log('[Toolbar] 📥 Loading from cloud...');
+      devLog('[Toolbar] 📥 Loading from cloud...');
       const success = await this.syncService.loadFromCloud();
 
       if (success) {
-        console.log('[Toolbar] ✅ Cloud data loaded successfully');
+        devLog('[Toolbar] ✅ Cloud data loaded successfully');
         // Navigate to root desktop instead of reloading the page
         // This prevents auth state loss and black screen issues
         const rootDesktop = this.storageService.desktops().find(d => !d.parentId);
         if (rootDesktop) {
-          console.log('[Toolbar] 🏠 Navigating to root desktop:', rootDesktop.id);
+          devLog('[Toolbar] 🏠 Navigating to root desktop:', rootDesktop.id);
           this.navigateTo.emit(rootDesktop.id);
         }
         alert('Datos cargados exitosamente desde la nube.');
       } else {
-        console.log('[Toolbar] ⚠️ No cloud data found');
+        devLog('[Toolbar] ⚠️ No cloud data found');
         alert('No se encontraron datos en la nube para este usuario. Usa "Guardar en la nube" primero para crear una copia de seguridad.');
       }
     }
@@ -166,7 +179,7 @@ export class ToolbarComponent {
       try {
         await this.mapService.downloadMap(this.currentDesktopId);
       } catch (error) {
-        console.error('Error exporting map:', error);
+        devError('Error exporting map:', error);
         alert('Error al exportar el mapa');
       }
     }
@@ -214,7 +227,7 @@ export class ToolbarComponent {
       setTimeout(() => this.mcpTokenCopied.set(false), 3000);
 
     } catch (error) {
-      console.error('Error copying MCP token:', error);
+      devError('Error copying MCP token:', error);
       alert('Error al copiar el token. Intenta de nuevo.');
     }
   }

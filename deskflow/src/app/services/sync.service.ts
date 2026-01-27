@@ -4,6 +4,19 @@ import { StorageService } from './storage.service';
 import { AuthService } from './auth.service';
 import { SyncStatus, SyncState, SyncResult } from '../models/database.model';
 import { AppState, Desktop, Note, Folder, Connection, NoteImage } from '../models/desktop.model';
+import { environment } from '../../environments/environment';
+
+function devLog(...args: any[]): void {
+  if (!environment.production) {
+    console.log(...args);
+  }
+}
+
+function devError(...args: any[]): void {
+  if (!environment.production) {
+    console.error(...args);
+  }
+}
 
 const STORAGE_KEY = 'multidesktop_data';
 
@@ -151,7 +164,7 @@ export class SyncService {
 
       return result;
     } catch (error: any) {
-      console.error('Sync error:', error);
+      devError('Sync error:', error);
       this.syncState.update(state => ({
         ...state,
         status: 'error',
@@ -184,7 +197,7 @@ export class SyncService {
         .single();
 
       if (wsError || !workspace) {
-        console.log('No remote workspace found');
+        devLog('No remote workspace found');
         this.syncState.update(state => ({ ...state, status: 'idle' }));
         return false;
       }
@@ -199,7 +212,7 @@ export class SyncService {
       if (dsError) throw dsError;
 
       if (!remoteDesktops || remoteDesktops.length === 0) {
-        console.log('No remote desktops found');
+        devLog('No remote desktops found');
         this.syncState.update(state => ({ ...state, status: 'idle' }));
         return false;
       }
@@ -254,7 +267,7 @@ export class SyncService {
                   });
                 }
               } catch (e) {
-                console.error('Error downloading image:', e);
+                devError('Error downloading image:', e);
               }
             }
           }
@@ -373,7 +386,7 @@ export class SyncService {
 
       return true;
     } catch (error: any) {
-      console.error('Load from cloud error:', error);
+      devError('Load from cloud error:', error);
       this.syncState.update(state => ({
         ...state,
         status: 'error',
@@ -536,7 +549,7 @@ export class SyncService {
           local_id: image.id
         });
     } catch (e) {
-      console.error('Error uploading image:', e);
+      devError('Error uploading image:', e);
     }
   }
 

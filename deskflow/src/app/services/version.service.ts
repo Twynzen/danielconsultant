@@ -3,6 +3,13 @@ import { SupabaseService } from './supabase.service';
 import { IndexedDBService, LocalVersion } from './indexeddb.service';
 import { AuthService } from './auth.service';
 import { Version, VersionDiff } from '../models/database.model';
+import { environment } from '../../environments/environment';
+
+function devError(...args: any[]): void {
+  if (!environment.production) {
+    console.error(...args);
+  }
+}
 
 @Injectable({
   providedIn: 'root'
@@ -96,7 +103,7 @@ export class VersionService {
         return versions;
       }
     } catch (error) {
-      console.error('Error loading version history:', error);
+      devError('Error loading version history:', error);
       return [];
     } finally {
       this.isLoading.set(false);
@@ -139,7 +146,7 @@ export class VersionService {
         };
       }
     } catch (error) {
-      console.error('Error getting version:', error);
+      devError('Error getting version:', error);
       return null;
     }
   }
@@ -186,7 +193,7 @@ export class VersionService {
 
       return version;
     } catch (error) {
-      console.error('Error saving local version:', error);
+      devError('Error saving local version:', error);
       return null;
     }
   }
@@ -289,7 +296,7 @@ export class VersionService {
 
       return true;
     } catch (error) {
-      console.error('Error restoring version:', error);
+      devError('Error restoring version:', error);
       return false;
     }
   }
@@ -354,7 +361,7 @@ export class VersionService {
 
       return diff;
     } catch (error) {
-      console.error('Error comparing versions:', error);
+      devError('Error comparing versions:', error);
       return null;
     }
   }

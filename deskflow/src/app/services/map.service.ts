@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { IndexedDBService, LocalDesktop, LocalNote, LocalFolder, LocalConnection, LocalAsset } from './indexeddb.service';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 import {
   MapFile,
   MapDesktop,
@@ -15,7 +16,12 @@ import {
   SharedMap,
   SharedMapInfo
 } from '../models/database.model';
-import { environment } from '../../environments/environment';
+
+function devError(...args: any[]): void {
+  if (!environment.production) {
+    console.error(...args);
+  }
+}
 
 @Injectable({
   providedIn: 'root'
@@ -169,7 +175,7 @@ export class MapService {
         mapFile
       };
     } catch (error: any) {
-      console.error('Error exporting map:', error);
+      devError('Error exporting map:', error);
       return {
         success: false,
         fileName: '',
@@ -218,7 +224,7 @@ export class MapService {
 
       return await this.importMapData(mapFile);
     } catch (error: any) {
-      console.error('Error importing map:', error);
+      devError('Error importing map:', error);
       return {
         success: false,
         desktopsImported: 0,
@@ -384,7 +390,7 @@ export class MapService {
         rootDesktopId
       };
     } catch (error: any) {
-      console.error('Error importing map data:', error);
+      devError('Error importing map data:', error);
       return {
         success: false,
         desktopsImported: 0,
@@ -452,7 +458,7 @@ export class MapService {
         isPublic
       };
     } catch (error: any) {
-      console.error('Error sharing map:', error);
+      devError('Error sharing map:', error);
       return {
         success: false,
         shareToken: '',
@@ -487,7 +493,7 @@ export class MapService {
 
       return data.map_data as MapFile;
     } catch (error) {
-      console.error('Error getting shared map:', error);
+      devError('Error getting shared map:', error);
       return null;
     }
   }
@@ -526,7 +532,7 @@ export class MapService {
         createdAt: new Date(item.created_at)
       }));
     } catch (error) {
-      console.error('Error listing public maps:', error);
+      devError('Error listing public maps:', error);
       return [];
     }
   }

@@ -3,6 +3,20 @@ import { Router } from '@angular/router';
 import { SupabaseService } from './supabase.service';
 import { IndexedDBService } from './indexeddb.service';
 import { UserProfile, AuthState } from '../models/database.model';
+import { environment } from '../../environments/environment';
+
+/** Safe logger that only outputs in development mode */
+function devLog(...args: any[]): void {
+  if (!environment.production) {
+    console.log(...args);
+  }
+}
+
+function devError(...args: any[]): void {
+  if (!environment.production) {
+    console.error(...args);
+  }
+}
 
 @Injectable({
   providedIn: 'root'
@@ -33,51 +47,51 @@ export class AuthService {
   }
 
   private async initializeAuth(): Promise<void> {
-    console.log('[AuthService] 🚀 initializeAuth() started');
+    devLog('[AuthService] 🚀 initializeAuth() started');
 
     try {
       // Check if Supabase is configured
       if (!this.supabase.isConfigured()) {
-        console.log('[AuthService] ⚠️ Supabase not configured. Offline mode available.');
+        devLog('[AuthService] ⚠️ Supabase not configured. Offline mode available.');
         this.offlineMode.set(true);
         this.authState.set({
           user: null,
           isAuthenticated: false,
           isLoading: false
         });
-        console.log('[AuthService] ✅ Offline mode set, isLoading: false');
+        devLog('[AuthService] ✅ Offline mode set, isLoading: false');
         return;
       }
 
-      console.log('[AuthService] 📡 Supabase is configured, setting up auth listener...');
+      devLog('[AuthService] 📡 Supabase is configured, setting up auth listener...');
 
       // Listen to auth state changes
       this.supabase.onAuthStateChange(async (event, session) => {
-        console.log(`[AuthService] 🔔 onAuthStateChange event: ${event}`, { hasSession: !!session, hasUser: !!session?.user });
+        devLog(`[AuthService] 🔔 onAuthStateChange event: ${event}`, { hasSession: !!session, hasUser: !!session?.user });
 
         try {
           if (session?.user) {
-            console.log(`[AuthService] 👤 User found in session: ${session.user.email}`);
+            devLog(`[AuthService] 👤 User found in session: ${session.user.email}`);
             const profile = await this.fetchProfile(session.user.id, session.user.email);
-            console.log('[AuthService] 📋 Profile fetched:', { hasProfile: !!profile, displayName: profile?.displayName });
+            devLog('[AuthService] 📋 Profile fetched:', { hasProfile: !!profile, displayName: profile?.displayName });
 
             this.authState.set({
               user: profile,
               isAuthenticated: !!profile,
               isLoading: false
             });
-            console.log('[AuthService] ✅ Auth state updated from listener, isAuthenticated:', !!profile);
+            devLog('[AuthService] ✅ Auth state updated from listener, isAuthenticated:', !!profile);
           } else {
-            console.log('[AuthService] 👻 No user in session from listener');
+            devLog('[AuthService] 👻 No user in session from listener');
             this.authState.set({
               user: null,
               isAuthenticated: false,
               isLoading: false
             });
-            console.log('[AuthService] ✅ Auth state cleared from listener');
+            devLog('[AuthService] ✅ Auth state cleared from listener');
           }
         } catch (listenerError) {
-          console.error('[AuthService] ❌ Error in onAuthStateChange listener:', listenerError);
+          devError('[AuthService] ❌ Error in onAuthStateChange listener:', listenerError);
           this.authState.set({
             user: null,
             isAuthenticated: false,
@@ -87,42 +101,42 @@ export class AuthService {
       });
 
       // Check initial session
-      console.log('[AuthService] 🔍 Checking initial session...');
+      devLog('[AuthService] 🔍 Checking initial session...');
       const session = await this.supabase.getSession();
-      console.log('[AuthService] 📦 Initial session result:', { hasSession: !!session, hasUser: !!session?.user });
+      devLog('[AuthService] 📦 Initial session result:', { hasSession: !!session, hasUser: !!session?.user });
 
       if (session?.user) {
-        console.log(`[AuthService] 👤 User found: ${session.user.email}, fetching profile...`);
+        devLog(`[AuthService] 👤 User found: ${session.user.email}, fetching profile...`);
         const profile = await this.fetchProfile(session.user.id, session.user.email);
-        console.log('[AuthService] 📋 Profile result:', { hasProfile: !!profile, displayName: profile?.displayName });
+        devLog('[AuthService] 📋 Profile result:', { hasProfile: !!profile, displayName: profile?.displayName });
 
         this.authState.set({
           user: profile,
           isAuthenticated: !!profile,
           isLoading: false
         });
-        console.log('[AuthService] ✅ Auth initialized with user, isAuthenticated:', !!profile);
+        devLog('[AuthService] ✅ Auth initialized with user, isAuthenticated:', !!profile);
       } else {
-        console.log('[AuthService] 👻 No initial session found');
+        devLog('[AuthService] 👻 No initial session found');
         this.authState.set({
           user: null,
           isAuthenticated: false,
           isLoading: false
         });
-        console.log('[AuthService] ✅ Auth initialized without user');
+        devLog('[AuthService] ✅ Auth initialized without user');
       }
     } catch (error) {
-      console.error('[AuthService] ❌ CRITICAL ERROR in initializeAuth:', error);
+      devError('[AuthService] ❌ CRITICAL ERROR in initializeAuth:', error);
       // ALWAYS set isLoading to false to prevent infinite loading
       this.authState.set({
         user: null,
         isAuthenticated: false,
         isLoading: false
       });
-      console.log('[AuthService] 🔧 Recovered from error, isLoading set to false');
+      devLog('[AuthService] 🔧 Recovered from error, isLoading set to false');
     }
 
-    console.log('[AuthService] 🏁 initializeAuth() completed. Final state:', {
+    devLog('[AuthService] 🏁 initializeAuth() completed. Final state:', {
       isLoading: this.isLoading(),
       isAuthenticated: this.isAuthenticated(),
       hasUser: !!this.currentUser()
@@ -130,10 +144,10 @@ export class AuthService {
   }
 
   private async fetchProfile(userId: string, email?: string): Promise<UserProfile | null> {
-    console.log(`[AuthService] 🔍 fetchProfile() called for userId: ${userId}`);
+    devLog(`[AuthService] 🔍 fetchProfile() called for userId: ${userId}`);
 
     try {
-      console.log('[AuthService] 📡 Querying profiles table...');
+      devLog('[AuthService] 📡 Querying profiles table...');
 
       // Add timeout to prevent infinite hanging
       const PROFILE_TIMEOUT_MS = 5000;
@@ -145,7 +159,7 @@ export class AuthService {
 
       const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string } }>((resolve) => {
         setTimeout(() => {
-          console.error('[AuthService] ⏰ Profile query TIMEOUT after 5 seconds!');
+          devError('[AuthService] ⏰ Profile query TIMEOUT after 5 seconds!');
           resolve({ data: null, error: { code: 'TIMEOUT', message: 'Profile query timed out' } });
         }, PROFILE_TIMEOUT_MS);
       });
@@ -153,17 +167,17 @@ export class AuthService {
       const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
 
       if (error) {
-        console.log('[AuthService] ⚠️ Profile query error:', { code: error.code, message: error.message });
+        devLog('[AuthService] ⚠️ Profile query error:', { code: error.code, message: error.message });
 
         // Profile doesn't exist OR timeout - try to create one
         if ((error.code === 'PGRST116' || error.code === 'TIMEOUT') && email) {
-          console.log('[AuthService] 📝 Profile not found or timeout, creating new profile...');
+          devLog('[AuthService] 📝 Profile not found or timeout, creating new profile...');
           return await this.createProfile(userId, email);
         }
         throw error;
       }
 
-      console.log('[AuthService] ✅ Profile found:', { id: data.id, email: data.email, displayName: data.display_name });
+      devLog('[AuthService] ✅ Profile found:', { id: data.id, email: data.email, displayName: data.display_name });
 
       return {
         id: data.id,
@@ -174,7 +188,7 @@ export class AuthService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error: any) {
-      console.error('[AuthService] ❌ Error fetching profile:', {
+      devError('[AuthService] ❌ Error fetching profile:', {
         message: error?.message,
         code: error?.code,
         details: error?.details,
@@ -182,7 +196,7 @@ export class AuthService {
       });
       // Return a minimal profile from auth data so user can still access the app
       if (email) {
-        console.log('[AuthService] 🔧 Creating fallback profile from auth data');
+        devLog('[AuthService] 🔧 Creating fallback profile from auth data');
         return {
           id: userId,
           email: email,
@@ -196,12 +210,12 @@ export class AuthService {
   }
 
   private async createProfile(userId: string, email: string): Promise<UserProfile | null> {
-    console.log(`[AuthService] 📝 createProfile() called for: ${email}`);
+    devLog(`[AuthService] 📝 createProfile() called for: ${email}`);
     const displayName = email.split('@')[0];
 
     try {
       const now = new Date();
-      console.log('[AuthService] 📡 Inserting new profile...');
+      devLog('[AuthService] 📡 Inserting new profile...');
 
       // Add timeout to prevent infinite hanging
       const CREATE_TIMEOUT_MS = 5000;
@@ -219,7 +233,7 @@ export class AuthService {
 
       const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string } }>((resolve) => {
         setTimeout(() => {
-          console.error('[AuthService] ⏰ Create profile TIMEOUT after 5 seconds!');
+          devError('[AuthService] ⏰ Create profile TIMEOUT after 5 seconds!');
           resolve({ data: null, error: { code: 'TIMEOUT', message: 'Create profile timed out' } });
         }, CREATE_TIMEOUT_MS);
       });
@@ -227,11 +241,11 @@ export class AuthService {
       const { data, error } = await Promise.race([createPromise, timeoutPromise]);
 
       if (error) {
-        console.error('[AuthService] ❌ Error inserting profile:', { code: error.code, message: error.message });
+        devError('[AuthService] ❌ Error inserting profile:', { code: error.code, message: error.message });
         throw error;
       }
 
-      console.log('[AuthService] ✅ Profile created successfully:', { id: data.id, displayName: data.display_name });
+      devLog('[AuthService] ✅ Profile created successfully:', { id: data.id, displayName: data.display_name });
 
       return {
         id: data.id,
@@ -242,13 +256,13 @@ export class AuthService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error: any) {
-      console.error('[AuthService] ❌ Error creating profile:', {
+      devError('[AuthService] ❌ Error creating profile:', {
         message: error?.message,
         code: error?.code,
         details: error?.details
       });
       // Return fallback profile so user can access the app
-      console.log('[AuthService] 🔧 Returning fallback profile');
+      devLog('[AuthService] 🔧 Returning fallback profile');
       return {
         id: userId,
         email: email,
@@ -367,7 +381,7 @@ export class AuthService {
       await this.supabase.signOut();
       this.router.navigate(['/login']);
     } catch (error) {
-      console.error('Error signing out:', error);
+      devError('Error signing out:', error);
     }
   }
 
@@ -376,7 +390,7 @@ export class AuthService {
    */
   async continueOffline(): Promise<void> {
     if (!this.offlineMode()) {
-      console.warn('continueOffline called but Supabase is configured');
+      devLog('continueOffline called but Supabase is configured');
       return;
     }
 
@@ -497,7 +511,7 @@ export class AuthService {
 
       if (dsError) throw dsError;
     } catch (error) {
-      console.error('Error creating default workspace:', error);
+      devError('Error creating default workspace:', error);
     }
   }
 

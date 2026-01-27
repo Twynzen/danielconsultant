@@ -1,4 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { environment } from '../../environments/environment';
 import {
   AppState,
   Desktop,
@@ -11,6 +12,12 @@ import {
   createDefaultFolder,
   DEFAULT_THEMES
 } from '../models/desktop.model';
+
+function devError(...args: any[]): void {
+  if (!environment.production) {
+    console.error(...args);
+  }
+}
 
 const STORAGE_KEY = 'multidesktop_data';
 const ROOT_DESKTOP_ID = 'root';
@@ -84,7 +91,7 @@ export class StorageService {
         return parsed;
       }
     } catch (e) {
-      console.error('Error loading state:', e);
+      devError('Error loading state:', e);
     }
 
     // Estado inicial por defecto
@@ -104,7 +111,7 @@ export class StorageService {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state()));
     } catch (e) {
-      console.error('Error saving state:', e);
+      devError('Error saving state:', e);
     }
   }
 
@@ -373,7 +380,7 @@ export class StorageService {
       this.saveState();
       return true;
     } catch (e) {
-      console.error('Error importing data:', e);
+      devError('Error importing data:', e);
       return false;
     }
   }

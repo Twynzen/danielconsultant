@@ -429,34 +429,99 @@ CREATE POLICY "Users can delete own shared maps" ON public.shared_maps
     FOR DELETE USING (auth.uid() = owner_id);
 
 -- ============================================
--- STORAGE BUCKET PARA IMÁGENES
+-- STORAGE BUCKET PARA IMÁGENES (PRIVADO)
 -- ============================================
--- Ejecutar en SQL Editor:
+-- SEGURIDAD: Bucket PRIVADO - archivos solo accesibles via signed URLs
+-- Los archivos se almacenan con path: {userId}/{imageId}
+-- Las políticas verifican ownership por el primer segmento del path
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('assets', 'assets', true);
+VALUES ('assets', 'assets', false);
 
--- Política para subir archivos
-CREATE POLICY "Users can upload assets"
+-- Política para subir archivos (solo en tu propia carpeta userId/)
+CREATE POLICY "Users can upload own assets"
 ON storage.objects FOR INSERT
 WITH CHECK (
     bucket_id = 'assets' AND
-    auth.uid() IS NOT NULL
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
 );
 
--- Política para ver archivos propios
+-- Política para ver archivos propios (verificar ownership por path)
 CREATE POLICY "Users can view own assets"
 ON storage.objects FOR SELECT
 USING (
     bucket_id = 'assets' AND
-    auth.uid() IS NOT NULL
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
 );
 
--- Política para eliminar archivos propios
+-- Política para actualizar archivos propios
+CREATE POLICY "Users can update own assets"
+ON storage.objects FOR UPDATE
+USING (
+    bucket_id = 'assets' AND
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Política para eliminar archivos propios (verificar ownership por path)
 CREATE POLICY "Users can delete own assets"
 ON storage.objects FOR DELETE
 USING (
     bucket_id = 'assets' AND
-    auth.uid() IS NOT NULL
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
+);
+```
+
+### Paso 4b: Migración de Seguridad (si ya tienes el bucket público)
+
+Si ya creaste el bucket como `public: true`, ejecuta este script para corregirlo:
+
+```sql
+-- ============================================
+-- MIGRACIÓN: Asegurar bucket de assets
+-- ============================================
+
+-- 1. Cambiar bucket a PRIVADO
+UPDATE storage.buckets SET public = false WHERE id = 'assets';
+
+-- 2. Eliminar políticas inseguras anteriores
+DROP POLICY IF EXISTS "Users can upload assets" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view own assets" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own assets" ON storage.objects;
+
+-- 3. Crear políticas con verificación de ownership real
+CREATE POLICY "Users can upload own assets"
+ON storage.objects FOR INSERT
+WITH CHECK (
+    bucket_id = 'assets' AND
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can view own assets"
+ON storage.objects FOR SELECT
+USING (
+    bucket_id = 'assets' AND
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can update own assets"
+ON storage.objects FOR UPDATE
+USING (
+    bucket_id = 'assets' AND
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can delete own assets"
+ON storage.objects FOR DELETE
+USING (
+    bucket_id = 'assets' AND
+    auth.uid() IS NOT NULL AND
+    auth.uid()::text = (storage.foldername(name))[1]
 );
 ```
 
@@ -1095,6 +1160,11 @@ class VersionService {
 - Todas las tablas usan Row Level Security (RLS)
 - Los usuarios solo pueden acceder a sus propios datos
 - Los tokens de compartir son únicos y seguros
+- Storage bucket es PRIVADO - archivos solo accesibles via signed URLs
+- Storage policies verifican ownership por path (userId/imageId)
+- Console.logs deshabilitados en producción para no exponer datos de usuario
+- Security headers configurados via _headers (CSP, HSTS, X-Frame-Options)
+- Supabase anon key expuesta en cliente pero protegida por RLS en todas las tablas
 
 ### Rendimiento
 - IndexedDB para operaciones locales rápidas

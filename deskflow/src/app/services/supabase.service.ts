@@ -2,6 +2,12 @@ import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient, AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
 
+function devLog(...args: any[]): void {
+  if (!environment.production) {
+    console.log(...args);
+  }
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -23,7 +29,7 @@ export class SupabaseService {
         }
       );
     } else {
-      console.log('Supabase not configured. Running in offline mode.');
+      devLog('Supabase not configured. Running in offline mode.');
     }
   }
 
@@ -116,10 +122,25 @@ export class SupabaseService {
     return { path: data?.path ?? null, error: error as Error | null };
   }
 
+  /**
+   * @deprecated Use createSignedUrl() instead - bucket is now private
+   */
   getPublicUrl(bucket: string, path: string): string {
     if (!this.supabase) return '';
     const { data } = this.supabase.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;
+  }
+
+  /**
+   * Creates a signed URL for private bucket access.
+   * The URL expires after the specified duration (default: 1 hour).
+   */
+  async createSignedUrl(bucket: string, path: string, expiresInSeconds: number = 3600): Promise<{ url: string | null; error: Error | null }> {
+    if (!this.supabase) return { url: null, error: new Error('Supabase not configured') };
+    const { data, error } = await this.supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, expiresInSeconds);
+    return { url: data?.signedUrl ?? null, error: error as Error | null };
   }
 
   async downloadFile(bucket: string, path: string): Promise<{ data: Blob | null; error: Error | null }> {
