@@ -71,7 +71,7 @@ export class SendellServiceComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   onAgendarClick(): void {
-    window.open('https://calendly.com/danielconsultant', '_blank');
+    window.open('https://calendly.com/darmcastiblanco/30min', '_blank');
   }
 
   ngOnInit(): void {

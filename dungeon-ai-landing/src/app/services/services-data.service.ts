@@ -119,7 +119,7 @@ export class ServicesDataService {
 
   private ctaData = {
     buttonText: 'AGENDAR SESIÓN GRATUITA',
-    consultationUrl: 'https://calendly.com/danielcastiblanco',
+    consultationUrl: 'https://calendly.com/darmcastiblanco/30min',
     message: '30 minutos para identificar 3 oportunidades de IA en tu negocio'
   };
 
