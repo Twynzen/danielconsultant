@@ -38,6 +38,9 @@ import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
 import { CameraService } from '../../services/camera.service';
 import { SendellAIService } from '../../services/sendell-ai.service';
+// v9.0: Real-time chat via Sendell Consultant WebSocket
+import { ConsultantChatService } from '../../services/consultant-chat.service';
+import { getConsultantConfig } from '../../config/consultant-chat.config';
 import { TourService, TourStep } from '../../services/tour.service';
 // v7.0: Background loader for deferred AI downloads
 import { BackgroundLoaderService } from '../../services/background-loader.service';
@@ -65,6 +68,9 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private tourService = inject(TourService);
   // v7.0: Background loader for deferred AI downloads
   private backgroundLoader = inject(BackgroundLoaderService);
+  // v9.0: Real-time chat via Sendell Consultant
+  private consultantChat = inject(ConsultantChatService);
+  private consultantConnected = false;
 
   // v1.1: Character dimensions for positioning
   private readonly CHARACTER_WIDTH = 180;
@@ -130,6 +136,25 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
   private _hadChatError = false;
   // v5.9.4: Flag to track if tour was cancelled by ESC
   private _tourCancelled = false;
+
+  // v9.0: Chat UX improvements
+  /** Last user message shown above the AI response */
+  lastUserMessage = signal('');
+  /** Dynamic status badge: CONSULTANT / MODO SMART / CONECTANDO */
+  chatStatusText = computed(() => {
+    const state = this.consultantChat.connectionState();
+    if (state === 'connected') return 'CONSULTANT';
+    if (state === 'connecting') return 'CONECTANDO...';
+    if (state === 'error') return 'MODO SMART';
+    return 'MODO SMART';
+  });
+  /** CSS class for status badge */
+  chatStatusClass = computed(() => {
+    const state = this.consultantChat.connectionState();
+    if (state === 'connected') return 'consultant';
+    if (state === 'connecting') return 'connecting';
+    return 'smart';
+  });
 
   // v2.0: LLM info tooltip state
   showLLMInfo = signal(false);
@@ -661,10 +686,38 @@ export class SendellDialogComponent implements OnInit, OnDestroy, OnChanges {
     // Open the input (if already open, this is a no-op)
     this.openChatInput();
 
+    // v9.0: Connect to Sendell Consultant on first chat open
+    if (!this.consultantConnected) {
+      this.consultantConnected = true;
+      const config = getConsultantConfig();
+      this.consultantChat.connect(config.wsEndpoint, config.wsToken);
+
+      // Subscribe to streaming chunks for typing effect
+      this.consultantChat.streamChunk$.subscribe(chunk => {
+        if (chunk.state === 'delta') {
+          // v9.0: Progressive streaming — show cursor (not dots)
+          const current = this.displayedText() || '';
+          this.displayedText.set(current + chunk.text);
+          this.isTyping.set(true);    // Show blinking cursor
+          this.isAITyping.set(false); // Hide "..." dots
+          this.cdr.markForCheck();
+        } else if (chunk.state === 'final') {
+          // Final response received — show complete text
+          if (chunk.text) {
+            this.displayedText.set(chunk.text);
+          }
+          this.isTyping.set(false);
+          this.isAITyping.set(false);
+          this._isLLMResponsePending = false;
+          this.finishAITyping();
+        }
+      });
+    }
+
     // If dialog has no text, show a greeting
     if (!this.displayedText() || this.displayedText().length === 0) {
       this._isGreetingMessage = true;  // v5.9.2: Mark as greeting (not LLM response)
-      this.startAITypingAnimation('¡Hola! ¿En qué puedo ayudarte?');
+      this.startAITypingAnimation('¡Hola! Soy Sendell, el asistente de Daniel. ¿Con quién tengo el gusto?');
     }
   }
 
@@ -1464,11 +1517,13 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
       return;  // Don't show "[CUALQUIER TECLA]" - keep input visible
     }
 
-    // v5.8.1: In free chat mode, show continue prompt ONLY after LLM response (not greeting)
+    // v9.0: After chat response, show input directly for continued conversation
     if (this.isChatMode() && !this.tourService.isActive() && this._isLLMResponsePending) {
-      console.log('[Chat] LLM response complete, waiting for user to dismiss');
-      this._isLLMResponsePending = false;  // Reset flag
-      this.isChatResponseComplete.set(true);
+      console.log('[Chat] Response complete, showing input for continued conversation');
+      this._isLLMResponsePending = false;
+      this.showChatInput.set(true);
+      this.isChatOpen.set(true);
+      setTimeout(() => this.chatInputRef?.nativeElement?.focus(), 100);
       this.cdr.markForCheck();
       return;
     }
@@ -1506,6 +1561,9 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
     const input = this.chatUserInput.trim();
     if (!input) return;
 
+    // v9.0: Save user message for display above AI response
+    this.lastUserMessage.set(input);
+
     // Clear input immediately
     this.chatUserInput = '';
     this.isChatOpen.set(false);  // v3.0: Reset to prevent auto-show
@@ -1521,27 +1579,47 @@ NO incluyas acciones. HABLA EN PRIMERA PERSONA.`;
     this.cdr.markForCheck();
 
     try {
-      // v8.0 PHASE 1: Smart responses are INSTANT - no waiting needed
-      console.log('[Chat] ====== SMART RESPONSE MODE ======');
-      console.log('[Chat] User input:', input);
+      // v9.0: Try Sendell Consultant (real AI) first, fall back to smart responses
+      if (this.consultantChat.isReady()) {
+        console.log('[Chat] ====== CONSULTANT MODE (WebSocket) ======');
+        console.log('[Chat] User input:', input);
 
-      // Process with AI service (uses smart keyword matching)
-      const response = await this.sendellAI.processUserInput(input);
+        // Clear display for streaming response — deltas will populate it
+        this.displayedText.set('');
 
-      console.log('[Chat] Response received (instant)');
-      console.log('[Chat] Dialogue:', response.dialogue);
-      console.log('[Chat] Action:', JSON.stringify(response.actions));
-      console.log('[Chat] ================================');
+        // sendMessage() returns when server ACKs, response arrives via streaming
+        await this.consultantChat.sendMessage(input);
+        // Streaming chunks will update displayedText via the subscription above
+      } else {
+        // v8.0 PHASE 1: Smart responses are INSTANT - no waiting needed
+        console.log('[Chat] ====== SMART RESPONSE MODE ======');
+        console.log('[Chat] User input:', input);
 
-      // Show response with typing animation
-      this.startAITypingAnimation(response.dialogue);
+        // Process with AI service (uses smart keyword matching)
+        const response = await this.sendellAI.processUserInput(input);
+
+        console.log('[Chat] Response received (instant)');
+        console.log('[Chat] Dialogue:', response.dialogue);
+        console.log('[Chat] Action:', JSON.stringify(response.actions));
+        console.log('[Chat] ================================');
+
+        // Show response with typing animation
+        this.startAITypingAnimation(response.dialogue);
+      }
 
     } catch (error) {
       console.error('Chat error:', error);
       this._hadChatError = true;
-      this.startAITypingAnimation(
-        'Mmm, algo salió mal. ¿Puedes intentar de nuevo?'
-      );
+
+      // Fall back to smart responses if Consultant fails
+      try {
+        const fallback = await this.sendellAI.processUserInput(input);
+        this.startAITypingAnimation(fallback.dialogue);
+      } catch {
+        this.startAITypingAnimation(
+          'Mmm, algo salió mal. ¿Puedes intentar de nuevo?'
+        );
+      }
     }
   }
 

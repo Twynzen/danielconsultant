@@ -22,8 +22,8 @@
           <span class="dialog-indicator ai-active"></span>
           <span class="dialog-title">// SENDELL</span>
           @if (isChatMode()) {
-            <span class="ai-status ready">
-              <span class="status-text">MODO SMART</span>
+            <span class="ai-status" [class.ready]="chatStatusClass() === 'consultant'" [class.smart-mode]="chatStatusClass() === 'smart'" [class.connecting-mode]="chatStatusClass() === 'connecting'">
+              <span class="status-text">{{ chatStatusText() }}</span>
             </span>
           }
         </div>
@@ -55,12 +55,20 @@
 
         <!-- v8.0 PHASE 1: Removed AI download indicators - smart responses are instant -->
 
+        <!-- v9.0: User message bubble (shown above AI response in chat mode) -->
+        @if (isChatMode() && lastUserMessage()) {
+          <div class="user-message-bubble">
+            <span class="user-label">TÚ &gt;</span>
+            <span class="user-text">{{ lastUserMessage() }}</span>
+          </div>
+        }
+
         <!-- Dialog Text with Typing Effect -->
-        <!-- v8.0 PHASE 1: Simplified - no LLM progress, just typing animation -->
-        @if (!isLoading() && !isWelcome() && (displayedText() || isTyping())) {
+        <!-- v9.0: Streaming shows cursor, processing shows dots -->
+        @if (!isLoading() && !isWelcome() && (displayedText() || isTyping() || isAITyping())) {
           <div class="dialog-text" [class.chat-response]="isChatMode()">
             @if (isAITyping() && !isTyping()) {
-              <!-- Brief "..." while processing (instant for smart responses) -->
+              <!-- Processing indicator (before first chunk arrives) -->
               <span class="loading-text">{{ displayedText() }}</span>
               <span class="loading-dots">
                 <span class="dot">.</span>

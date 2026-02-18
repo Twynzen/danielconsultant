@@ -1,0 +1,61 @@
+<div class="sendell-page" [style.--accent]="selected().color" [style.--accent-dim]="selected().colorDim">
+  <!-- Background Effects -->
+  <canvas #particleCanvas class="particle-canvas"></canvas>
+  <div class="bg-tint" [style.background]="selected().bgTint"></div>
+
+  <!-- Navigation -->
+  <nav class="top-nav">
+    <a routerLink="/" class="nav-link">&lt; danielconsultant.dev</a>
+    <span class="nav-title">// SENDELL</span>
+  </nav>
+
+  <!-- Main Content -->
+  <section class="main">
+    <h1 class="page-title">AGENTES IA</h1>
+
+    <!-- Robot + Platform -->
+    <div class="robot-stage">
+      <div class="robot-glow"></div>
+      <div class="robot-container" [style.filter]="'hue-rotate(' + selected().hueRotate + ')'">
+        <app-binary-character
+          [isMoving]="false"
+          [isJumping]="false"
+          [facingRight]="true"
+          [isTalking]="false"
+          [enableSpawnAssembly]="false">
+        </app-binary-character>
+      </div>
+      <div class="platform"></div>
+    </div>
+
+    <!-- Agent Type Selector -->
+    <div class="agent-selector">
+      @for (agent of agentTypes; track agent.id; let i = $index) {
+        <button
+          class="agent-tab"
+          [class.active]="selectedIndex() === i"
+          [style.--tab-color]="agent.color"
+          (click)="selectAgent(i)">
+          <span class="agent-dot"></span>
+          <span class="agent-label">{{ agent.label }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Agent Description -->
+    <div class="agent-info">
+      <h2 class="agent-title">{{ selected().title }}</h2>
+      <p class="agent-desc">{{ selected().desc }}</p>
+    </div>
+
+    <!-- CTA -->
+    <button class="cta-button" (click)="onAgendarClick()">
+      AGENDAR SESI&Oacute;N GRATUITA
+    </button>
+  </section>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <a routerLink="/" class="footer-link">danielconsultant.dev</a>
+  </footer>
+</div>

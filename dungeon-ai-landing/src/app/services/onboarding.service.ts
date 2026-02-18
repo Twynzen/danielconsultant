@@ -420,14 +420,14 @@ export class OnboardingService {
     const isTour = ['Y', 'S', 'SI', 'YES'].includes(normalized);
 
     if (isTour) {
-      // v3.0: Check if LLM is ready for tour mode
-      const llmReady = this._llmPreloadProgress() >= 100 ||
-                       this._isWebGPUSupported() === false; // fallback OK
-
+      // v9.0: Go directly to TOUR_ACTIVE — smart responses don't need LLM
+      // (Fixes deadlock where TOUR_WAITING_LLM never advanced because
+      //  sendellAI.initialize() was only called inside startGuidedTour(),
+      //  which required TOUR_ACTIVE phase — creating a chicken-and-egg bug)
       this.state.update(s => ({
         ...s,
         userChoice: 'tour',
-        phase: llmReady ? OnboardingPhase.TOUR_ACTIVE : OnboardingPhase.TOUR_WAITING_LLM,
+        phase: OnboardingPhase.TOUR_ACTIVE,
         currentDialogIndex: 0
       }));
     } else {
