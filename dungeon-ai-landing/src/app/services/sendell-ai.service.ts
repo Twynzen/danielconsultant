@@ -107,6 +107,14 @@ export class SendellAIService {
   /** Minimum turns before allowing walk_to_pillar actions */
   private readonly MIN_TURNS_BEFORE_WALK = 2;
 
+  // v3.0: Conversation memory — persists during browser session
+  /** User's name if they told us */
+  private _userName = signal<string | null>(null);
+  /** Last topic the user asked about */
+  private _lastTopic = signal<string | null>(null);
+  /** Public accessor for user name */
+  readonly userName = this._userName.asReadonly();
+
   // v5.9: LLM Query Progress System
   private _llmQueryProgress = signal<number>(0);
   private _llmQueryStage = signal<string>('');
@@ -317,26 +325,29 @@ export class SendellAIService {
       // v2.0: Registrar query en memoria
       this.memoryService.recordQuery(trimmedInput);
 
-      // Check for off-topic query first (keeps the escalating response system)
-      const offTopicResponse = this.checkOffTopic(trimmedInput);
-      if (offTopicResponse) {
-        response = offTopicResponse;
-      }
-      // v2.0: CHECK PENDING SUGGESTION — user confirming or rejecting a previous offer
-      else if (this._pendingSuggestion()) {
+      // v3.0: CONVERSATION MEMORY — extract name, detect frustration
+      const contextResponse = this.handleConversationContext(trimmedInput);
+
+      if (contextResponse) {
+        // v3.0: Context-aware response (name intro, frustration, etc.)
+        response = contextResponse;
+      } else if (this.checkOffTopic(trimmedInput)) {
+        // Check for off-topic query (keeps escalating response system)
+        response = this.checkOffTopic(trimmedInput)!;
+      } else if (this._pendingSuggestion()) {
+        // v2.0: CHECK PENDING SUGGESTION — user confirming or rejecting
         const pendingTarget = this._pendingSuggestion()!;
 
         if (isConfirmation(trimmedInput)) {
-          // User confirmed → walk to the suggested pillar
           console.log(`[SendellAI] ✅ Confirmation received → walking to ${pendingTarget}`);
           this._pendingSuggestion.set(null);
+          const name = this._userName();
           response = {
             actions: [{ type: 'walk_to_pillar', target: pendingTarget }],
-            dialogue: '¡Vamos! Sígueme.',
+            dialogue: name ? `¡Vamos ${name}! Sígueme.` : '¡Vamos! Sígueme.',
             emotion: 'excited'
           };
         } else if (isRejection(trimmedInput)) {
-          // User rejected → clear suggestion, continue conversation
           console.log(`[SendellAI] ❌ Rejection received → clearing suggestion`);
           this._pendingSuggestion.set(null);
           response = {
@@ -345,15 +356,12 @@ export class SendellAIService {
             emotion: 'friendly'
           };
         } else {
-          // User said something else → treat as new input, clear old suggestion
           console.log(`[SendellAI] 🔄 New input while pending → processing as new query`);
           this._pendingSuggestion.set(null);
-          // Process normally with conversational guard
           response = this.getGuardedResponse(trimmedInput, turns);
         }
-      }
-      // v2.0: Normal processing with conversation guard
-      else {
+      } else {
+        // v2.0: Normal processing with conversation guard
         response = this.getGuardedResponse(trimmedInput, turns);
       }
 
@@ -420,6 +428,105 @@ export class SendellAIService {
     console.log('[SendellAI] ==============================');
 
     return response;
+  }
+
+  /**
+   * v3.0: Handle conversation context — name extraction, frustration detection, greetings with name
+   * Returns a response if context produces one, null otherwise (falls through to keyword matching)
+   */
+  private handleConversationContext(input: string): SendellResponse | null {
+    const normalized = input.toLowerCase().trim();
+    const currentName = this._userName();
+
+    // 1. NAME EXTRACTION: "soy X", "me llamo X", "mi nombre es X"
+    const namePatterns = [
+      /(?:soy|me llamo|mi nombre es)\s+([A-Za-záéíóúÁÉÍÓÚñÑüÜ]+)/i,
+      /^([A-Za-záéíóúÁÉÍÓÚñÑüÜ]{2,15})$/  // Just a name by itself (2-15 chars, no spaces)
+    ];
+
+    for (const pattern of namePatterns) {
+      const match = input.match(pattern);
+      if (match) {
+        const name = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+
+        // Only treat single-word input as name if it's the first or second turn
+        // and doesn't match any keyword
+        if (pattern === namePatterns[1]) {
+          const turns = this._conversationTurns();
+          if (turns > 2) break; // After turn 2, single words are likely topics
+          // Check it's not a keyword like "hola", "ia", "rag", etc.
+          const commonKeywords = ['hola', 'hey', 'buenas', 'hi', 'hello', 'ia', 'rag', 'llm', 'si', 'no', 'ok', 'bye', 'tour', 'ayuda', 'help', 'gracias'];
+          if (commonKeywords.includes(normalized)) break;
+        }
+
+        if (currentName && currentName.toLowerCase() === name.toLowerCase()) {
+          // Already know this name
+          return {
+            actions: [{ type: 'idle' }],
+            dialogue: `Sí ${currentName}, te recuerdo. ¿En qué te puedo ayudar?`,
+            emotion: 'friendly'
+          };
+        }
+
+        // New name!
+        this._userName.set(name);
+        console.log(`[SendellAI] 📛 Name extracted: ${name}`);
+        return {
+          actions: [{ type: 'wave' }],
+          dialogue: `¡Mucho gusto ${name}! Soy Sendell, guía de esta web. ¿Qué te trae por acá? ¿Buscas algo específico o estás explorando?`,
+          emotion: 'friendly'
+        };
+      }
+    }
+
+    // 2. FRUSTRATION DETECTION: "ya te dije", "te lo dije", "repito", "otra vez"
+    if (normalized.match(/ya te dije|te lo dije|repito|otra vez|te acabo de decir|no me escuchas/)) {
+      if (currentName) {
+        return {
+          actions: [{ type: 'idle' }],
+          dialogue: `Perdona ${currentName}, tienes razón — te recuerdo. ¿En qué puedo ayudarte?`,
+          emotion: 'helpful'
+        };
+      }
+      return {
+        actions: [{ type: 'idle' }],
+        dialogue: 'Perdona, tienes razón. ¿Me recuerdas tu nombre? Así no se me olvida.',
+        emotion: 'helpful'
+      };
+    }
+
+    // 3. GREETING WITH NAME: personalize if we know the user
+    if (normalized.match(/^(hola|hey|buenas|buenos|hi|hello|saludos)/)) {
+      if (currentName) {
+        return {
+          actions: [{ type: 'wave' }],
+          dialogue: `¡Hola de nuevo ${currentName}! ¿En qué te puedo ayudar?`,
+          emotion: 'friendly'
+        };
+      }
+      // No name yet — return null to let keyword matcher handle the greeting
+      // (it will ask their name via the standard greeting response)
+      return null;
+    }
+
+    // 4. "¿Quién soy?" / "¿Cómo me llamo?" — prove we remember
+    if (normalized.match(/quién soy|quien soy|cómo me llamo|como me llamo|mi nombre|recuerdas/)) {
+      if (currentName) {
+        return {
+          actions: [{ type: 'idle' }],
+          dialogue: `¡Claro! Eres ${currentName}. ¿Hay algo en lo que pueda ayudarte?`,
+          emotion: 'friendly'
+        };
+      }
+      return {
+        actions: [{ type: 'idle' }],
+        dialogue: 'Aún no me has dicho tu nombre. ¿Cómo te llamas?',
+        emotion: 'curious'
+      };
+    }
+
+    // No context-specific response needed
+    return null;
   }
 
   /**
@@ -580,6 +687,7 @@ export class SendellAIService {
   /**
    * Clear chat history
    * v2.0: Also resets conversation guard state
+   * v3.0: Keeps userName (persists across chat sessions)
    */
   clearHistory(): void {
     this._chatHistory.set([]);
@@ -587,6 +695,8 @@ export class SendellAIService {
     this._offTopicCount.set(0);
     this._conversationTurns.set(0);
     this._pendingSuggestion.set(null);
+    this._lastTopic.set(null);
+    // NOTE: _userName is NOT reset — it persists during the browser session
   }
 
   /**

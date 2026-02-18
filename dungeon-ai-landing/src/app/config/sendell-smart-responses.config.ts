@@ -45,7 +45,7 @@ export const SMART_RESPONSES: SmartResponse[] = [
   // ==================== SALUDOS (Alta prioridad) ====================
   {
     keywords: ['hola', 'hey', 'buenas', 'buenos', 'hi', 'hello', 'saludos', 'qué tal', 'que tal'],
-    dialogue: '¡Hola! Soy Sendell, guía de esta web. ¿Te muestro los servicios de Daniel?',
+    dialogue: '¡Hola! Soy Sendell, guía de esta web. ¿Con quién tengo el gusto?',
     action: { type: 'wave' },
     emotion: 'friendly',
     priority: 100
