@@ -168,6 +168,8 @@ export interface SendellResponse {
   actions: RobotAction[];
   dialogue: string;
   emotion: SendellEmotion;
+  /** v2.0: Pending pillar target when in conversational mode (awaiting confirmation) */
+  _pendingTarget?: string;
 }
 
 // Valid pillar IDs for actions

@@ -35,7 +35,8 @@ import {
   getAllPillarContent
 } from '../config/pillar-knowledge.config';
 // v8.0 PHASE 1: Smart responses for instant fallback
-import { getSmartResponse } from '../config/sendell-smart-responses.config';
+// v2.0: Conversational guard - ask before walking
+import { getSmartResponse, isConfirmation, isRejection } from '../config/sendell-smart-responses.config';
 
 // v3.0: Sendell identity context - ALWAYS included to prevent identity confusion
 // v5.8.2: Clarified that Sendell talks to VISITORS (potential clients), NOT to Daniel
@@ -97,6 +98,14 @@ export class SendellAIService {
   private _offTopicCount = signal<number>(0);
   private _lastResponse = signal<SendellResponse | null>(null);
   private _isProcessing = signal<boolean>(false);
+
+  // v2.0: Conversation guard state
+  /** Number of conversation turns since chat opened */
+  private _conversationTurns = signal<number>(0);
+  /** Pending pillar target waiting for user confirmation */
+  private _pendingSuggestion = signal<string | null>(null);
+  /** Minimum turns before allowing walk_to_pillar actions */
+  private readonly MIN_TURNS_BEFORE_WALK = 2;
 
   // v5.9: LLM Query Progress System
   private _llmQueryProgress = signal<number>(0);
@@ -276,10 +285,12 @@ export class SendellAIService {
   /**
    * Process user input and get Sendell's response
    * This is the main entry point for user interaction
-   * v8.0 PHASE 1: Uses SMART RESPONSES by default (instant, no LLM wait)
+   * v2.0: CONVERSATIONAL GUARD - Sendell converses BEFORE walking to pillars
    *
-   * The robot responds INSTANTLY with keyword-matched responses
-   * and WALKS to relevant pillars. No more waiting for WebLLM downloads.
+   * Flow:
+   * 1. If pending suggestion exists, check for confirmation/rejection
+   * 2. If too few turns, use conversational mode (ask, don't walk)
+   * 3. If enough turns, allow direct walk_to_pillar
    */
   async processUserInput(input: string): Promise<SendellResponse> {
     if (this._isProcessing()) {
@@ -288,6 +299,10 @@ export class SendellAIService {
 
     this._isProcessing.set(true);
     const trimmedInput = input.trim();
+
+    // v2.0: Increment conversation turns
+    this._conversationTurns.update(t => t + 1);
+    const turns = this._conversationTurns();
 
     // Add user message to history
     this.addChatMessage({
@@ -307,15 +322,45 @@ export class SendellAIService {
       if (offTopicResponse) {
         response = offTopicResponse;
       }
-      // v8.0 PHASE 1: Use SMART RESPONSES (instant, with robot actions)
+      // v2.0: CHECK PENDING SUGGESTION — user confirming or rejecting a previous offer
+      else if (this._pendingSuggestion()) {
+        const pendingTarget = this._pendingSuggestion()!;
+
+        if (isConfirmation(trimmedInput)) {
+          // User confirmed → walk to the suggested pillar
+          console.log(`[SendellAI] ✅ Confirmation received → walking to ${pendingTarget}`);
+          this._pendingSuggestion.set(null);
+          response = {
+            actions: [{ type: 'walk_to_pillar', target: pendingTarget }],
+            dialogue: '¡Vamos! Sígueme.',
+            emotion: 'excited'
+          };
+        } else if (isRejection(trimmedInput)) {
+          // User rejected → clear suggestion, continue conversation
+          console.log(`[SendellAI] ❌ Rejection received → clearing suggestion`);
+          this._pendingSuggestion.set(null);
+          response = {
+            actions: [{ type: 'idle' }],
+            dialogue: 'Sin problema. ¿En qué más te puedo ayudar?',
+            emotion: 'friendly'
+          };
+        } else {
+          // User said something else → treat as new input, clear old suggestion
+          console.log(`[SendellAI] 🔄 New input while pending → processing as new query`);
+          this._pendingSuggestion.set(null);
+          // Process normally with conversational guard
+          response = this.getGuardedResponse(trimmedInput, turns);
+        }
+      }
+      // v2.0: Normal processing with conversation guard
       else {
-        response = getSmartResponse(trimmedInput);
-        console.log('[SendellAI] ====== SMART RESPONSE ======');
-        console.log('[SendellAI] Input:', trimmedInput);
-        console.log('[SendellAI] Dialogue:', response.dialogue);
-        console.log('[SendellAI] Action:', JSON.stringify(response.actions));
-        console.log('[SendellAI] Emotion:', response.emotion);
-        console.log('[SendellAI] ==============================');
+        response = this.getGuardedResponse(trimmedInput, turns);
+      }
+
+      // v2.0: Check if response has a pending target to store
+      if (response._pendingTarget) {
+        this._pendingSuggestion.set(response._pendingTarget);
+        console.log(`[SendellAI] 📌 Stored pending suggestion: ${response._pendingTarget}`);
       }
 
       // v2.0: Registrar visitas a pilares basado en las acciones
@@ -352,6 +397,29 @@ export class SendellAIService {
     } finally {
       this._isProcessing.set(false);
     }
+  }
+
+  /**
+   * v2.0: Get response with conversation guard
+   * Uses conversational mode when too few turns have passed
+   */
+  private getGuardedResponse(input: string, turns: number): SendellResponse {
+    const useConversational = turns <= this.MIN_TURNS_BEFORE_WALK;
+
+    console.log(`[SendellAI] ====== SMART RESPONSE (turn ${turns}, conversational=${useConversational}) ======`);
+
+    const response = getSmartResponse(input, { conversational: useConversational });
+
+    console.log('[SendellAI] Input:', input);
+    console.log('[SendellAI] Dialogue:', response.dialogue);
+    console.log('[SendellAI] Action:', JSON.stringify(response.actions));
+    console.log('[SendellAI] Emotion:', response.emotion);
+    if (response._pendingTarget) {
+      console.log('[SendellAI] PendingTarget:', response._pendingTarget);
+    }
+    console.log('[SendellAI] ==============================');
+
+    return response;
   }
 
   /**
@@ -511,11 +579,14 @@ export class SendellAIService {
 
   /**
    * Clear chat history
+   * v2.0: Also resets conversation guard state
    */
   clearHistory(): void {
     this._chatHistory.set([]);
     this.llmService.resetConversation();
     this._offTopicCount.set(0);
+    this._conversationTurns.set(0);
+    this._pendingSuggestion.set(null);
   }
 
   /**
@@ -624,5 +695,7 @@ export class SendellAIService {
     this._status.set('initializing');
     this._chatHistory.set([]);
     this._offTopicCount.set(0);
+    this._conversationTurns.set(0);
+    this._pendingSuggestion.set(null);
   }
 }
