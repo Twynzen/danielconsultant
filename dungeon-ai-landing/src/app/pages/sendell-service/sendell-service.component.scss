@@ -5,6 +5,23 @@ $bg-dark: #0a0a0a;
   min-height: 100vh;
   background: $bg-dark;
   font-family: 'Courier New', monospace;
+  overflow-y: auto;
+  scrollbar-width: none; // Firefox
+
+  &::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+  }
+}
+
+// Hide scrollbar globally when this page is active
+::ng-deep body {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+  }
 }
 
 .sendell-page {
@@ -81,20 +98,6 @@ $bg-dark: #0a0a0a;
   }
 }
 
-.page-title {
-  font-size: 1.8em;
-  letter-spacing: 0.25em;
-  margin: 0 0 40px;
-  text-align: center;
-  color: var(--accent, #ffffff);
-  text-shadow: 0 0 30px var(--accent-dim, rgba(255,255,255,0.2));
-  transition: color 0.6s ease, text-shadow 0.6s ease;
-
-  @media (max-width: 768px) {
-    font-size: 1.4em;
-    margin-bottom: 25px;
-  }
-}
 
 // Robot Stage
 .robot-stage {
@@ -234,8 +237,9 @@ $bg-dark: #0a0a0a;
   }
 }
 
-// CTA
+// CTA with VHS effect
 .cta-button {
+  position: relative;
   padding: 14px 32px;
   background: var(--accent, #ffffff);
   color: $bg-dark;
@@ -245,12 +249,103 @@ $bg-dark: #0a0a0a;
   font-weight: bold;
   letter-spacing: 0.1em;
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+  animation: vhs-glitch 6s infinite;
+  overflow: hidden;
+
+  // Scanlines overlay
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.04) 2px,
+      rgba(0, 0, 0, 0.04) 4px
+    );
+    pointer-events: none;
+  }
 
   &:hover {
     background: transparent;
     color: var(--accent, #ffffff);
     box-shadow: 0 0 25px var(--accent-dim, rgba(255,255,255,0.3));
+  }
+}
+
+@keyframes vhs-glitch {
+  0%, 93%, 100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  94% {
+    transform: translateX(-2px);
+    opacity: 0.92;
+  }
+  95% {
+    transform: translateX(2px);
+    opacity: 0.88;
+  }
+  96% {
+    transform: translateX(-1px);
+    opacity: 0.95;
+  }
+  97% {
+    transform: translateX(1px);
+    opacity: 1;
+  }
+}
+
+// WhatsApp link
+.whatsapp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.35);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  transition: color 0.3s ease;
+
+  .wa-icon {
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .wa-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .wa-number {
+    font-size: 0.95em;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.08em;
+    transition: color 0.3s ease;
+  }
+
+  .wa-label {
+    font-size: 0.75em;
+    opacity: 0.6;
+  }
+
+  &:hover {
+    color: var(--accent, #ffffff);
+
+    .wa-icon {
+      opacity: 1;
+    }
+
+    .wa-number {
+      color: var(--accent, #ffffff);
+    }
   }
 }
 

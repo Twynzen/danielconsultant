@@ -8,7 +8,7 @@ interface AgentType {
   color: string;
   colorDim: string;
   bgTint: string;
-  hueRotate: string;
+  robotFilter: string;
   title: string;
   desc: string;
 }
@@ -30,9 +30,9 @@ export class SendellServiceComponent implements OnInit, OnDestroy, AfterViewInit
       color: '#ffffff',
       colorDim: 'rgba(255, 255, 255, 0.4)',
       bgTint: 'radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.04) 0%, transparent 70%)',
-      hueRotate: '240deg',
+      robotFilter: 'saturate(0) brightness(2.5)',
       title: 'Asistente Personal',
-      desc: 'Tu asistente 24/7. Organiza tu vida, recuerda todo, te ayuda a pensar.',
+      desc: 'Disponible 24/7. Memoria perfecta, atenci\u00f3n constante.',
     },
     {
       id: 'soporte',
@@ -40,9 +40,9 @@ export class SendellServiceComponent implements OnInit, OnDestroy, AfterViewInit
       color: '#ff4444',
       colorDim: 'rgba(255, 68, 68, 0.4)',
       bgTint: 'radial-gradient(ellipse at 50% 40%, rgba(255, 68, 68, 0.05) 0%, transparent 70%)',
-      hueRotate: '315deg',
+      robotFilter: 'hue-rotate(244deg) saturate(2.5) brightness(1.2)',
       title: 'Atenci\u00f3n al Cliente',
-      desc: 'Responde preguntas, resuelve dudas, escala cuando necesita. Autom\u00e1tico.',
+      desc: 'Gestiona y resuelve incidencias de forma personalizada. Soporte inteligente 24/7.',
     },
     {
       id: 'negocios',
@@ -50,7 +50,7 @@ export class SendellServiceComponent implements OnInit, OnDestroy, AfterViewInit
       color: '#4488ff',
       colorDim: 'rgba(68, 136, 255, 0.4)',
       bgTint: 'radial-gradient(ellipse at 50% 40%, rgba(68, 136, 255, 0.05) 0%, transparent 70%)',
-      hueRotate: '190deg',
+      robotFilter: 'hue-rotate(74deg) saturate(1.5) brightness(1.1)',
       title: 'Automatizaci\u00f3n Empresarial',
       desc: 'Ventas, an\u00e1lisis, reportes, integraciones. Tu equipo digital.',
     },
@@ -61,9 +61,13 @@ export class SendellServiceComponent implements OnInit, OnDestroy, AfterViewInit
 
   private animId = 0;
   private particles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number; }[] = [];
+  private rotateInterval: ReturnType<typeof setInterval> | null = null;
+  private pauseTimeout: ReturnType<typeof setTimeout> | null = null;
 
   selectAgent(index: number): void {
     this.selectedIndex.set(index);
+    // Pause auto-rotate for 10s on manual click
+    this.pauseAutoRotate();
   }
 
   onAgendarClick(): void {
@@ -71,7 +75,7 @@ export class SendellServiceComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   ngOnInit(): void {
-    // Particles initialized in afterViewInit
+    this.startAutoRotate();
   }
 
   ngAfterViewInit(): void {
@@ -80,6 +84,26 @@ export class SendellServiceComponent implements OnInit, OnDestroy, AfterViewInit
 
   ngOnDestroy(): void {
     if (this.animId) cancelAnimationFrame(this.animId);
+    if (this.rotateInterval) clearInterval(this.rotateInterval);
+    if (this.pauseTimeout) clearTimeout(this.pauseTimeout);
+  }
+
+  private startAutoRotate(): void {
+    this.rotateInterval = setInterval(() => {
+      const next = (this.selectedIndex() + 1) % this.agentTypes.length;
+      this.selectedIndex.set(next);
+    }, 3000);
+  }
+
+  private pauseAutoRotate(): void {
+    if (this.rotateInterval) {
+      clearInterval(this.rotateInterval);
+      this.rotateInterval = null;
+    }
+    if (this.pauseTimeout) clearTimeout(this.pauseTimeout);
+    this.pauseTimeout = setTimeout(() => {
+      this.startAutoRotate();
+    }, 10000);
   }
 
   private initParticles(): void {
