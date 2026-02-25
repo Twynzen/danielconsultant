@@ -12,7 +12,7 @@ Deploy: Render, Railway, Fly.io, etc.
 import os
 import json
 import asyncio
-from typing import Any, Optional
+from typing import Any, List, Optional
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Query
@@ -84,7 +84,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="DeskFlow MCP Remote Server",
     description="MCP Server for DeskFlow - Works with Claude Desktop and REST API for Sendell",
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan
 )
 
@@ -119,6 +119,22 @@ class NoteCreateRequest(BaseModel):
     content: str = ""
     color: str = "#00ff41"
 
+
+# --- Sendell v2 Models ---
+
+class SendellInitRequest(BaseModel):
+    user_token: str
+    instance_id: str
+    instance_name: str = "Sendell"
+
+class SendellContextRequest(BaseModel):
+    user_token: str
+    instance_id: str
+    include_knowledge: bool = True
+    include_recent_conversations: int = 5
+    include_tasks: bool = True
+    max_content_length: int = 500
+
 # =============================================================================
 # HEALTH CHECK (for UptimeRobot)
 # =============================================================================
@@ -128,13 +144,15 @@ async def root():
     """Root endpoint - shows server info."""
     return {
         "service": "DeskFlow MCP Remote Server",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "status": "running",
         "endpoints": {
             "health": "/health",
             "api_docs": "/docs",
             "mcp_sse": "/mcp/sse",
-            "rest_api": "/api/*"
+            "rest_api": "/api/*",
+            "sendell_init": "/api/v2/sendell/init",
+            "sendell_context": "/api/v2/sendell/context",
         }
     }
 
@@ -367,6 +385,377 @@ async def api_recent_notes(
         .execute()
 
     return {"notes": notes.data or [], "count": len(notes.data or [])}
+
+
+# =============================================================================
+# SENDELL v2 API ENDPOINTS
+# =============================================================================
+
+# Standard desktop names for Sendell Hub hierarchy
+SENDELL_DESKTOP_NAMES = {
+    "hub": "Sendell Hub",
+    "conversations": "Conversations",
+    "knowledge": "Knowledge Base",
+    "tasks": "Tasks & Calendar",
+    "system": "System",
+}
+
+
+async def _get_default_workspace_id(client: Client) -> str:
+    """Get the default workspace ID for the authenticated user."""
+    workspace = client.table("workspaces") \
+        .select("id") \
+        .eq("is_default", True) \
+        .is_("deleted_at", "null") \
+        .single() \
+        .execute()
+    if not workspace.data:
+        raise HTTPException(status_code=404, detail="No default workspace found")
+    return workspace.data["id"]
+
+
+async def _get_next_position_order(client: Client, workspace_id: str) -> int:
+    """Get the next available position_order for a workspace."""
+    result = client.table("desktops") \
+        .select("position_order") \
+        .eq("workspace_id", workspace_id) \
+        .order("position_order", desc=True) \
+        .limit(1) \
+        .execute()
+    if result.data:
+        return result.data[0]["position_order"] + 1
+    return 0
+
+
+def _hub_name(instance_name: str) -> str:
+    return f"{SENDELL_DESKTOP_NAMES['hub']} — {instance_name}"
+
+
+def _sub_name(key: str, instance_name: str) -> str:
+    return f"{SENDELL_DESKTOP_NAMES[key]} — {instance_name}"
+
+
+@app.post("/api/v2/sendell/init")
+async def sendell_init(request: SendellInitRequest):
+    """
+    Bootstrap the Sendell Hub desktop hierarchy for a Sendell instance.
+    Idempotent: returns existing IDs if already initialized.
+
+    Creates:
+      - Sendell Hub — {instance_name}  (root)
+        - Conversations — {instance_name}
+        - Knowledge Base — {instance_name}
+        - Tasks & Calendar — {instance_name}
+        - System — {instance_name}
+    """
+    client = await get_supabase_client(request.user_token)
+    workspace_id = await _get_default_workspace_id(client)
+    hub_name = _hub_name(request.instance_name)
+
+    # Check if Sendell Hub already exists
+    existing = client.table("desktops") \
+        .select("id, name, parent_id") \
+        .eq("workspace_id", workspace_id) \
+        .ilike("name", hub_name) \
+        .execute()
+
+    if existing.data:
+        # Already initialized — find child desktops
+        hub_id = existing.data[0]["id"]
+        children = client.table("desktops") \
+            .select("id, name") \
+            .eq("workspace_id", workspace_id) \
+            .eq("parent_id", hub_id) \
+            .execute()
+
+        child_map = {d["name"]: d["id"] for d in (children.data or [])}
+
+        return {
+            "status": "already_initialized",
+            "workspace_id": workspace_id,
+            "instance_id": request.instance_id,
+            "sendell_hub": {
+                "desktop_id": hub_id,
+                "conversations_desktop_id": child_map.get(
+                    _sub_name("conversations", request.instance_name)
+                ),
+                "knowledge_desktop_id": child_map.get(
+                    _sub_name("knowledge", request.instance_name)
+                ),
+                "tasks_desktop_id": child_map.get(
+                    _sub_name("tasks", request.instance_name)
+                ),
+                "system_desktop_id": child_map.get(
+                    _sub_name("system", request.instance_name)
+                ),
+            }
+        }
+
+    # Create the hierarchy
+    pos = await _get_next_position_order(client, workspace_id)
+
+    # 1. Create Hub root desktop
+    hub_result = client.table("desktops") \
+        .insert({
+            "workspace_id": workspace_id,
+            "name": hub_name,
+            "parent_id": None,
+            "position_order": pos,
+        }) \
+        .execute()
+
+    if not hub_result.data:
+        raise HTTPException(status_code=500, detail="Failed to create Sendell Hub desktop")
+
+    hub_id = hub_result.data[0]["id"]
+
+    # 2. Create child desktops
+    child_keys = ["conversations", "knowledge", "tasks", "system"]
+    child_ids = {}
+
+    for i, key in enumerate(child_keys):
+        child_result = client.table("desktops") \
+            .insert({
+                "workspace_id": workspace_id,
+                "name": _sub_name(key, request.instance_name),
+                "parent_id": hub_id,
+                "position_order": pos + 1 + i,
+            }) \
+            .execute()
+
+        if child_result.data:
+            child_ids[key] = child_result.data[0]["id"]
+
+    # 3. Create folders on Hub linking to children
+    for key, child_id in child_ids.items():
+        folder_x = 100 + (list(child_ids.keys()).index(key) % 2) * 250
+        folder_y = 100 + (list(child_ids.keys()).index(key) // 2) * 200
+        client.table("folders") \
+            .insert({
+                "desktop_id": hub_id,
+                "target_desktop_id": child_id,
+                "name": SENDELL_DESKTOP_NAMES[key],
+                "position_x": folder_x,
+                "position_y": folder_y,
+                "icon": None,
+                "color": "#00ff41",
+            }) \
+            .execute()
+
+    # 4. Create initial system note
+    if "system" in child_ids:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        client.table("notes") \
+            .insert({
+                "desktop_id": child_ids["system"],
+                "title": f"Instance Config — {request.instance_name}",
+                "content": (
+                    f"---\n"
+                    f"sendell_type: system\n"
+                    f"sendell_instance: {request.instance_id}\n"
+                    f"instance_name: {request.instance_name}\n"
+                    f"initialized_at: {now}\n"
+                    f"---\n\n"
+                    f"# Sendell Integration\n\n"
+                    f"**Instance**: {request.instance_name} ({request.instance_id})\n"
+                    f"**Connected**: {now[:10]}\n"
+                    f"**Status**: Active\n"
+                ),
+                "color": "#333333",
+                "position_x": 100,
+                "position_y": 100,
+                "width": 350,
+                "height": 250,
+                "z_index": 1,
+            }) \
+            .execute()
+
+    return {
+        "status": "initialized",
+        "workspace_id": workspace_id,
+        "instance_id": request.instance_id,
+        "sendell_hub": {
+            "desktop_id": hub_id,
+            "conversations_desktop_id": child_ids.get("conversations"),
+            "knowledge_desktop_id": child_ids.get("knowledge"),
+            "tasks_desktop_id": child_ids.get("tasks"),
+            "system_desktop_id": child_ids.get("system"),
+        }
+    }
+
+
+@app.post("/api/v2/sendell/context")
+async def sendell_context(request: SendellContextRequest):
+    """
+    Single-call context retrieval optimized for Sendell.
+    Returns knowledge notes, recent conversations, and tasks from the
+    Sendell Hub hierarchy for the specified instance.
+    """
+    client = await get_supabase_client(request.user_token)
+    workspace_id = await _get_default_workspace_id(client)
+
+    # Find Sendell Hub desktops for this instance
+    all_desktops = client.table("desktops") \
+        .select("id, name, parent_id") \
+        .eq("workspace_id", workspace_id) \
+        .execute()
+
+    desktop_list = all_desktops.data or []
+
+    # Find hub by name pattern
+    hub_name = _hub_name(request.instance_id)
+    hub = None
+    for d in desktop_list:
+        if d["name"] and hub_name.lower() in d["name"].lower():
+            hub = d
+            break
+
+    # If not found by instance_id, try by common patterns
+    if not hub:
+        for d in desktop_list:
+            if d["name"] and "sendell hub" in d["name"].lower():
+                hub = d
+                break
+
+    if not hub:
+        return {
+            "status": "not_initialized",
+            "message": "Sendell Hub not found. Call /api/v2/sendell/init first.",
+            "workspace_id": workspace_id,
+            "knowledge": [],
+            "recent_conversations": [],
+            "tasks": [],
+            "stats": {
+                "total_notes": 0,
+                "sendell_notes": 0,
+                "last_sync": None,
+            }
+        }
+
+    hub_id = hub["id"]
+
+    # Find child desktops
+    children = {d["name"]: d["id"] for d in desktop_list if d["parent_id"] == hub_id}
+
+    # Resolve desktop IDs
+    knowledge_id = None
+    conversations_id = None
+    tasks_id = None
+
+    for name, did in children.items():
+        name_lower = name.lower() if name else ""
+        if "knowledge" in name_lower:
+            knowledge_id = did
+        elif "conversation" in name_lower:
+            conversations_id = did
+        elif "task" in name_lower or "calendar" in name_lower:
+            tasks_id = did
+
+    # Collect all Sendell desktop IDs for stats
+    sendell_desktop_ids = [hub_id] + list(children.values())
+
+    # Build response
+    knowledge = []
+    recent_conversations = []
+    tasks = []
+    max_len = request.max_content_length
+
+    # Knowledge notes
+    if request.include_knowledge and knowledge_id:
+        k_result = client.table("notes") \
+            .select("id, title, content, color, updated_at") \
+            .eq("desktop_id", knowledge_id) \
+            .order("updated_at", desc=True) \
+            .execute()
+
+        for note in (k_result.data or []):
+            content = note.get("content") or ""
+            knowledge.append({
+                "id": note["id"],
+                "title": note["title"],
+                "content_preview": content[:max_len] if max_len > 0 else "",
+                "full_length": len(content),
+                "updated_at": note["updated_at"],
+            })
+
+    # Recent conversations
+    if request.include_recent_conversations > 0 and conversations_id:
+        # Get conversations desktop and any monthly sub-desktops
+        conv_children = [d["id"] for d in desktop_list if d["parent_id"] == conversations_id]
+        conv_desktop_ids = [conversations_id] + conv_children
+
+        c_result = client.table("notes") \
+            .select("id, title, content, color, updated_at") \
+            .in_("desktop_id", conv_desktop_ids) \
+            .order("updated_at", desc=True) \
+            .limit(request.include_recent_conversations) \
+            .execute()
+
+        for note in (c_result.data or []):
+            content = note.get("content") or ""
+            recent_conversations.append({
+                "id": note["id"],
+                "title": note["title"],
+                "content_preview": content[:max_len] if max_len > 0 else "",
+                "full_length": len(content),
+                "updated_at": note["updated_at"],
+            })
+
+    # Tasks
+    if request.include_tasks and tasks_id:
+        t_result = client.table("notes") \
+            .select("id, title, content, color, updated_at") \
+            .eq("desktop_id", tasks_id) \
+            .order("updated_at", desc=True) \
+            .execute()
+
+        for note in (t_result.data or []):
+            content = note.get("content") or ""
+            tasks.append({
+                "id": note["id"],
+                "title": note["title"],
+                "content_preview": content[:max_len] if max_len > 0 else "",
+                "full_length": len(content),
+                "updated_at": note["updated_at"],
+            })
+
+    # Stats
+    sendell_notes_count = 0
+    if sendell_desktop_ids:
+        stats_result = client.table("notes") \
+            .select("id", count="exact") \
+            .in_("desktop_id", sendell_desktop_ids) \
+            .execute()
+        sendell_notes_count = stats_result.count or 0
+
+    total_notes_result = client.table("notes") \
+        .select("id", count="exact") \
+        .in_("desktop_id", [d["id"] for d in desktop_list]) \
+        .execute()
+    total_notes_count = total_notes_result.count or 0
+
+    return {
+        "status": "ok",
+        "workspace_id": workspace_id,
+        "instance_id": request.instance_id,
+        "sendell_hub": {
+            "desktop_id": hub_id,
+            "conversations_desktop_id": conversations_id,
+            "knowledge_desktop_id": knowledge_id,
+            "tasks_desktop_id": tasks_id,
+        },
+        "knowledge": knowledge,
+        "recent_conversations": recent_conversations,
+        "tasks": tasks,
+        "stats": {
+            "total_notes": total_notes_count,
+            "sendell_notes": sendell_notes_count,
+            "knowledge_count": len(knowledge),
+            "conversations_count": len(recent_conversations),
+            "tasks_count": len(tasks),
+        }
+    }
 
 
 # =============================================================================
