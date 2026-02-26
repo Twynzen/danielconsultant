@@ -11,7 +11,7 @@
   position: relative;
   padding: 20px 40px; // Mantener padding original
   // Estado apagado - fuente principal Glitchy Demo
-  font-family: "Courier New", monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -61,7 +61,7 @@
   &.typing {
     .typing-text {
       display: inline-block;
-      font-family: "Courier New", monospace;
+      font-family: 'Source Code Pro', monospace;
       border-right: none;
       padding-right: 2px;
       color: #000 !important; // NEGRO para contraste sobre botón verde
@@ -193,7 +193,7 @@
 
 .binary-particle {
   position: absolute;
-  font-family: "Courier New", monospace;
+  font-family: 'Source Code Pro', monospace;
   font-weight: bold;
   color: #00ff44;
   text-shadow: 0 0 5px rgba(0, 255, 68, 0.8);

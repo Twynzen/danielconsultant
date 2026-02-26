@@ -23,7 +23,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   min-height: 100vh;
   background: $bg;
   color: $neutral-2;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Source Code Pro', monospace;
   overflow-y: auto;
   scrollbar-width: none;
 
@@ -72,7 +72,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
 }
 
 .nav-logo {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 1.05rem;
   font-weight: bold;
   letter-spacing: 0.15em;
@@ -111,7 +111,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   background: transparent;
   border: 1px solid var(--primary);
   color: var(--primary);
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.8rem;
   letter-spacing: 0.1em;
   cursor: pointer;
@@ -154,7 +154,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   background: transparent;
   border: 1px solid #444;  // grey neutral for inactive
   color: #666;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.73rem;
   letter-spacing: 0.18em;
   cursor: pointer;
@@ -197,7 +197,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
 
 // ===== SHARED HELPERS =====
 .section-tag {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.7rem;
   letter-spacing: 0.3em;
   color: var(--primary);
@@ -273,7 +273,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   padding: 6px 18px;
   background: var(--primary-dim);
   border: 1px solid var(--primary);
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.76rem;
   letter-spacing: 0.15em;
   color: var(--primary);
@@ -312,7 +312,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   background: var(--primary);
   border: 1px solid var(--primary);
   color: $bg;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.87rem;
   font-weight: bold;
   letter-spacing: 0.1em;
@@ -341,7 +341,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   background: transparent;
   border: 1px solid $neutral-3;
   color: $neutral-2;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.87rem;
   letter-spacing: 0.08em;
   cursor: pointer;
@@ -562,7 +562,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   padding: 7px 12px;
   background: color-mix(in srgb, var(--primary) 6%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.63rem;
   letter-spacing: 0.2em;
   color: var(--primary);
@@ -627,7 +627,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   background: var(--primary);
   border: 1px solid var(--primary);
   color: $bg;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.8rem;
   font-weight: bold;
   letter-spacing: 0.08em;
@@ -731,7 +731,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
 }
 
 .hist-num {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--primary);
@@ -747,7 +747,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   color: var(--primary);
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   transition: all 0.3s;
 }
 
@@ -837,7 +837,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   letter-spacing: 0.15em;
   color: $bg;
   align-self: flex-start;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   transition: background 0.3s;
 }
 
@@ -892,7 +892,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
   color: $neutral-2;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.78rem;
   letter-spacing: 0.1em;
   cursor: pointer;
@@ -941,7 +941,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
 }
 
 .footer-logo {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.9rem;
   font-weight: bold;
   letter-spacing: 0.15em;
@@ -1012,7 +1012,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   background: $bg;
   border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
   color: var(--primary);
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   font-weight: bold;

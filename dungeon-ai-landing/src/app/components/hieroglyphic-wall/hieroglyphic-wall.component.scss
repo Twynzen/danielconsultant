@@ -24,7 +24,7 @@ $stone-dark: #0d0d0d;
   width: 380px;
   max-height: 500px;
   padding: 24px;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   overflow: hidden;
 
   // v4.7.1: Default color variable
@@ -367,7 +367,7 @@ $stone-dark: #0d0d0d;
 .binary-overlay {
   position: absolute;
   inset: 0;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 10px;
   line-height: 1.2;
   color: var(--inscription-color);

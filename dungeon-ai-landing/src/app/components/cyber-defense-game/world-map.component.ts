@@ -201,7 +201,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
     }
 
     .loading-text {
-      font-family: 'Courier New', monospace;
+      font-family: 'Source Code Pro', monospace;
       font-size: 1rem;
       color: #00ff44;
       margin: 0 0 1.5rem 0;
@@ -255,7 +255,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       text-align: center;
 
       .game-title {
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         font-size: 2.5rem;
         color: #00ff44;
         margin: 0;
@@ -264,7 +264,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       }
 
       .subtitle {
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         font-size: 1rem;
         color: #ff3366;
         margin: 0.5rem 0 0 0;
@@ -302,7 +302,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
         }
 
         .value {
-          font-family: 'Courier New', monospace;
+          font-family: 'Source Code Pro', monospace;
           font-size: 1.2rem;
           color: #ffff00;
           font-weight: bold;
@@ -329,7 +329,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       transform: translateX(400px);
       transition: transform 0.3s ease-out;
       z-index: 20;
-      font-family: 'Courier New', monospace;
+      font-family: 'Source Code Pro', monospace;
 
       &.visible {
         transform: translateX(0);
@@ -406,7 +406,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
         .defend-btn {
           width: 100%;
           padding: 1rem;
-          font-family: 'Courier New', monospace;
+          font-family: 'Source Code Pro', monospace;
           font-size: 1.1rem;
           font-weight: bold;
           background: rgba(255, 51, 102, 0.2);
@@ -437,7 +437,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       top: 1.5rem;
       left: 1.5rem;
       padding: 0.75rem 1.5rem;
-      font-family: 'Courier New', monospace;
+      font-family: 'Source Code Pro', monospace;
       font-size: 0.9rem;
       background: rgba(0, 0, 0, 0.7);
       border: 1px solid rgba(0, 255, 68, 0.5);
@@ -473,7 +473,7 @@ import { DATACENTER_LEVELS, getDifficultyColor } from './datacenter.data';
       background: rgba(20, 0, 0, 0.9);
       border: 1px solid #ff3333;
       border-left: 4px solid #ff0000;
-      font-family: 'Courier New', monospace;
+      font-family: 'Source Code Pro', monospace;
       animation: alertPulse 2s ease-in-out infinite;
       cursor: pointer;
       transition: all 0.2s ease;

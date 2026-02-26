@@ -171,7 +171,7 @@ export class ServiceHieroglyphsComponent implements OnInit, OnDestroy, AfterView
     element.style.borderRight = 'none';
     element.style.color = '#00ff44';
     element.style.textShadow = '0 0 10px #00ff44, 0 0 20px #00ff44, 0 0 30px rgba(0, 255, 68, 0.8)';
-    element.style.fontFamily = "'Courier New', monospace"; // MANTENER fuente durante animación
+    element.style.fontFamily = "'Source Code Pro', monospace"; // MANTENER fuente durante animación
     
     let revealedCount = 0;
     const revealInterval = setInterval(() => {

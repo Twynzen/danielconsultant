@@ -17,7 +17,7 @@ $dark-bg: #0a0a0a;
   align-items: center;
   background: $deep-navy;
   overflow: hidden;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
 
   canvas {
     border: 2px solid $cyber-cyan;
@@ -830,7 +830,7 @@ $dark-bg: #0a0a0a;
 
 // ============ BUTTONS ============
 .game-button {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 1.1rem;
   padding: 1rem 2.5rem;
   margin: 0.5rem;

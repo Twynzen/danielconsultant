@@ -133,7 +133,7 @@ import { CONSULTING_SERVICES, GAME_CONFIG } from '../../core/config/game.config'
     }
 
     .terminal-title {
-      font-family: 'Courier New', monospace;
+      font-family: 'Source Code Pro', monospace;
       font-size: 12px;
       color: rgba(255, 0, 255, 0.6);
     }
@@ -143,7 +143,7 @@ import { CONSULTING_SERVICES, GAME_CONFIG } from '../../core/config/game.config'
       overflow-y: auto;
       flex: 1;
       color: #ff00ff;
-      font-family: 'Courier New', monospace;
+      font-family: 'Source Code Pro', monospace;
     }
 
     .section-title {
@@ -283,7 +283,7 @@ import { CONSULTING_SERVICES, GAME_CONFIG } from '../../core/config/game.config'
       border-top: 1px solid rgba(255, 0, 255, 0.1);
 
       .hint {
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         font-size: 11px;
         color: rgba(255, 0, 255, 0.4);
       }

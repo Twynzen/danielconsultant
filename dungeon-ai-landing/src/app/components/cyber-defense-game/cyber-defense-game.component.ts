@@ -1241,7 +1241,7 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
 
   private renderHUD(): void {
     this.ctx.fillStyle = '#00ffff';
-    this.ctx.font = 'bold 14px "Courier New", monospace';
+    this.ctx.font = "bold 14px 'Source Code Pro', monospace";
     this.ctx.textAlign = 'left';
 
     // Top left stats
@@ -1487,11 +1487,11 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
     this.renderMatrixRain();
 
     this.ctx.fillStyle = '#00ffff';
-    this.ctx.font = 'bold 36px "Courier New", monospace';
+    this.ctx.font = "bold 36px 'Source Code Pro', monospace";
     this.ctx.textAlign = 'center';
     this.ctx.fillText('CYBER DEFENSE', this.CANVAS_WIDTH / 2, 60);
 
-    this.ctx.font = '16px "Courier New", monospace';
+    this.ctx.font = "16px 'Source Code Pro', monospace";
     this.ctx.fillStyle = '#00ff00';
     this.ctx.fillText('Select a datacenter to defend', this.CANVAS_WIDTH / 2, 90);
   }
@@ -1501,12 +1501,12 @@ export class CyberDefenseGameComponent implements OnInit, OnDestroy {
     this.ctx.fillRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT);
 
     this.ctx.fillStyle = '#00ffff';
-    this.ctx.font = 'bold 32px "Courier New", monospace';
+    this.ctx.font = "bold 32px 'Source Code Pro', monospace";
     this.ctx.textAlign = 'center';
 
     if (this.currentLevel) {
       this.ctx.fillText(this.currentLevel.name, this.CANVAS_WIDTH / 2, 150);
-      this.ctx.font = '18px "Courier New", monospace';
+      this.ctx.font = "18px 'Source Code Pro', monospace";
       this.ctx.fillStyle = getDifficultyColor(this.currentLevel.difficulty);
       this.ctx.fillText(`${this.currentLevel.company} - ${this.currentLevel.difficulty.toUpperCase()}`, this.CANVAS_WIDTH / 2, 190);
       this.ctx.fillStyle = '#888';

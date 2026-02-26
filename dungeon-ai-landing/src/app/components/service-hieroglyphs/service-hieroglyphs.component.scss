@@ -32,7 +32,7 @@
   &.typing {
     .typing-text {
       display: inline-block;
-      font-family: "Courier New", monospace;
+      font-family: 'Source Code Pro', monospace;
       border-right: none;
       padding-right: 2px;
       
@@ -51,7 +51,7 @@
     font-weight: 600;
     color: #444; // Gris sutil inicial
     margin: 0;
-    font-family: "Courier New", monospace; // Typography robótica como Daniel pidió
+    font-family: 'Source Code Pro', monospace; // Typography robótica como Daniel pidió
     letter-spacing: 0.08em; // Spacing más sutil
     transition: all 0.4s ease;
     text-transform: uppercase;
@@ -143,7 +143,7 @@
   &.typing {
     .typing-text {
       display: inline-block;
-      font-family: "Courier New", monospace;
+      font-family: 'Source Code Pro', monospace;
       border-right: none;
       padding-right: 2px;
       
@@ -162,7 +162,7 @@
     font-weight: 600;  // Semi-bold
     color: #555;       // Gris inicial más visible
     margin: 0;
-    font-family: "Courier New", monospace; // Typography robótica como Daniel pidió
+    font-family: 'Source Code Pro', monospace; // Typography robótica como Daniel pidió
     letter-spacing: 0.05em; // Más sutil
     transition: all 0.4s ease;
     line-height: 1.3;

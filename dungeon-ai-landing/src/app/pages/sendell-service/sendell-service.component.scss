@@ -4,7 +4,7 @@ $bg-dark: #0a0a0a;
   display: block;
   min-height: 100vh;
   background: $bg-dark;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   overflow-y: auto;
   scrollbar-width: none; // Firefox
 
@@ -164,7 +164,7 @@ $bg-dark: #0a0a0a;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.3);
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.85em;
   letter-spacing: 0.1em;
   cursor: pointer;
@@ -244,7 +244,7 @@ $bg-dark: #0a0a0a;
   background: var(--accent, #ffffff);
   color: $bg-dark;
   border: 1px solid var(--accent, #ffffff);
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 0.95em;
   font-weight: bold;
   letter-spacing: 0.1em;

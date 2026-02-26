@@ -45,7 +45,7 @@
   .menu-content {
     text-align: center;
     color: #00ff00;
-    font-family: 'Courier New', monospace;
+    font-family: 'Source Code Pro', monospace;
     animation: glitchText 2s infinite;
 
     .game-title {
@@ -88,7 +88,7 @@
   .pause-content {
     text-align: center;
     color: #00ff00;
-    font-family: 'Courier New', monospace;
+    font-family: 'Source Code Pro', monospace;
 
     h2 {
       font-size: 3rem;
@@ -113,7 +113,7 @@
   .levelup-content {
     text-align: center;
     color: #00ff00;
-    font-family: 'Courier New', monospace;
+    font-family: 'Source Code Pro', monospace;
     max-width: 900px;
 
     h2 {
@@ -147,7 +147,7 @@
         padding: 1.5rem;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         color: #00ff00;
         min-height: 180px;
         display: flex;
@@ -197,7 +197,7 @@
   .gameover-content {
     text-align: center;
     color: #00ff00;
-    font-family: 'Courier New', monospace;
+    font-family: 'Source Code Pro', monospace;
     max-width: 600px;
 
     .gameover-title {
@@ -271,7 +271,7 @@
 
 // ========== BUTTONS ==========
 .game-button {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 1.3rem;
   padding: 1rem 3rem;
   margin: 0.5rem;

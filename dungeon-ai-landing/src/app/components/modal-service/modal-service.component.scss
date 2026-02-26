@@ -32,7 +32,7 @@
   overflow: hidden;
   overflow-x: hidden;
   cursor: default;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
 
   // Default color variable
   --modal-color: #00ff44;
@@ -192,7 +192,7 @@
       0 0 30px color-mix(in srgb, var(--modal-color, #00ff44) 80%, transparent);
     margin: 0;
     letter-spacing: 2px;
-    font-family: 'Courier New', monospace;
+    font-family: 'Source Code Pro', monospace;
   }
 }
 

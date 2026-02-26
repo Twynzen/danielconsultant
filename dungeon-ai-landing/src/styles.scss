@@ -8,6 +8,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'Source Code Pro', monospace;
 }
 
 html, body {
@@ -15,7 +16,7 @@ html, body {
   overflow-x: hidden;
   background: #0a0a0a;
   color: #00ff44;
-  font-family: "Courier New", monospace;
+  font-family: 'Source Code Pro', monospace;
   
   // CURSOR VERDE NATIVO - Flecha Matrix
   cursor: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="%2300ff44" d="M0 0v16l6-6h6l4-4z"/></svg>') 0 0, auto;

@@ -223,7 +223,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 }
 
 .wifi-waves {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 16px;  // Reduced from 24px
   color: $green;
   margin-bottom: 8px;  // Reduced from 15px
@@ -271,7 +271,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 
 .hologram-url {
   display: block;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 14px;  // Reduced from 20px
   font-weight: bold;
   color: $green;
@@ -293,7 +293,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 }
 
 .url-description {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 10px;  // Reduced from 12px
   color: rgba(0, 255, 68, 0.7);
   margin: 5px 0;   // Reduced from 10px
@@ -302,7 +302,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 
 .url-hint {
   display: block;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 9px;  // Reduced from 11px
   color: rgba(0, 255, 68, 0.5);
   margin-top: 8px;  // Reduced from 15px
@@ -348,7 +348,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 }
 
 .hologram-title {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 18px;
   font-weight: bold;
   color: $green;
@@ -387,7 +387,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 }
 
 .hologram-description {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 12px;
   color: rgba(0, 255, 68, 0.85);
   line-height: 1.6;
@@ -400,7 +400,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 
 .features-title,
 .tech-title {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 11px;
   font-weight: bold;
   color: $green;
@@ -420,7 +420,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 8px;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 11px;
   color: rgba(0, 255, 68, 0.8);
   line-height: 1.4;
@@ -453,7 +453,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
 }
 
 .tech-tag {
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 10px;
   color: $green;
   background: rgba(0, 255, 68, 0.1);
@@ -475,7 +475,7 @@ $green-subtle: rgba(0, 255, 68, 0.1);
   border-top: 1px solid rgba(0, 255, 68, 0.2);
 
   span {
-    font-family: 'Courier New', monospace;
+    font-family: 'Source Code Pro', monospace;
     font-size: 10px;
     color: rgba(0, 255, 68, 0.4);
     animation: hint-blink 1.5s ease-in-out infinite;

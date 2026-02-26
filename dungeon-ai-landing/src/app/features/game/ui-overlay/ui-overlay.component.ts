@@ -55,7 +55,7 @@ import { GAME_CONFIG } from '../../../core/config/game.config';
       padding: 12px 20px;
 
       .name {
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         font-size: 18px;
         color: #00ff44;
         margin: 0;
@@ -63,7 +63,7 @@ import { GAME_CONFIG } from '../../../core/config/game.config';
       }
 
       .title {
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         font-size: 12px;
         color: rgba(0, 255, 68, 0.7);
         margin: 4px 0 0 0;
@@ -77,7 +77,7 @@ import { GAME_CONFIG } from '../../../core/config/game.config';
       padding: 8px 16px;
 
       .phase {
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         font-size: 11px;
         color: rgba(0, 255, 68, 0.5);
         text-transform: uppercase;
@@ -94,7 +94,7 @@ import { GAME_CONFIG } from '../../../core/config/game.config';
       text-align: center;
 
       .subtitle {
-        font-family: 'Courier New', monospace;
+        font-family: 'Source Code Pro', monospace;
         font-size: 14px;
         color: rgba(0, 255, 68, 0.6);
         margin: 0;

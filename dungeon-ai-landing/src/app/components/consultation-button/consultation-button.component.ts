@@ -168,7 +168,7 @@ export class ConsultationButtonComponent implements OnInit, OnDestroy, AfterView
     element.style.borderRight = 'none';
     element.style.color = '#000'; // NEGRO para legibilidad sobre botón verde
     element.style.textShadow = '0 0 2px rgba(0, 0, 0, 0.3)'; // Sombra negra para contraste
-    element.style.fontFamily = "'Courier New', monospace"; // MANTENER fuente durante animación
+    element.style.fontFamily = "'Source Code Pro', monospace"; // MANTENER fuente durante animación
     
     let revealedCount = 0;
     const revealInterval = setInterval(() => {

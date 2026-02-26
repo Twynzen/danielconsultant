@@ -733,7 +733,7 @@ export class VampireSurvivorsGameComponent implements OnInit, OnDestroy {
 
   private drawHUD(): void {
     this.ctx.fillStyle = '#00ff00';
-    this.ctx.font = 'bold 16px "Courier New", monospace';
+    this.ctx.font = "bold 16px 'Source Code Pro', monospace";
     this.ctx.textAlign = 'left';
 
     // Top left stats
@@ -767,11 +767,11 @@ export class VampireSurvivorsGameComponent implements OnInit, OnDestroy {
     this.ctx.fillRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT);
 
     this.ctx.fillStyle = '#00ff00';
-    this.ctx.font = 'bold 48px "Courier New", monospace';
+    this.ctx.font = "bold 48px 'Source Code Pro', monospace";
     this.ctx.textAlign = 'center';
     this.ctx.fillText('VAMPIRE SURVIVORS', this.CANVAS_WIDTH / 2, 200);
 
-    this.ctx.font = '24px "Courier New", monospace';
+    this.ctx.font = "24px 'Source Code Pro', monospace";
     this.ctx.fillText('Press SPACE to Start', this.CANVAS_WIDTH / 2, 300);
     this.ctx.fillText('WASD or Arrow Keys to Move', this.CANVAS_WIDTH / 2, 350);
     this.ctx.fillText('Auto-attack nearest enemy', this.CANVAS_WIDTH / 2, 390);
@@ -782,7 +782,7 @@ export class VampireSurvivorsGameComponent implements OnInit, OnDestroy {
     }
 
     this.ctx.fillStyle = '#666';
-    this.ctx.font = '16px "Courier New", monospace';
+    this.ctx.font = "16px 'Source Code Pro', monospace";
     this.ctx.fillText('Press ESC to return to Landing Page', this.CANVAS_WIDTH / 2, this.CANVAS_HEIGHT - 50);
   }
 

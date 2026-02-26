@@ -46,7 +46,7 @@ $cabin-height: 50px;
   flex-direction: column;
   background: $bg-dark;
   overflow: hidden;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', monospace;
   color: $matrix-green;
   overscroll-behavior: none;
 }
@@ -584,7 +584,7 @@ $cabin-height: 50px;
   }
 
   .chat-text {
-    font-family: 'Courier New', monospace;
+    font-family: 'Source Code Pro', monospace;
     font-size: 0.85rem;
     font-weight: bold;
     letter-spacing: 2px;
