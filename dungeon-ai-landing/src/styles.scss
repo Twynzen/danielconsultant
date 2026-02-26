@@ -62,6 +62,13 @@ button,
   background: var(--matrix-green);
 }
 
+// Hide scrollbar on /servicios page (added via component lifecycle)
+html.servicios-page,
+body.servicios-page {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none !important; }
+}
+
 // Selection colors
 ::selection {
   background: var(--matrix-green-glow);

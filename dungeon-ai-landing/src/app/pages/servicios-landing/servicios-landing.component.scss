@@ -35,6 +35,11 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   min-height: 100vh;
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Ccircle cx='8' cy='8' r='6' fill='none' stroke='white' stroke-width='2'/%3E%3Ccircle cx='8' cy='8' r='2' fill='white'/%3E%3C/svg%3E") 8 8, crosshair;
 
+  // Override global green pointer — inherit mode color ring cursor on all interactive elements
+  a, button, [role="button"] {
+    cursor: inherit !important;
+  }
+
   &[data-mode="soporte"] {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Ccircle cx='8' cy='8' r='6' fill='none' stroke='%23ff1744' stroke-width='2'/%3E%3Ccircle cx='8' cy='8' r='2' fill='%23ff1744'/%3E%3C/svg%3E") 8 8, crosshair;
   }

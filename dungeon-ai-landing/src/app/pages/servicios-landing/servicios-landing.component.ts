@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BinaryCharacterComponent } from '../../components/binary-character/binary-character.component';
 
@@ -36,7 +36,17 @@ interface ServiceMode {
   templateUrl: './servicios-landing.component.html',
   styleUrl: './servicios-landing.component.scss',
 })
-export class ServiciosLandingComponent {
+export class ServiciosLandingComponent implements OnInit, OnDestroy {
+
+  ngOnInit(): void {
+    document.documentElement.classList.add('servicios-page');
+    document.body.classList.add('servicios-page');
+  }
+
+  ngOnDestroy(): void {
+    document.documentElement.classList.remove('servicios-page');
+    document.body.classList.remove('servicios-page');
+  }
 
   readonly modes: ServiceMode[] = [
     {
