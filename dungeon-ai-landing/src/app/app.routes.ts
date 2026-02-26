@@ -48,10 +48,16 @@ export const routes: Routes = [
       .then(m => m.ModelResearchLayoutComponent)
   },
   {
-    // Sendell AI Agents service page
+    // Sendell AI Agents service page (original - robot + tabs + CTA)
     path: 'sendell',
     loadComponent: () => import('./pages/sendell-service/sendell-service.component')
       .then(m => m.SendellServiceComponent)
+  },
+  {
+    // Sendell commercial landing (AutoManus-style — hero, demo, pricing, story)
+    path: 'servicios',
+    loadComponent: () => import('./pages/servicios-landing/servicios-landing.component')
+      .then(m => m.ServiciosLandingComponent)
   },
   // DeskFlow app is served by Netlify at /deskflow (separate Angular app)
   {

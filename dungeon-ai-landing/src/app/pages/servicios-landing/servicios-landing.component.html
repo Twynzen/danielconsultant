@@ -1,0 +1,251 @@
+<div class="sendell-landing">
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a class="nav-logo" routerLink="/">
+        <span class="logo-s">S</span>ENDELL
+      </a>
+      <div class="nav-links">
+        <a href="#demo" (click)="scrollTo('demo', $event)">Demo</a>
+        <a href="#precios" (click)="scrollTo('precios', $event)">Precios</a>
+        <a href="#historia" (click)="scrollTo('historia', $event)">Nosotros</a>
+        <a routerLink="/sendell" class="nav-back">← Volver</a>
+      </div>
+      <button class="btn-iniciar" (click)="onAgendarClick()">Iniciar →</button>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-badge aos">
+      <span class="badge-star">✦</span> AI-Powered Agents
+    </div>
+    <h1 class="hero-title aos">
+      Agentes IA<br>
+      <span class="gradient-text">a tu Medida</span>
+    </h1>
+    <p class="hero-sub aos">
+      Agentes evolutivos que crecen con tu negocio.<br>
+      Personales o empresariales. Desplegados en minutos.
+    </p>
+    <div class="hero-ctas aos">
+      <button class="btn-primary" (click)="onAgendarClick()">Solicitar Agente →</button>
+      <button class="btn-outline" (click)="scrollTo('demo', $event)">Ver Demo</button>
+    </div>
+    <div class="hero-cols aos">
+      <div class="hero-col">
+        <span class="col-icon">💬</span>
+        <p>Sendell atiende clientes vía WhatsApp, WebChat o Discord</p>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-col">
+        <span class="col-icon">🛡️</span>
+        <p>Tu negocio automatizado y protegido con seguridad SENTINEL</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DEMO INTERACTIVA ===== -->
+  <section id="demo" class="demo-section">
+    <div class="section-header">
+      <p class="section-tag aos">DEMO INTERACTIVA</p>
+      <h2 class="section-title aos">Mira a Sendell en Acción</h2>
+    </div>
+    <div class="demo-grid">
+
+      <!-- Chat mockup -->
+      <div class="chat-card aos">
+        <div class="chat-card-header">
+          <div class="chat-avatar">🤖</div>
+          <div class="chat-agent-info">
+            <div class="chat-agent-name">Ecolimpieza AI</div>
+            <div class="chat-status"><span class="status-dot"></span>En línea · Impulsado por Sendell</div>
+          </div>
+        </div>
+        <div class="chat-messages">
+          <div class="msg msg-agent">¡Hola! ¿En qué puedo ayudarte hoy? 👋</div>
+          <div class="msg msg-user">Quiero información sobre limpieza de oficinas</div>
+          <div class="msg msg-agent">¡Perfecto! Ofrecemos servicio completo para oficinas desde $150/visita. ¿Cuántos m² tiene tu espacio?</div>
+          <div class="msg msg-user">Unos 200 m²</div>
+          <div class="msg msg-agent">Para 200m² tenemos un plan especial a $280/visita con 2 limpiadores. ¿Te agendo una visita gratuita? 📅</div>
+        </div>
+        <div class="chat-input-row">
+          <span class="chat-placeholder">Pregunta sobre nuestros servicios...</span>
+          <span class="chat-send">↑</span>
+        </div>
+      </div>
+
+      <!-- Sync connector -->
+      <div class="sync-connector aos">
+        <div class="sync-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="sync-badge">
+          <span class="sync-icon">⟳</span>
+          AUTO-SYNC
+        </div>
+        <div class="sync-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Hub card -->
+      <div class="hub-card aos">
+        <div class="hub-new-badge">⚡ ¡Nuevo Cliente!</div>
+        <div class="hub-contact">
+          <div class="contact-avatar">MG</div>
+          <div class="contact-info">
+            <div class="contact-name">María García</div>
+            <div class="contact-phone">+57 310 555 0123</div>
+          </div>
+        </div>
+        <div class="contact-tags">
+          <span class="tag">Limpieza oficinas</span>
+          <span class="tag">200 m²</span>
+          <span class="tag tag-green">~$280/visita</span>
+        </div>
+        <button class="btn-qualify" (click)="onAgendarClick()">Calificar Lead</button>
+        <p class="hub-sync-note">Sincroniza desde WhatsApp, Web y Discord</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== NUESTRA HISTORIA ===== -->
+  <section id="historia" class="historia-section">
+    <p class="section-tag aos">NUESTRA HISTORIA</p>
+    <h2 class="section-title aos">Tu Guía Inteligente</h2>
+    <div class="historia-grid">
+
+      <div class="historia-card aos">
+        <div class="hist-header">
+          <span class="hist-num">01</span>
+          <span class="hist-badge">El Nombre</span>
+        </div>
+        <div class="hist-body">
+          <p><strong>'Send'</strong> — Conectar, enviar, comunicar. Tu puente entre la tecnología y las personas.</p>
+          <p><strong>'ell'</strong> — Guía. Un compañero que entiende tu negocio y evoluciona contigo.</p>
+          <p class="hist-quote">Juntos: El compañero inteligente que protege tu negocio, automatiza lo repetitivo, y nunca deja escapar una oportunidad.</p>
+        </div>
+      </div>
+
+      <div class="historia-card aos">
+        <div class="hist-header">
+          <span class="hist-num">02</span>
+          <span class="hist-badge">La Misión</span>
+        </div>
+        <div class="hist-body">
+          <p>Creemos que cada negocio merece un agente IA que trabaje 24/7, que aprenda de cada interacción, y que ponga la seguridad del cliente primero.</p>
+          <p>No vendemos chatbots genéricos. Construimos compañeros digitales a la medida.</p>
+          <p class="hist-quote">Tu negocio merece más que respuestas automáticas. Merece inteligencia real.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== PRECIOS ===== -->
+  <section id="precios" class="precios-section">
+    <p class="section-tag aos">PLANES</p>
+    <h2 class="section-title aos">Precios Simples y Transparentes</h2>
+    <p class="section-sub aos">Empieza con una consulta gratuita, luego escala mientras creces</p>
+    <div class="precios-grid">
+
+      <div class="precio-card aos">
+        <div class="plan-name">Consulta</div>
+        <div class="plan-price">$0</div>
+        <div class="plan-period">Evaluación gratuita</div>
+        <ul class="plan-features">
+          <li>Diagnóstico de tu negocio</li>
+          <li>Identificamos oportunidades</li>
+          <li>Sin compromiso</li>
+        </ul>
+        <button class="btn-plan" (click)="onAgendarClick()">Comenzar gratis</button>
+      </div>
+
+      <div class="precio-card aos">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">$350<span class="plan-freq">/mes</span></div>
+        <div class="plan-period">Setup: $500</div>
+        <ul class="plan-features">
+          <li>1 agente IA</li>
+          <li>WhatsApp + WebChat</li>
+          <li>Personalización básica</li>
+          <li>Soporte por email</li>
+        </ul>
+        <button class="btn-plan" (click)="onAgendarClick()">Solicitar</button>
+      </div>
+
+      <div class="precio-card precio-popular aos">
+        <div class="plan-popular-badge">MÁS POPULAR</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$600<span class="plan-freq">/mes</span></div>
+        <div class="plan-period">Setup: $1,500</div>
+        <ul class="plan-features">
+          <li>Agentes ilimitados</li>
+          <li>Todos los canales</li>
+          <li>Seguridad SENTINEL</li>
+          <li>Dashboard de métricas</li>
+          <li>Soporte prioritario</li>
+        </ul>
+        <button class="btn-plan btn-plan-primary" (click)="onAgendarClick()">Solicitar Pro</button>
+      </div>
+
+      <div class="precio-card aos">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">Custom</div>
+        <div class="plan-period">Setup: desde $2,000</div>
+        <ul class="plan-features">
+          <li>Agentes a medida</li>
+          <li>Instalación local / VPS</li>
+          <li>Integraciones custom</li>
+          <li>SLA dedicado</li>
+          <li>Gerente de éxito</li>
+        </ul>
+        <button class="btn-plan" (click)="onAgendarClick()">Contactar</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="sendell-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <a class="footer-logo" routerLink="/">
+          <span class="logo-s">S</span>ENDELL
+        </a>
+        <div class="footer-links">
+          <a href="#historia" (click)="scrollTo('historia', $event)">Nosotros</a>
+          <a (click)="onAgendarClick()" style="cursor:pointer">Contacto</a>
+          <a routerLink="/">danielconsultant.dev</a>
+        </div>
+        <div class="footer-social">
+          <a href="https://linkedin.com" target="_blank" rel="noopener" class="social-icon" title="LinkedIn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+          </a>
+          <a href="https://wa.me/573007980679" target="_blank" rel="noopener" class="social-icon" title="WhatsApp">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-bottom">
+        <span>© 2026 Sendell. Todos los derechos reservados.</span>
+        <span class="footer-legal">Servicios disponibles vía WhatsApp, WebChat y Discord.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== CHAT WIDGET ===== -->
+  <button class="chat-widget" (click)="onChatClick()" title="Chatea con Sendell">
+    <span class="cw-icon">💬</span>
+    <span class="cw-text">Chat with us</span>
+  </button>
+
+</div>
