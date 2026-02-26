@@ -12,7 +12,6 @@ interface ServiceMode {
   label: string;
   color: string;
   colorDim: string;
-  colorHighlight: string;
   robotFilter: string;
   heroBadge: string;
   heroTitle: string;
@@ -45,7 +44,6 @@ export class ServiciosLandingComponent {
       label: 'PERSONAL',
       color: '#d8d8d8',
       colorDim: 'rgba(216, 216, 216, 0.2)',
-      colorHighlight: '#ffffff',
       robotFilter: 'saturate(0) brightness(2.5)',
       heroBadge: '✦ Tu Compañero IA',
       heroTitle: 'Tu Compañero',
@@ -117,7 +115,6 @@ export class ServiciosLandingComponent {
       label: 'SOPORTE',
       color: '#ff3333',
       colorDim: 'rgba(255, 51, 51, 0.2)',
-      colorHighlight: '#ff6b35',
       robotFilter: 'hue-rotate(244deg) saturate(2.5) brightness(1.2)',
       heroBadge: '✦ Soporte 24/7',
       heroTitle: 'Soporte al Cliente',
@@ -196,7 +193,6 @@ export class ServiciosLandingComponent {
       label: 'NEGOCIOS',
       color: '#4f8ef7',
       colorDim: 'rgba(79, 142, 247, 0.2)',
-      colorHighlight: '#8b5cf6',
       robotFilter: 'hue-rotate(74deg) saturate(1.5) brightness(1.1)',
       heroBadge: '✦ Automatización IA',
       heroTitle: 'Automatiza tu Negocio',

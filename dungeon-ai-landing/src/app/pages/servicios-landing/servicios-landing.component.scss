@@ -16,7 +16,6 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
 :host {
   --primary: #00ff44;
   --primary-dim: rgba(0, 255, 68, 0.2);
-  --primary-highlight: #ffffff;
 }
 
 :host {
@@ -201,9 +200,10 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
 .section-title {
   font-size: clamp(1.5rem, 4vw, 2.3rem);
   font-weight: 700;
-  color: #f0f0f0;
+  color: var(--primary);
   margin: 0;
   line-height: 1.2;
+  transition: color 0.3s;
 }
 
 .section-sub {
@@ -276,13 +276,9 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   font-weight: 800;
   line-height: 1.1;
   margin: 0 0 18px;
-  color: #f0f0f0;
+  color: var(--primary);
   letter-spacing: 0.02em;
-}
-
-.hero-title-main {
-  color: var(--primary-highlight, #f0f0f0);
-  transition: color 0.35s ease;
+  transition: color 0.3s;
 }
 
 .hero-sub {

@@ -1,4 +1,4 @@
-<div class="sendell-landing" [style.--primary]="selected().color" [style.--primary-dim]="selected().colorDim" [style.--primary-highlight]="selected().colorHighlight" [attr.data-mode]="selected().id">
+<div class="sendell-landing" [style.--primary]="selected().color" [style.--primary-dim]="selected().colorDim" [attr.data-mode]="selected().id">
 
   <!-- ===== NAVBAR ===== -->
   <nav class="navbar">
@@ -35,7 +35,7 @@
     <div class="hero-content">
       <div class="hero-badge">{{ selected().heroBadge }}</div>
       <h1 class="hero-title">
-        <span class="hero-title-main">{{ selected().heroTitle }}</span><br>
+        {{ selected().heroTitle }}<br>
         <span class="gradient-text">{{ selected().heroAccent }}</span>
       </h1>
       <p class="hero-sub">{{ selected().heroSub }}</p>
