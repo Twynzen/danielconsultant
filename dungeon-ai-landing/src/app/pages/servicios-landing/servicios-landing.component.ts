@@ -1,5 +1,6 @@
 import { Component, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { BinaryCharacterComponent } from '../../components/binary-character/binary-character.component';
 
 interface ChatMessage { role: 'user' | 'agent'; text: string; }
 interface HubItem { label: string; value: string; }
@@ -11,6 +12,7 @@ interface ServiceMode {
   label: string;
   color: string;
   colorDim: string;
+  robotFilter: string;
   heroBadge: string;
   heroTitle: string;
   heroAccent: string;
@@ -30,7 +32,7 @@ interface ServiceMode {
 @Component({
   selector: 'app-servicios-landing',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, BinaryCharacterComponent],
   templateUrl: './servicios-landing.component.html',
   styleUrl: './servicios-landing.component.scss',
 })
@@ -42,6 +44,7 @@ export class ServiciosLandingComponent {
       label: 'PERSONAL',
       color: '#d8d8d8',
       colorDim: 'rgba(216, 216, 216, 0.2)',
+      robotFilter: 'saturate(0) brightness(2.5)',
       heroBadge: '✦ Tu Compañero IA',
       heroTitle: 'Tu Compañero',
       heroAccent: 'IA Personal',
@@ -112,6 +115,7 @@ export class ServiciosLandingComponent {
       label: 'SOPORTE',
       color: '#ff3333',
       colorDim: 'rgba(255, 51, 51, 0.2)',
+      robotFilter: 'hue-rotate(244deg) saturate(2.5) brightness(1.2)',
       heroBadge: '✦ Soporte 24/7',
       heroTitle: 'Soporte al Cliente',
       heroAccent: 'con IA Real',
@@ -189,6 +193,7 @@ export class ServiciosLandingComponent {
       label: 'NEGOCIOS',
       color: '#4f8ef7',
       colorDim: 'rgba(79, 142, 247, 0.2)',
+      robotFilter: 'hue-rotate(74deg) saturate(1.5) brightness(1.1)',
       heroBadge: '✦ Automatización IA',
       heroTitle: 'Automatiza tu Negocio',
       heroAccent: 'con Agentes IA',
