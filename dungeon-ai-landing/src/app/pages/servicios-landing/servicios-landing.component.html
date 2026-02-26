@@ -1,4 +1,4 @@
-<div class="sendell-landing">
+<div class="sendell-landing" [style.--primary]="selected().color" [style.--primary-dim]="selected().colorDim" [attr.data-mode]="selected().id">
 
   <!-- ===== NAVBAR ===== -->
   <nav class="navbar">
@@ -16,33 +16,33 @@
     </div>
   </nav>
 
+  <!-- ===== MODE SELECTOR ===== -->
+  <div class="mode-selector">
+    @for (mode of modes; track mode.id; let i = $index) {
+      <button
+        class="mode-tab"
+        [class.active]="selectedIndex() === i"
+        [style.--tab-color]="mode.color"
+        (click)="selectMode(i)">
+        <span class="mode-dot"></span>
+        {{ mode.label }}
+      </button>
+    }
+  </div>
+
   <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="hero-badge">
-      <span class="badge-star">&#x2726;</span> AI-Powered Agents
+      {{ selected().heroBadge }}
     </div>
     <h1 class="hero-title">
-      Agentes IA<br>
-      <span class="gradient-text">a tu Medida</span>
+      {{ selected().heroTitle }}<br>
+      <span class="gradient-text">{{ selected().heroAccent }}</span>
     </h1>
-    <p class="hero-sub">
-      Agentes evolutivos que crecen con tu negocio.<br>
-      Personales o empresariales. Desplegados en minutos.
-    </p>
+    <p class="hero-sub">{{ selected().heroSub }}</p>
     <div class="hero-ctas">
-      <button class="btn-primary" (click)="onAgendarClick()">Solicitar Agente &#x2192;</button>
+      <button class="btn-primary" (click)="onAgendarClick()">{{ selected().heroCta1 }}</button>
       <button class="btn-outline" (click)="scrollTo('demo', $event)">Ver Demo</button>
-    </div>
-    <div class="hero-cols">
-      <div class="hero-col">
-        <span class="col-icon">&#x1F4AC;</span>
-        <p>Sendell atiende clientes v&#xED;a WhatsApp, WebChat o Discord</p>
-      </div>
-      <div class="hero-divider"></div>
-      <div class="hero-col">
-        <span class="col-icon">&#x1F6E1;&#xFE0F;</span>
-        <p>Tu negocio automatizado y protegido con seguridad SENTINEL</p>
-      </div>
     </div>
   </section>
 
@@ -58,19 +58,19 @@
         <div class="chat-card-header">
           <div class="chat-avatar">&#x1F916;</div>
           <div class="chat-agent-info">
-            <div class="chat-agent-name">Ecolimpieza AI</div>
+            <div class="chat-agent-name">{{ selected().chatName }}</div>
             <div class="chat-status"><span class="status-dot"></span>En l&#xED;nea &middot; Impulsado por Sendell</div>
           </div>
         </div>
         <div class="chat-messages">
-          <div class="msg msg-agent">&#xA1;Hola! &#xBF;En qu&#xE9; puedo ayudarte hoy?</div>
-          <div class="msg msg-user">Quiero informaci&#xF3;n sobre limpieza de oficinas</div>
-          <div class="msg msg-agent">&#xA1;Perfecto! Ofrecemos servicio completo desde $150/visita. &#xBF;Cu&#xE1;ntos m&#xB2; tiene tu espacio?</div>
-          <div class="msg msg-user">Unos 200 m&#xB2;</div>
-          <div class="msg msg-agent">Para 200m&#xB2; tenemos un plan especial a $280/visita. &#xBF;Te agendo una visita gratuita?</div>
+          @for (msg of selected().chatMessages; track $index) {
+            <div class="msg" [class.msg-user]="msg.role === 'user'" [class.msg-agent]="msg.role === 'agent'">
+              {{ msg.text }}
+            </div>
+          }
         </div>
         <div class="chat-input-row">
-          <span class="chat-placeholder">Pregunta sobre nuestros servicios...</span>
+          <span class="chat-placeholder">Escribe tu pregunta...</span>
           <span class="chat-send">&#x2191;</span>
         </div>
       </div>
@@ -89,23 +89,35 @@
       </div>
 
       <div class="hub-card">
-        <div class="hub-new-badge">&#x26A1; &#xA1;Nuevo Cliente!</div>
-        <div class="hub-contact">
-          <div class="contact-avatar">MG</div>
-          <div class="contact-info">
-            <div class="contact-name">Mar&#xED;a Garc&#xED;a</div>
-            <div class="contact-phone">+57 310 555 0123</div>
-          </div>
+        <div class="hub-title-bar">{{ selected().hubTitle }}</div>
+        <div class="hub-items">
+          @for (item of selected().hubItems; track $index) {
+            <div class="hub-item">
+              <span class="hub-label">{{ item.label }}</span>
+              <span class="hub-value">{{ item.value }}</span>
+            </div>
+          }
         </div>
-        <div class="contact-tags">
-          <span class="tag">Limpieza oficinas</span>
-          <span class="tag">200 m&#xB2;</span>
-          <span class="tag tag-green">~$280/visita</span>
-        </div>
-        <button class="btn-qualify" (click)="onAgendarClick()">Calificar Lead</button>
+        <button class="btn-qualify" (click)="onAgendarClick()">Ver Dashboard</button>
         <p class="hub-sync-note">Sincroniza desde WhatsApp, Web y Discord</p>
       </div>
 
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="features-section">
+    <div class="section-header">
+      <p class="section-tag">CARACTER&#xCD;STICAS</p>
+      <h2 class="section-title">Todo lo que Necesitas</h2>
+    </div>
+    <div class="features-grid">
+      @for (feat of selected().features; track $index) {
+        <div class="feature-item">
+          <span class="feat-check">&#x2713;</span>
+          <span>{{ feat }}</span>
+        </div>
+      }
     </div>
   </section>
 
@@ -117,25 +129,25 @@
 
       <div class="historia-card">
         <div class="hist-header">
-          <span class="hist-num">01</span>
-          <span class="hist-badge">El Nombre</span>
+          <span class="hist-num">{{ selected().histCard1.num }}</span>
+          <span class="hist-badge">{{ selected().histCard1.badge }}</span>
         </div>
         <div class="hist-body">
-          <p><strong>'Send'</strong> &#x2014; Conectar, enviar, comunicar. Tu puente entre la tecnolog&#xED;a y las personas.</p>
-          <p><strong>'ell'</strong> &#x2014; Gu&#xED;a. Un compa&#xF1;ero que entiende tu negocio y evoluciona contigo.</p>
-          <p class="hist-quote">Juntos: El compa&#xF1;ero inteligente que protege tu negocio, automatiza lo repetitivo, y nunca deja escapar una oportunidad.</p>
+          <p>{{ selected().histCard1.p1 }}</p>
+          <p>{{ selected().histCard1.p2 }}</p>
+          <p class="hist-quote">{{ selected().histCard1.quote }}</p>
         </div>
       </div>
 
       <div class="historia-card">
         <div class="hist-header">
-          <span class="hist-num">02</span>
-          <span class="hist-badge">La Misi&#xF3;n</span>
+          <span class="hist-num">{{ selected().histCard2.num }}</span>
+          <span class="hist-badge">{{ selected().histCard2.badge }}</span>
         </div>
         <div class="hist-body">
-          <p>Creemos que cada negocio merece un agente IA que trabaje 24/7, que aprenda de cada interacci&#xF3;n, y que ponga la seguridad del cliente primero.</p>
-          <p>No vendemos chatbots gen&#xE9;ricos. Construimos compa&#xF1;eros digitales a la medida.</p>
-          <p class="hist-quote">Tu negocio merece m&#xE1;s que respuestas autom&#xE1;ticas. Merece inteligencia real.</p>
+          <p>{{ selected().histCard2.p1 }}</p>
+          <p>{{ selected().histCard2.p2 }}</p>
+          <p class="hist-quote">{{ selected().histCard2.quote }}</p>
         </div>
       </div>
 
@@ -146,62 +158,24 @@
   <section id="precios" class="precios-section">
     <p class="section-tag">PLANES</p>
     <h2 class="section-title">Precios Simples y Transparentes</h2>
-    <p class="section-sub">Empieza con una consulta gratuita, luego escala mientras creces</p>
+    <p class="section-sub">{{ selected().preciosSub }}</p>
     <div class="precios-grid">
 
-      <div class="precio-card">
-        <div class="plan-name">Consulta</div>
-        <div class="plan-price">$0</div>
-        <div class="plan-period">Evaluaci&#xF3;n gratuita</div>
-        <ul class="plan-features">
-          <li>Diagn&#xF3;stico de tu negocio</li>
-          <li>Identificamos oportunidades</li>
-          <li>Sin compromiso</li>
-        </ul>
-        <button class="btn-plan" (click)="onAgendarClick()">Comenzar gratis</button>
-      </div>
-
-      <div class="precio-card">
-        <div class="plan-name">Starter</div>
-        <div class="plan-price">$350<span class="plan-freq">/mes</span></div>
-        <div class="plan-period">Setup: $500</div>
-        <ul class="plan-features">
-          <li>1 agente IA</li>
-          <li>WhatsApp + WebChat</li>
-          <li>Personalizaci&#xF3;n b&#xE1;sica</li>
-          <li>Soporte por email</li>
-        </ul>
-        <button class="btn-plan" (click)="onAgendarClick()">Solicitar</button>
-      </div>
-
-      <div class="precio-card precio-popular">
-        <div class="plan-popular-badge">M&#xC1;S POPULAR</div>
-        <div class="plan-name">Pro</div>
-        <div class="plan-price">$600<span class="plan-freq">/mes</span></div>
-        <div class="plan-period">Setup: $1,500</div>
-        <ul class="plan-features">
-          <li>Agentes ilimitados</li>
-          <li>Todos los canales</li>
-          <li>Seguridad SENTINEL</li>
-          <li>Dashboard de m&#xE9;tricas</li>
-          <li>Soporte prioritario</li>
-        </ul>
-        <button class="btn-plan btn-plan-primary" (click)="onAgendarClick()">Solicitar Pro</button>
-      </div>
-
-      <div class="precio-card">
-        <div class="plan-name">Enterprise</div>
-        <div class="plan-price">Custom</div>
-        <div class="plan-period">Setup: desde $2,000</div>
-        <ul class="plan-features">
-          <li>Agentes a medida</li>
-          <li>Instalaci&#xF3;n local / VPS</li>
-          <li>Integraciones custom</li>
-          <li>SLA dedicado</li>
-          <li>Gerente de &#xE9;xito</li>
-        </ul>
-        <button class="btn-plan" (click)="onAgendarClick()">Contactar</button>
-      </div>
+      @for (plan of selected().plans; track plan.name) {
+        <div class="precio-card" [class.precio-popular]="plan.popular">
+          @if (plan.popular) {
+            <div class="plan-popular-badge">M&#xC1;S POPULAR</div>
+          }
+          <div class="plan-name">{{ plan.name }}</div>
+          <div class="plan-price">{{ plan.price }}<span class="plan-freq">{{ plan.period }}</span></div>
+          <ul class="plan-features">
+            @for (feat of plan.features; track $index) {
+              <li>{{ feat }}</li>
+            }
+          </ul>
+          <button class="btn-plan" [class.btn-plan-primary]="plan.popular" (click)="onAgendarClick()">{{ plan.cta }}</button>
+        </div>
+      }
 
     </div>
   </section>
