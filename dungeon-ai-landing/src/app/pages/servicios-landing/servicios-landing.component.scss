@@ -16,6 +16,7 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
 :host {
   --primary: #00ff44;
   --primary-dim: rgba(0, 255, 68, 0.2);
+  --primary-highlight: #ffffff;
 }
 
 :host {
@@ -277,6 +278,11 @@ $border-subtle: rgba(255, 255, 255, 0.06); // bordes estructurales muy sutiles
   margin: 0 0 18px;
   color: #f0f0f0;
   letter-spacing: 0.02em;
+}
+
+.hero-title-main {
+  color: var(--primary-highlight, #f0f0f0);
+  transition: color 0.35s ease;
 }
 
 .hero-sub {
