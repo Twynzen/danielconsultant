@@ -35,10 +35,10 @@
     <div class="hero-content">
       <div class="hero-badge">{{ selected().heroBadge }}</div>
       <h1 class="hero-title">
-        {{ selected().heroTitle }}<br>
-        <span class="gradient-text">{{ selected().heroAccent }}</span>
+        {{ displayedTitle() }}<br>
+        <span class="gradient-text">{{ displayedAccent() }}<span class="hero-cursor" [class.done]="typingDone()"></span></span>
       </h1>
-      <p class="hero-sub">{{ selected().heroSub }}</p>
+      <p class="hero-sub" [style.opacity]="subVisible() ? '1' : '0'">{{ selected().heroSub }}</p>
       <div class="hero-ctas">
         <button class="btn-primary" (click)="onAgendarClick()">{{ selected().heroCta1 }}</button>
         <button class="btn-outline" (click)="scrollTo('demo', $event)">Ver Demo</button>

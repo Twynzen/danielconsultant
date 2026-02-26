@@ -41,11 +41,13 @@ export class ServiciosLandingComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     document.documentElement.classList.add('servicios-page');
     document.body.classList.add('servicios-page');
+    this.startTypewriter();
   }
 
   ngOnDestroy(): void {
     document.documentElement.classList.remove('servicios-page');
     document.body.classList.remove('servicios-page');
+    if (this.typewriterTimeout) clearTimeout(this.typewriterTimeout);
   }
 
   readonly modes: ServiceMode[] = [
@@ -288,8 +290,44 @@ export class ServiciosLandingComponent implements OnInit, OnDestroy {
   selectedIndex = signal(0);
   selected = computed(() => this.modes[this.selectedIndex()]);
 
+  displayedTitle = signal('');
+  displayedAccent = signal('');
+  typingDone = signal(false);
+  subVisible = signal(false);
+  private typewriterTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  private startTypewriter(): void {
+    if (this.typewriterTimeout) clearTimeout(this.typewriterTimeout);
+    const mode = this.modes[this.selectedIndex()];
+    this.displayedTitle.set('');
+    this.displayedAccent.set('');
+    this.typingDone.set(false);
+    this.subVisible.set(false);
+    const fullTitle = mode.heroTitle;
+    const fullAccent = mode.heroAccent;
+    const speed = 55;
+    let i = 0;
+    const type = () => {
+      if (i < fullTitle.length) {
+        this.displayedTitle.set(fullTitle.slice(0, i + 1));
+        i++;
+        this.typewriterTimeout = setTimeout(type, speed);
+      } else if (i < fullTitle.length + fullAccent.length) {
+        const j = i - fullTitle.length;
+        this.displayedAccent.set(fullAccent.slice(0, j + 1));
+        i++;
+        this.typewriterTimeout = setTimeout(type, speed);
+      } else {
+        this.typingDone.set(true);
+        this.typewriterTimeout = setTimeout(() => this.subVisible.set(true), 250);
+      }
+    };
+    this.typewriterTimeout = setTimeout(type, 120);
+  }
+
   selectMode(index: number): void {
     this.selectedIndex.set(index);
+    this.startTypewriter();
   }
 
   onAgendarClick(): void {
