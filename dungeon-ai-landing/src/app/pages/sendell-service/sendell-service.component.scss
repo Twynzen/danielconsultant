@@ -349,6 +349,30 @@ $bg-dark: #0a0a0a;
   }
 }
 
+// Servicios nav link
+.servicios-nav {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 24px 0 8px;
+}
+
+.servicios-link {
+  color: var(--accent-dim, rgba(255,255,255,0.4));
+  text-decoration: none;
+  font-size: 0.9em;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--accent-dim, rgba(255,255,255,0.2));
+  padding: 10px 22px;
+  transition: color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    color: var(--accent, #ffffff);
+    border-color: var(--accent, #ffffff);
+    box-shadow: 0 0 16px var(--accent-dim, rgba(255,255,255,0.2));
+  }
+}
+
 // Footer
 .page-footer {
   position: relative;
