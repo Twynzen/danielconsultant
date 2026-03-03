@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, NgZone, ViewChild, HostListener, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CircuitsBackgroundComponent } from '../circuits-background/circuits-background.component';
 import { ModalServiceComponent } from '../modal-service/modal-service.component';
 // v4.7: Replaced by HieroglyphicWall
@@ -26,6 +26,7 @@ import { ActionExecutorService } from '../../services/action-executor.service';
     selector: 'app-landing-page',
     imports: [
         CommonModule,
+        RouterLink,
         CircuitsBackgroundComponent,
         ModalServiceComponent,
         // v4.7: Replaced HologramProjection with HieroglyphicWall
@@ -431,6 +432,13 @@ export class LandingPageComponent implements OnInit, OnDestroy {
       case 'jump':
         // v5.4.0: Use ActionExecutor for consistent jump
         this.actionExecutor.executeAction(action);
+        break;
+      case 'navigate':
+        // v9.1: Navigate to an internal route (e.g., /servicios)
+        if (action.target) {
+          console.log('AI: Navigating to', action.target);
+          this.router.navigate([action.target]);
+        }
         break;
       case 'wave':
         // Wave animation would be handled by BinaryCharacterComponent

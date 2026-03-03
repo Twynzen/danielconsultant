@@ -20,6 +20,17 @@
     <!-- v5.1: Single decorative torch in top-right corner -->
     <!-- Lights up when title becomes visible -->
     <app-torch-system></app-torch-system>
+
+    <!-- v9.1: CTA link to /servicios for clear navigation -->
+    <a class="fixed-servicios-link"
+       [class.visible]="titleOpacity() > 0"
+       [style.opacity]="titleOpacity()"
+       routerLink="/servicios">
+      <span class="servicios-bracket">[</span>
+      <span class="servicios-text">VER SERVICIOS</span>
+      <span class="servicios-arrow"> →</span>
+      <span class="servicios-bracket">]</span>
+    </a>
   </div>
 
   <!-- ========== WORLD LAYER (scrolls horizontally) ========== -->

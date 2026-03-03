@@ -63,10 +63,10 @@ export const SMART_RESPONSES: SmartResponse[] = [
 
   // ==================== PRECIOS/COSTOS ====================
   {
-    keywords: ['precio', 'precios', 'costo', 'costos', 'cuánto', 'cuanto', 'tarifa', 'cotización', 'cotizacion', 'presupuesto', 'cobra'],
-    dialogue: 'Los precios varían por proyecto. ¡Agenda una sesión gratis para cotización!',
-    dialogueConversational: 'Los precios varían según el proyecto. ¿Quieres que te lleve a agendar una sesión gratis para cotización?',
-    action: { type: 'walk_to_pillar', target: 'calendly' },
+    keywords: ['precio', 'precios', 'costo', 'costos', 'cuánto', 'cuanto', 'tarifa', 'cotización', 'cotizacion', 'presupuesto', 'cobra', 'plan', 'planes'],
+    dialogue: '¡Te llevo a ver los planes y precios!',
+    dialogueConversational: 'Tenemos planes para personas, soporte y negocios. ¿Te llevo a la página de servicios para ver precios?',
+    action: { type: 'navigate', target: '/servicios' },
     emotion: 'helpful',
     priority: 90
   },
@@ -187,10 +187,10 @@ export const SMART_RESPONSES: SmartResponse[] = [
 
   // ==================== SERVICIOS GENERALES ====================
   {
-    keywords: ['servicio', 'servicios', 'qué ofreces', 'que ofreces', 'qué haces', 'que haces', 'ayuda', 'ayudar', 'ofrece'],
-    dialogue: 'Daniel ofrece consultoría de IA. ¡Te muestro los pilares!',
-    dialogueConversational: 'Daniel ofrece consultoría especializada en IA: LLMs, RAG, agentes, integraciones. ¿Te llevo a ver los servicios?',
-    action: { type: 'walk_to_pillar', target: 'about-daniel' },
+    keywords: ['servicio', 'servicios', 'qué ofreces', 'que ofreces', 'qué haces', 'que haces', 'ofrece'],
+    dialogue: '¡Te llevo a ver nuestros servicios! Personal, Soporte y Negocios.',
+    dialogueConversational: 'Ofrecemos agentes IA para personas, soporte y negocios. ¿Te llevo a ver los servicios y planes?',
+    action: { type: 'navigate', target: '/servicios' },
     emotion: 'helpful',
     priority: 60
   },
@@ -244,8 +244,9 @@ export const SMART_RESPONSES: SmartResponse[] = [
 
   // ==================== AYUDA ====================
   {
-    keywords: ['ayuda', 'help', 'no entiendo', 'confundido', 'perdido', 'cómo', 'como funciona'],
-    dialogue: 'Puedo mostrarte los servicios de Daniel o llevarte a agendar.',
+    keywords: ['ayuda', 'ayudar', 'help', 'no entiendo', 'confundido', 'perdido', 'cómo', 'como funciona'],
+    dialogue: 'Puedo mostrarte los servicios o llevarte a agendar una sesión gratis.',
+    dialogueConversational: '¿En qué te ayudo? Puedo mostrarte los servicios, llevarte a agendar una sesión gratis, o darte un tour por los pilares.',
     action: { type: 'idle' },
     emotion: 'helpful',
     priority: 40
@@ -258,9 +259,9 @@ export const SMART_RESPONSES: SmartResponse[] = [
  */
 export const SMART_FALLBACK: SmartResponse = {
   keywords: [],
-  dialogue: '¡Buena pregunta! Para respuestas más detalladas, te llevo a agendar una sesión con Daniel.',
-  dialogueConversational: 'Hmm, no estoy seguro de entender. ¿Buscas algo específico? Puedo mostrarte los servicios de Daniel o ayudarte a agendar una sesión.',
-  action: { type: 'walk_to_pillar', target: 'calendly' },
+  dialogue: '¡Buena pregunta! Te llevo a ver nuestros servicios.',
+  dialogueConversational: 'Hmm, no estoy seguro de entender. ¿Buscas algo específico? Puedo mostrarte los servicios y planes, o ayudarte a agendar una sesión gratis.',
+  action: { type: 'navigate', target: '/servicios' },
   emotion: 'helpful',
   priority: 0
 };

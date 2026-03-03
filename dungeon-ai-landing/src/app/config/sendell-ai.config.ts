@@ -45,7 +45,7 @@ export const SENDELL_RESPONSE_SCHEMA = JSON.stringify({
             type: "string",
             enum: ["walk_to_pillar", "walk_right", "walk_left", "stop", "jump",
                    "energize_pillar", "activate_pillar", "exit_pillar",
-                   "wave", "crash", "idle", "point_at"]
+                   "wave", "crash", "idle", "point_at", "navigate"]
           },
           target: { type: "string" },
           duration: { type: "number" }
@@ -141,6 +141,7 @@ export type RobotActionType =
   | 'walk_left'        // Walk left continuously
   | 'stop'             // Stop walking
   | 'jump'             // Jump
+  | 'navigate'         // Navigate to an internal route (e.g., /servicios)
   | 'energize_pillar'  // Energize a pillar (enter)
   | 'activate_pillar'  // Activate nearest pillar
   | 'exit_pillar'      // Exit current pillar

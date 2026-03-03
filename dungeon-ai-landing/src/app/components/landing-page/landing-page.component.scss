@@ -166,6 +166,52 @@
   }
 }
 
+// ========== v9.1: SERVICIOS CTA LINK ==========
+.fixed-servicios-link {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  pointer-events: auto;
+  text-decoration: none;
+  font-family: 'Source Code Pro', monospace;
+  font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: rgba(0, 255, 68, 0.7);
+  opacity: 0;
+  transition: opacity 1s ease-out, color 0.3s ease, text-shadow 0.3s ease;
+  cursor: pointer;
+  user-select: none;
+
+  &.visible {
+    opacity: 1;
+  }
+
+  &:hover {
+    color: rgba(0, 255, 68, 1);
+    text-shadow:
+      0 0 10px rgba(0, 255, 68, 0.6),
+      0 0 20px rgba(0, 255, 68, 0.3);
+
+    .servicios-arrow {
+      transform: translateX(4px);
+    }
+  }
+
+  .servicios-bracket {
+    color: rgba(0, 255, 68, 0.4);
+  }
+
+  .servicios-text {
+    text-transform: uppercase;
+  }
+
+  .servicios-arrow {
+    display: inline-block;
+    transition: transform 0.3s ease;
+  }
+}
+
 // ========== v4.6.4: CINEMATIC ZOOM EFFECT (Fixed) ==========
 // v4.6.4: Zoom ONLY affects title fade - hologram handles its own scale
 // This prevents the robot from floating when world was scaled
@@ -192,6 +238,12 @@
     letter-spacing: 0.3em;
     font-size: 0.65rem;
   }
+
+  .fixed-servicios-link {
+    bottom: 20px;
+    left: 20px;
+    font-size: 0.7rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -208,5 +260,11 @@
     font-size: 0.55rem;
     letter-spacing: 0.2em;
     margin-top: 0.3rem;
+  }
+
+  .fixed-servicios-link {
+    bottom: 15px;
+    left: 15px;
+    font-size: 0.65rem;
   }
 }
