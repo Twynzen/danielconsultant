@@ -32,7 +32,7 @@ import { ActionExecutorService } from '../../services/action-executor.service';
         HieroglyphicWallComponent,
         FlameHeadCharacterComponent,
         PillarSystemComponent,
-        // v5.0: Onboarding dialog system
+        // v5.0: Onboarding dialog system (deferred via @defer in template)
         SendellDialogComponent,
         // v5.1: Single torch in top-right corner
         TorchSystemComponent

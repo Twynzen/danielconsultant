@@ -32,7 +32,6 @@ import {
   HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { OnboardingService, OnboardingPhase } from '../../services/onboarding.service';
 import { PhysicsService } from '../../core/services/physics.service';
 import { InputService } from '../../core/services/input.service';
@@ -50,7 +49,7 @@ import { SendellResponse, RobotAction, getTourFallback, getPillarDescription, TO
 
 @Component({
     selector: 'app-sendell-dialog',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule],
     templateUrl: './sendell-dialog.component.html',
     styleUrls: ['./sendell-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

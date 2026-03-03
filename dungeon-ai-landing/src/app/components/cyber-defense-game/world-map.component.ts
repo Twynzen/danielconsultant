@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild, Output, EventEmitter, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, Output, EventEmitter, Input, Inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import * as maplibregl from 'maplibre-gl';
 import { DatacenterLevel, Difficulty } from './game.types';
@@ -557,6 +558,7 @@ export class WorldMapComponent implements OnInit, OnDestroy {
   @Input() clearedLevels: string[] = [];
 
   private map!: maplibregl.Map;
+  private maplibreCssLink: HTMLLinkElement | null = null;
   activeAlerts: DatacenterLevel[] = [];
 
   selectedDatacenter: DatacenterLevel | null = null;
@@ -576,7 +578,10 @@ export class WorldMapComponent implements OnInit, OnDestroy {
     return this.difficultyLabels[difficulty] || difficulty.toUpperCase();
   }
 
+  constructor(@Inject(DOCUMENT) private document: Document) {}
+
   ngOnInit(): void {
+    this.loadMaplibreCss();
     this.initMap();
   }
 
@@ -584,6 +589,19 @@ export class WorldMapComponent implements OnInit, OnDestroy {
     if (this.map) {
       this.map.remove();
     }
+    if (this.maplibreCssLink) {
+      this.maplibreCssLink.remove();
+    }
+  }
+
+  private loadMaplibreCss(): void {
+    if (this.document.querySelector('link[data-maplibre-css]')) return;
+    const link = this.document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'maplibre-gl.css';
+    link.setAttribute('data-maplibre-css', '');
+    this.document.head.appendChild(link);
+    this.maplibreCssLink = link;
   }
 
   private initMap(): void {

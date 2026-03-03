@@ -111,7 +111,8 @@
                 #chatInputEl
                 type="text"
                 class="chat-input"
-                [(ngModel)]="chatUserInput"
+                [value]="chatUserInput"
+                (input)="chatUserInput = $any($event.target).value"
                 (keydown)="onChatKeydown($event)"
                 (click)="onChatInputClick($event)"
                 (focus)="onInputFocus()"
