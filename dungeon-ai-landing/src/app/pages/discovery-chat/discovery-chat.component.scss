@@ -83,21 +83,6 @@
   }
 }
 
-.avatar-header {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: transparent;
-  border: 1.5px solid var(--primary);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  flex-shrink: 0;
-  text-shadow: 0 0 8px var(--primary-dim);
-}
 
 .header-info {
   h1 {
