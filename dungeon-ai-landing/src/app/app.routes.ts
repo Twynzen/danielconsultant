@@ -59,6 +59,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/servicios-landing/servicios-landing.component')
       .then(m => m.ServiciosLandingComponent)
   },
+  {
+    // Sendell Discovery — webchat with AI agent for product discovery
+    path: 'discovery',
+    loadComponent: () => import('./pages/discovery-chat/discovery-chat.component')
+      .then(m => m.DiscoveryChatComponent)
+  },
   // DeskFlow app is served by Netlify at /deskflow (separate Angular app)
   {
     path: '**',

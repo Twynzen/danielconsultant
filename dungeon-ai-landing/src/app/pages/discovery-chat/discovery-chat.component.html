@@ -1,0 +1,97 @@
+<div class="discovery-chat">
+  <!-- Header -->
+  <header class="chat-header">
+    <div class="header-left">
+      <a routerLink="/" class="back-btn" title="Volver">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      <div class="avatar-header">S</div>
+      <div class="header-info">
+        <h1>Sendell Discovery</h1>
+        <span class="status-dot" [class]="connectionStatus">{{ statusText }}</span>
+      </div>
+    </div>
+    <button class="btn-icon" (click)="newChat()" title="Nueva conversacion">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Messages -->
+  <main class="messages-container" #messagesContainer>
+    <div class="messages">
+      <!-- Welcome -->
+      @if (showWelcome) {
+        <div class="welcome-card">
+          <div class="welcome-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <h2>Bienvenido a Sendell Discovery</h2>
+          <p>Soy un asistente especializado en entender tu negocio. Cuentame sobre tu empresa y te ayudare a identificar oportunidades de mejora con IA.</p>
+        </div>
+      }
+
+      <!-- Messages list -->
+      @for (msg of messages; track $index) {
+        @if (msg.role === 'system') {
+          <div class="system-msg">{{ msg.text }}</div>
+        } @else {
+          <div class="message" [class]="msg.role">
+            <div class="avatar-msg">{{ msg.role === 'agent' ? 'S' : 'T' }}</div>
+            <div class="bubble-wrapper">
+              @if (msg.role === 'agent' && !msg.text && msg.streaming) {
+                <!-- Typing indicator -->
+                <div class="bubble typing-indicator">
+                  <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+              } @else {
+                <div class="bubble" [innerHTML]="renderHtml(msg.text)">
+                </div>
+                @if (msg.streaming) {
+                  <span class="cursor"></span>
+                }
+              }
+              <div class="msg-time">{{ formatTime(msg.time) }}</div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </main>
+
+  <!-- Error banner -->
+  @if (showError) {
+    <div class="error-banner">
+      <span>{{ errorMessage }}</span>
+      <button class="btn-retry" (click)="retryConnection()">Reintentar</button>
+    </div>
+  }
+
+  <!-- Input -->
+  <footer class="input-area">
+    <div class="input-wrapper">
+      <textarea
+        #messageInput
+        [(ngModel)]="inputText"
+        (ngModelChange)="onInputChange()"
+        (keydown)="onKeydown($event)"
+        placeholder="Escribe tu mensaje..."
+        rows="1"
+        maxlength="4000"
+      ></textarea>
+      <button class="btn-send" [disabled]="sendDisabled" (click)="sendMessage()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-footer">
+      <span class="powered-by">Powered by <a href="/" routerLink="/">Sendell</a></span>
+    </div>
+  </footer>
+</div>
