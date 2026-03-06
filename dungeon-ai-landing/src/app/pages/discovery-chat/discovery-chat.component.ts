@@ -74,8 +74,8 @@ export class DiscoveryChatComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   ngOnInit() {
-    this.title.setTitle('Sendell Discovery | Consultoria IA');
-    this.meta.updateTag({ name: 'description', content: 'Descubre como la IA puede transformar tu negocio. Habla con nuestro agente Discovery.' });
+    this.title.setTitle('Sendell Discovery | Consultoría IA');
+    this.meta.updateTag({ name: 'description', content: 'Descubre cómo la IA puede transformar tu negocio. Habla con nuestro agente Discovery.' });
     this.connect();
   }
 
@@ -106,16 +106,16 @@ export class DiscoveryChatComponent implements OnInit, OnDestroy, AfterViewInit 
 
     this.ws.onclose = (e) => {
       this.connected = false;
-      if (e.code === 1008) this.setError('Conexion cerrada: ' + (e.reason || 'token invalido'));
+      if (e.code === 1008) this.setError('Conexión cerrada:' + (e.reason || 'token inválido'));
       else { this.setStatus('offline', 'Desconectado'); if (e.code !== 1000) this.scheduleReconnect(); }
     };
 
-    this.ws.onerror = () => this.setError('Error de conexion');
+    this.ws.onerror = () => this.setError('Error de conexión');
   }
 
   private scheduleReconnect() {
     if (this.reconnectAttempts >= RECONNECT_MAX_ATTEMPTS) {
-      this.setError('No se puede reconectar. Recarga la pagina.');
+      this.setError('No se puede reconectar. Recarga la página.');
       return;
     }
     const delay = Math.min(RECONNECT_BASE_MS * Math.pow(1.5, this.reconnectAttempts), RECONNECT_MAX_MS);
@@ -132,7 +132,7 @@ export class DiscoveryChatComponent implements OnInit, OnDestroy, AfterViewInit 
       case 'ready':
         this.connected = true;
         this.reconnectAttempts = 0;
-        this.setStatus('online', 'En linea');
+        this.setStatus('online', 'En línea');
         this.hideErrorBanner();
         break;
 
@@ -166,7 +166,7 @@ export class DiscoveryChatComponent implements OnInit, OnDestroy, AfterViewInit 
         this.removeTypingIndicator();
         if (this.activeRun?.timer) clearTimeout(this.activeRun.timer);
         this.activeRun = null;
-        this.messages.push({ role: 'system', text: 'Error: ' + (msg.message || 'Algo salio mal'), time: new Date() });
+        this.messages.push({ role: 'system', text: 'Error: ' + (msg.message || 'Algo salió mal'), time: new Date() });
         this.cd.markForCheck();
         this.scrollToBottom();
         break;
