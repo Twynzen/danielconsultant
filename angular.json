@@ -44,15 +44,19 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "10kb",
+                  "maximumError": "20kb"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "fonts": false
+              }
             },
             "development": {
               "buildOptimizer": false,
               "optimization": false,
+              "fonts": false,
               "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,

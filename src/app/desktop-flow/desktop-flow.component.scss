@@ -1,0 +1,271 @@
+// Infinite Desktop Flow - Matrix Navigation
+.desktop-flow-container {
+  position: fixed;
+  inset: 0;
+  background: #0a0a14;
+  overflow: hidden;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// Matrix Background
+.matrix-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.matrix-grid {
+  position: absolute;
+  transform-origin: 0 0;
+  transition: none;
+}
+
+.grid-lines {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  pointer-events: none;
+}
+
+// Desktop Cell
+.desktop-cell {
+  position: absolute;
+  border: 2px solid rgba(0, 180, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 0 30px rgba(0, 120, 255, 0.08);
+
+  &:hover {
+    border-color: rgba(0, 200, 255, 0.5);
+    box-shadow: 0 0 50px rgba(0, 150, 255, 0.15);
+  }
+
+  &.active {
+    border-color: rgba(0, 220, 255, 0.7);
+    box-shadow: 0 0 60px rgba(0, 180, 255, 0.25), inset 0 0 30px rgba(0, 150, 255, 0.05);
+  }
+}
+
+.cell-label {
+  position: absolute;
+  top: -28px;
+  left: 8px;
+  font-size: 14px;
+  color: rgba(0, 200, 255, 0.7);
+  font-family: 'Consolas', monospace;
+  text-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cell-preview {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .active & {
+    pointer-events: auto;
+  }
+}
+
+.cell-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 10, 20, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.25s;
+  border-radius: 10px;
+
+  &:hover {
+    background: rgba(0, 10, 20, 0.2);
+  }
+}
+
+.cell-coords {
+  font-family: 'Consolas', monospace;
+  font-size: 24px;
+  color: rgba(0, 220, 255, 0.8);
+  text-shadow: 0 0 20px rgba(0, 200, 255, 0.4);
+  font-weight: bold;
+}
+
+.cell-enter-hint {
+  font-size: 12px;
+  color: rgba(0, 200, 255, 0.5);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+// HUD
+.hud {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hud-title {
+  font-family: 'Consolas', monospace;
+  font-size: 16px;
+  color: rgba(0, 220, 255, 0.9);
+  text-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+.hud-glow {
+  font-size: 22px;
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { text-shadow: 0 0 10px rgba(0, 200, 255, 0.5); }
+  50% { text-shadow: 0 0 25px rgba(0, 200, 255, 0.9), 0 0 50px rgba(0, 150, 255, 0.3); }
+}
+
+.hud-minimap {
+  background: rgba(0, 20, 40, 0.7);
+  border: 1px solid rgba(0, 180, 255, 0.3);
+  border-radius: 6px;
+  padding: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.minimap-grid {
+  position: relative;
+  min-width: 54px;
+  min-height: 42px;
+}
+
+.minimap-cell {
+  position: absolute;
+  width: 16px;
+  height: 12px;
+  border: 1px solid rgba(0, 180, 255, 0.4);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba(0, 200, 255, 0.3);
+  }
+
+  &.active {
+    background: rgba(0, 220, 255, 0.6);
+    border-color: rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 8px rgba(0, 200, 255, 0.5);
+  }
+}
+
+.hud-coords {
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  color: rgba(0, 200, 255, 0.6);
+}
+
+.hud-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(0, 180, 255, 0.3);
+    background: rgba(0, 20, 40, 0.6);
+    color: rgba(0, 220, 255, 0.8);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+    backdrop-filter: blur(5px);
+
+    &:hover {
+      background: rgba(0, 60, 100, 0.7);
+      border-color: rgba(0, 220, 255, 0.5);
+    }
+  }
+
+  .zoom-btn {
+    width: auto;
+    padding: 0 12px;
+    font-size: 11px;
+    margin-left: 8px;
+  }
+}
+
+.vert-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// Exit Zoom
+.exit-zoom {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10000;
+  padding: 10px 20px;
+  background: rgba(0, 20, 40, 0.85);
+  border: 1px solid rgba(0, 180, 255, 0.4);
+  color: rgba(0, 220, 255, 0.9);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Segoe UI', sans-serif;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+  animation: fadeIn 0.3s;
+
+  &:hover {
+    background: rgba(0, 40, 80, 0.9);
+    border-color: rgba(0, 220, 255, 0.6);
+    box-shadow: 0 0 20px rgba(0, 150, 255, 0.2);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Add Desktop Buttons
+.add-desktop {
+  position: fixed;
+  z-index: 10000;
+  padding: 6px 14px;
+  background: rgba(0, 20, 40, 0.7);
+  border: 1px solid rgba(0, 180, 255, 0.25);
+  color: rgba(0, 200, 255, 0.7);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: 'Consolas', monospace;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(0, 50, 80, 0.8);
+    border-color: rgba(0, 220, 255, 0.5);
+    color: rgba(0, 255, 255, 0.9);
+  }
+
+  &.top { top: 16px; left: 50%; transform: translateX(-50%); }
+  &.bottom { bottom: 16px; left: 50%; transform: translateX(-50%); }
+  &.left { left: 16px; top: 50%; transform: translateY(-50%); }
+  &.right { right: 16px; top: 50%; transform: translateY(-50%); }
+}
