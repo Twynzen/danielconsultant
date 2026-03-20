@@ -1,0 +1,76 @@
+@if (hasWindows()) {
+  <div class="windows-layer">
+
+    @for (win of desktopWindows(); track win.id) {
+      @if (!win.minimized) {
+        <div class="os-window"
+             [class.maximized]="win.maximized"
+             [class.focused]="win.focused"
+             [style.left.px]="win.maximized ? 0 : win.x"
+             [style.top.px]="win.maximized ? 0 : win.y"
+             [style.width.px]="win.maximized ? undefined : win.width"
+             [style.height.px]="win.maximized ? undefined : win.height"
+             [style.z-index]="win.zIndex"
+             (mousedown)="wm.focusWindow(win.id)">
+
+          <!-- Titlebar -->
+          <div class="os-titlebar" (mousedown)="startDrag($event, win)">
+            <span class="os-win-icon" [innerHTML]="getAppIcon(win.appType)"></span>
+            <span class="os-win-title">{{ win.title }}</span>
+            <div class="os-controls">
+              <button class="os-btn os-min"
+                      title="Minimizar"
+                      (click)="wm.minimizeWindow(win.id)"
+                      (mousedown)="$event.stopPropagation()">
+                <svg viewBox="0 0 10 1"><rect width="10" height="1.5" fill="currentColor"/></svg>
+              </button>
+              <button class="os-btn os-max"
+                      [title]="win.maximized ? 'Restaurar' : 'Maximizar'"
+                      (click)="wm.toggleMaximize(win.id)"
+                      (mousedown)="$event.stopPropagation()">
+                @if (win.maximized) {
+                  <svg viewBox="0 0 10 10">
+                    <rect x="2" y="0" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1"/>
+                    <rect x="0" y="2" width="8" height="8" fill="#0a0e14" stroke="currentColor" stroke-width="1"/>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 10 10">
+                    <rect x="0" y="0" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1"/>
+                  </svg>
+                }
+              </button>
+              <button class="os-btn os-close"
+                      title="Cerrar"
+                      (click)="wm.closeWindow(win.id)"
+                      (mousedown)="$event.stopPropagation()">
+                <svg viewBox="0 0 10 10">
+                  <line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.5"/>
+                  <line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- App content -->
+          <div class="os-content">
+            @if (win.appType === 'paint') {
+              <app-paint/>
+            } @else if (win.appType === 'notepad') {
+              <app-notepad/>
+            } @else if (win.appType === 'calculator') {
+              <app-calculator/>
+            }
+          </div>
+
+          <!-- Resize handle -->
+          @if (!win.maximized) {
+            <div class="os-resize-handle"
+                 (mousedown)="startResize($event, win)">
+            </div>
+          }
+        </div>
+      }
+    }
+
+  </div>
+}

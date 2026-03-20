@@ -9,6 +9,7 @@ import { StorageService } from '../../services/storage.service';
 import { MapService } from '../../services/map.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { DeviceService } from '../../services/device.service';
+import { WindowManagerService } from '../../services/window-manager.service';
 import { Desktop } from '../../models/desktop.model';
 import { SyncIndicatorComponent } from '../sync-indicator/sync-indicator.component';
 
@@ -31,6 +32,30 @@ export class ToolbarComponent {
   @Output() toggleStructure = new EventEmitter<void>();
   @Output() showVersionHistory = new EventEmitter<void>();
   @Output() importMap = new EventEmitter<File>();
+  @Output() openApp = new EventEmitter<{ type: 'paint' | 'notepad' | 'calculator'; title: string }>();
+
+  // Window Manager inyectado directamente
+  private wm = inject(WindowManagerService);
+
+  showTaskbar = signal(false);
+
+  currentDesktopWindows() {
+    return this.wm.windows().filter(w => w.desktopId === this.currentDesktopId);
+  }
+
+  launchApp(type: 'paint' | 'notepad' | 'calculator') {
+    const titles: Record<string, string> = { paint: 'Paint', notepad: 'Notepad', calculator: 'Calculadora' };
+    this.openApp.emit({ type, title: titles[type] });
+  }
+
+  focusWin(id: string) { this.wm.focusWindow(id); }
+  closeWin(id: string) { this.wm.closeWindow(id); }
+  restoreWin(id: string) { this.wm.minimizeWindow(id); }
+
+  getWindowIcon(appType: string): string {
+    const icons: Record<string, string> = { paint: '🎨', notepad: '📝', calculator: '🧮' };
+    return icons[appType] ?? '□';
+  }
 
   showThemePicker = signal(false);
   showMenu = signal(false);

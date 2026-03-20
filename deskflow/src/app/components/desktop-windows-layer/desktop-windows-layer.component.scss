@@ -1,0 +1,166 @@
+// ===== WINDOWS LAYER - float over DeskFlow canvas =====
+.windows-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+}
+
+// ===== OS WINDOW =====
+.os-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 12, 16, 0.96);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  pointer-events: all;
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 255, 65, 0.06);
+  transition: box-shadow 0.15s, border-color 0.15s;
+  min-width: 240px;
+  min-height: 160px;
+
+  &.focused {
+    border-color: rgba(0, 255, 65, 0.45);
+    box-shadow:
+      0 12px 48px rgba(0, 0, 0, 0.8),
+      0 0 20px rgba(0, 255, 65, 0.07),
+      0 0 0 1px rgba(0, 255, 65, 0.18);
+  }
+
+  &.maximized {
+    position: fixed !important;
+    inset: 40px 0 48px 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+// ===== TITLEBAR =====
+.os-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  background: rgba(4, 8, 10, 0.95);
+  border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+  cursor: grab;
+  flex-shrink: 0;
+  user-select: none;
+
+  &:active { cursor: grabbing; }
+}
+
+.os-win-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.os-win-title {
+  flex: 1;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .focused & {
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+
+.os-controls {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.os-btn {
+  width: 30px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.12s;
+
+  svg {
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &.os-close:hover {
+    background: rgba(255, 0, 64, 0.75);
+    color: #fff;
+  }
+
+  &.os-max:hover {
+    background: rgba(0, 255, 65, 0.15);
+    color: #00ff41;
+  }
+}
+
+// ===== APP CONTENT =====
+.os-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+// ===== RESIZE HANDLE =====
+.os-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: transparent;
+  pointer-events: all;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid rgba(0, 255, 65, 0.25);
+    border-bottom: 2px solid rgba(0, 255, 65, 0.25);
+    border-radius: 0 0 2px 0;
+    transition: border-color 0.15s;
+  }
+
+  &:hover::after {
+    border-color: rgba(0, 255, 65, 0.6);
+  }
+}

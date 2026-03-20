@@ -5,16 +5,19 @@ import {
   ElementRef,
   signal,
   computed,
-  effect
+  effect,
+  inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StorageService } from '../../services/storage.service';
 import { ThemeService } from '../../services/theme.service';
+import { WindowManagerService } from '../../services/window-manager.service';
 import { NoteComponent } from '../note/note.component';
 import { FolderComponent } from '../folder/folder.component';
 import { ConnectionsComponent } from '../connections/connections.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { DesktopWindowsLayerComponent } from '../desktop-windows-layer/desktop-windows-layer.component';
 import { Note, Folder, Desktop } from '../../models/desktop.model';
 
 interface Particle {
@@ -33,7 +36,8 @@ interface Particle {
     NoteComponent,
     FolderComponent,
     ConnectionsComponent,
-    ToolbarComponent
+    ToolbarComponent,
+    DesktopWindowsLayerComponent
   ],
   templateUrl: './desktop.component.html',
   styleUrl: './desktop.component.scss'
@@ -61,6 +65,14 @@ export class DesktopComponent {
   readonly folders = computed(() => this.currentDesktop()?.folders || []);
   readonly connections = computed(() => this.currentDesktop()?.connections || []);
   readonly allDesktops = computed(() => this.storage.desktops());
+
+  // Window Manager para apps flotantes
+  readonly currentDesktopId = computed(() => this.storage.currentDesktop()?.id ?? 'main');
+  private wm = inject(WindowManagerService);
+
+  onOpenApp(event: { type: 'paint' | 'notepad' | 'calculator'; title: string }) {
+    this.wm.openWindow(this.currentDesktopId(), event.type, event.title);
+  }
 
   constructor(
     public storage: StorageService,

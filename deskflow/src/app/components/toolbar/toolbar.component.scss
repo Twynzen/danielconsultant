@@ -611,3 +611,127 @@
     transform: translateY(0);
   }
 }
+
+// ===== APP LAUNCHERS =====
+.app-launchers {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.app-launch-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ===== TOOLBAR SEPARATOR =====
+.toolbar-sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+// ===== MINI TASKBAR (ventanas abiertas) =====
+.mini-taskbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 320px;
+  overflow: hidden;
+}
+
+.taskbar-sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.07);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.taskbar-win-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid rgba(0, 255, 65, 0.12);
+  border-radius: 5px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  transition: all 0.15s;
+  max-width: 120px;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(0, 255, 65, 0.1);
+    border-color: rgba(0, 255, 65, 0.3);
+    color: #fff;
+  }
+
+  &.focused {
+    background: rgba(0, 255, 65, 0.12);
+    border-color: rgba(0, 255, 65, 0.4);
+    color: #00ff41;
+    box-shadow: 0 2px 0 rgba(0, 255, 65, 0.5);
+  }
+
+  &.minimized {
+    opacity: 0.45;
+    border-style: dashed;
+  }
+}
+
+.tw-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60px;
+}
+
+.tw-close {
+  opacity: 0;
+  font-size: 13px;
+  line-height: 1;
+  color: rgba(255, 0, 64, 0.6);
+  padding: 0 2px;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+
+  .taskbar-win-btn:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    color: #ff0040 !important;
+  }
+}

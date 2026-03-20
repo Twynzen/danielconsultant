@@ -16,13 +16,18 @@
 <!-- Toolbar -->
 <app-toolbar
   [breadcrumb]="breadcrumb()"
+  [currentDesktopId]="currentDesktopId()"
   (addNote)="onAddNote()"
   (addFolder)="onAddFolder()"
   (navigateTo)="onNavigateTo($event)"
   (exportData)="onExportData()"
   (importData)="onImportData()"
   (toggleStructure)="onToggleStructure()"
+  (openApp)="onOpenApp($event)"
 ></app-toolbar>
+
+<!-- Capa de ventanas flotantes OS -->
+<app-desktop-windows-layer [desktopId]="currentDesktopId()"></app-desktop-windows-layer>
 
 <!-- Input oculto para importar -->
 <input
