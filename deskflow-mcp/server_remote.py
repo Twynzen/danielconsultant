@@ -166,6 +166,7 @@ async def root():
             "sendell_context": "/api/v2/sendell/context",
             "agent_briefing": "/api/agent/briefing",
             "agent_ingest": "/api/agent/ingest",
+            "agent_ingest_ics": "/api/agent/ingest-ics",
             "agent_priorities": "/api/agent/priorities",
             "agent_keys": "/api/agent/keys",
         }
@@ -815,6 +816,21 @@ class BriefingRequest(BaseModel):
     stale_threshold_days: int = 14
 
 
+class IcsIngestRequest(BaseModel):
+    # Raw ICS feed (VCALENDAR text). Can be a pasted export or the body of an
+    # http-accessible .ics URL — we don't fetch it ourselves so the caller
+    # stays in control of whatever auth the feed needs.
+    ics: str
+    workspace_id: Optional[str] = None
+    target_desktop_id: Optional[str] = None
+    connector_id: Optional[str] = None
+    # Only ingest events that start on or after this cutoff. Defaults to
+    # today so past meetings don't flood the workspace.
+    start_after: Optional[str] = None
+    # Safety cap per ingestion call.
+    max_events: int = 100
+
+
 # ---------- Helpers ----------------------------------------------------------
 
 VALID_TYPES = {"note", "task", "project", "reference", "contact",
@@ -1275,6 +1291,252 @@ async def agent_priorities(
     scored.sort(key=lambda r: r["score"], reverse=True)
     log_api_call(api_key, "priorities.read", "agent_priorities")
     return {"workspace_id": wid, "items": scored[:max_items]}
+
+
+# ---------- ICS (Google Calendar / iCal) ingestion ---------------------------
+#
+# Rather than implementing OAuth against every calendar provider, we accept
+# the raw ICS feed and parse it here. Any provider exposing an ICS URL works
+# (Google, Outlook, Apple, Fastmail, CalDAV, ...). The caller passes the ICS
+# body it already has — this keeps provider auth out of the MCP server.
+
+def _ics_unfold(ics_text: str) -> list[str]:
+    """ICS lines can wrap with a leading space/tab. Unfold them per RFC 5545."""
+    lines = ics_text.replace("\r\n", "\n").split("\n")
+    unfolded: list[str] = []
+    for line in lines:
+        if line.startswith((" ", "\t")) and unfolded:
+            unfolded[-1] += line[1:]
+        else:
+            unfolded.append(line)
+    return unfolded
+
+
+def _ics_parse_dt(value: str) -> Optional[datetime]:
+    """
+    Parse a DTSTART/DTEND value. Returns a timezone-aware UTC datetime or
+    None when the value is unparseable. VALUE=DATE (all-day) produces a
+    midnight-UTC datetime on that date.
+    """
+    if not value:
+        return None
+    raw = value.strip()
+    # Strip a trailing Z and remember it so we can mark UTC.
+    is_utc = raw.endswith("Z")
+    raw = raw.rstrip("Z")
+
+    try:
+        if "T" in raw:
+            dt = datetime.strptime(raw, "%Y%m%dT%H%M%S")
+        else:
+            dt = datetime.strptime(raw, "%Y%m%d")
+    except ValueError:
+        return None
+
+    return dt.replace(tzinfo=timezone.utc) if is_utc or "T" not in raw else dt.replace(tzinfo=timezone.utc)
+
+
+def _ics_events(ics_text: str) -> list[dict[str, Any]]:
+    """Extract events from an ICS feed as dicts with uid/summary/start/end/location/description."""
+    events: list[dict[str, Any]] = []
+    current: Optional[dict[str, Any]] = None
+
+    for raw_line in _ics_unfold(ics_text):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line == "BEGIN:VEVENT":
+            current = {}
+            continue
+        if line == "END:VEVENT":
+            if current is not None:
+                events.append(current)
+            current = None
+            continue
+        if current is None:
+            continue
+
+        # Split KEY[;PARAMS]:VALUE — params live between the first ; and :.
+        sep = line.find(":")
+        if sep == -1:
+            continue
+        head = line[:sep]
+        value = line[sep + 1:]
+        key = head.split(";", 1)[0].upper()
+
+        if key == "UID":
+            current["uid"] = value
+        elif key == "SUMMARY":
+            current["summary"] = _ics_unescape(value)
+        elif key == "DESCRIPTION":
+            current["description"] = _ics_unescape(value)
+        elif key == "LOCATION":
+            current["location"] = _ics_unescape(value)
+        elif key == "DTSTART":
+            current["start"] = _ics_parse_dt(value)
+        elif key == "DTEND":
+            current["end"] = _ics_parse_dt(value)
+
+    return events
+
+
+def _ics_unescape(value: str) -> str:
+    return (value
+            .replace("\\n", "\n")
+            .replace("\\N", "\n")
+            .replace("\\,", ",")
+            .replace("\\;", ";")
+            .replace("\\\\", "\\"))
+
+
+@app.post("/api/agent/ingest-ics")
+async def agent_ingest_ics(
+    request: IcsIngestRequest,
+    api_key: dict = Depends(require_scope("write")),
+):
+    """
+    Ingest an ICS feed (Google Calendar / Outlook / Apple / any iCal source).
+
+    For each VEVENT in the feed a note is created (or kept idempotent via
+    the event UID) with metadata.type='meeting', dueDate=DTSTART and
+    linkedResources pointing back to the original UID.
+    """
+    if not request.ics or not request.ics.strip():
+        raise HTTPException(status_code=400, detail="ics body is required")
+    if len(request.ics) > 2_000_000:
+        raise HTTPException(status_code=400, detail="ICS payload too large (2MB cap)")
+
+    max_events = min(max(1, request.max_events), 500)
+
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+    workspace_id = request.workspace_id or _resolve_default_workspace(service, user_id)
+
+    # Resolve target desktop.
+    desktop_id = request.target_desktop_id
+    if not desktop_id:
+        first = service.table("desktops") \
+            .select("id") \
+            .eq("workspace_id", workspace_id) \
+            .order("position_order") \
+            .limit(1) \
+            .execute()
+        if not first.data:
+            raise HTTPException(status_code=404, detail="Workspace has no desktops")
+        desktop_id = first.data[0]["id"]
+
+    cutoff = _parse_iso(request.start_after) if request.start_after else _utcnow()
+
+    events = _ics_events(request.ics)[:max_events]
+
+    created = 0
+    updated = 0
+    skipped = 0
+    errors: list[str] = []
+
+    for evt in events:
+        try:
+            start: Optional[datetime] = evt.get("start")
+            summary = evt.get("summary") or "(Sin título)"
+            uid = evt.get("uid")
+
+            if start is None:
+                skipped += 1
+                continue
+            if cutoff is not None and start < cutoff:
+                skipped += 1
+                continue
+
+            metadata: dict[str, Any] = {
+                "type": "meeting",
+                "status": "active",
+                "source": f"connector:calendar:{api_key['name']}",
+                "dueDate": start.isoformat(),
+                "tags": ["calendar"],
+            }
+            if uid:
+                metadata["linkedResources"] = [{
+                    "type": "ics",
+                    "uri": f"ics:uid:{uid}",
+                    "label": "Calendar event UID",
+                }]
+
+            content_lines = []
+            if evt.get("location"):
+                content_lines.append(f"📍 {evt['location']}")
+            if evt.get("description"):
+                content_lines.append(evt["description"])
+            content = "\n\n".join(content_lines)
+
+            # Idempotency: if the event UID was already ingested (linkedResources
+            # contains its uri), update instead of inserting.
+            existing_id = None
+            if uid:
+                match = service.table("notes") \
+                    .select("id") \
+                    .eq("desktop_id", desktop_id) \
+                    .contains("metadata->linkedResources", [{"uri": f"ics:uid:{uid}"}]) \
+                    .limit(1) \
+                    .execute()
+                if match.data:
+                    existing_id = match.data[0]["id"]
+
+            if existing_id:
+                service.table("notes") \
+                    .update({
+                        "title": summary[:200],
+                        "content": content,
+                        "metadata": metadata,
+                        "updated_at": _utcnow().isoformat(),
+                    }) \
+                    .eq("id", existing_id) \
+                    .execute()
+                updated += 1
+            else:
+                service.table("notes").insert({
+                    "desktop_id": desktop_id,
+                    "title": summary[:200],
+                    "content": content,
+                    "position_x": 100,
+                    "position_y": 100,
+                    "width": 300,
+                    "height": 180,
+                    "color": "#15311f",
+                    "z_index": 1,
+                    "minimized": False,
+                    "metadata": metadata,
+                }).execute()
+                created += 1
+
+        except Exception as e:
+            errors.append(f"{evt.get('uid') or evt.get('summary', '?')}: {e}")
+
+    if request.connector_id:
+        try:
+            service.table("connectors") \
+                .update({
+                    "last_sync_at": _utcnow().isoformat(),
+                    "last_sync_status": f"ok ({created} new, {updated} updated)"
+                        if not errors else f"partial ({len(errors)} errors)",
+                }) \
+                .eq("id", request.connector_id) \
+                .eq("user_id", user_id) \
+                .execute()
+        except Exception:
+            pass
+
+    log_api_call(api_key, "ingest.ics", "agent_ingest_ics",
+                 resource_id=desktop_id, status=200 if not errors else 207)
+
+    return {
+        "status": "ok" if not errors else "partial",
+        "workspace_id": workspace_id,
+        "desktop_id": desktop_id,
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+        "errors": errors[:20],
+    }
 
 
 # =============================================================================

@@ -1,0 +1,140 @@
+:host {
+  display: block;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  z-index: 50;
+}
+
+.meta-panel {
+  background: #0a120a;
+  border: 1px solid rgba(0, 255, 65, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 0 12px rgba(0, 255, 65, 0.18);
+  color: #c8ffd6;
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-size: 11px;
+  width: 260px;
+  padding: 8px 10px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #00ff41;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+
+  .close {
+    background: transparent;
+    border: none;
+    color: #00ff41;
+    font-size: 14px;
+    cursor: pointer;
+    line-height: 1;
+    &:hover { color: #ff6b6b; }
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+
+  label {
+    width: 64px;
+    flex-shrink: 0;
+    color: #7ddc8e;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  select,
+  input[type='datetime-local'],
+  input[type='number'],
+  input[type='text'] {
+    flex: 1;
+    min-width: 0;
+    background: #050a05;
+    border: 1px solid rgba(0, 255, 65, 0.3);
+    color: #c8ffd6;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 3px 6px;
+    outline: none;
+
+    &:focus { border-color: #00ff41; }
+  }
+
+  .suffix {
+    color: #7ddc8e;
+    font-size: 10px;
+  }
+}
+
+.tags-row {
+  align-items: flex-start;
+
+  .tags {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tag-input {
+    flex: 1;
+    min-width: 80px;
+    border: 1px dashed rgba(0, 255, 65, 0.4);
+    padding: 2px 6px;
+  }
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 255, 65, 0.14);
+  border: 1px solid rgba(0, 255, 65, 0.4);
+  padding: 2px 6px;
+  font-size: 10px;
+
+  button {
+    background: transparent;
+    border: none;
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+    padding: 0;
+  }
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 255, 65, 0.18);
+
+  button {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(0, 255, 65, 0.35);
+    color: #c8ffd6;
+    padding: 4px 6px;
+    font-family: inherit;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+
+    &:hover { border-color: #00ff41; color: #00ff41; }
+    &.danger:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  }
+}

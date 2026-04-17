@@ -1,0 +1,82 @@
+<div class="meta-panel" (click)="$event.stopPropagation()">
+  <header>
+    <span>Metadata</span>
+    <button class="close" type="button" (click)="close.emit()" aria-label="Cerrar">×</button>
+  </header>
+
+  <div class="row">
+    <label>Tipo</label>
+    <select [ngModel]="metadata().type ?? ''" (ngModelChange)="setType($event)">
+      <option value="">—</option>
+      @for (t of types; track t) { <option [value]="t">{{ t }}</option> }
+    </select>
+  </div>
+
+  <div class="row">
+    <label>Estado</label>
+    <select [ngModel]="metadata().status ?? ''" (ngModelChange)="setStatus($event)">
+      <option value="">—</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ s }}</option> }
+    </select>
+  </div>
+
+  <div class="row">
+    <label>Prioridad</label>
+    <select [ngModel]="metadata().priority ?? ''" (ngModelChange)="setPriority($event)">
+      <option value="">—</option>
+      @for (p of priorities; track p) {
+        <option [value]="p">{{ p }} {{ p === 1 ? '(urgente)' : p === 5 ? '(algún día)' : '' }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="row">
+    <label>Vence</label>
+    <input
+      type="datetime-local"
+      [ngModel]="dueDateLocal()"
+      (ngModelChange)="setDueDate($event)" />
+  </div>
+
+  <div class="row">
+    <label>Avance</label>
+    <input
+      type="number"
+      min="0"
+      max="100"
+      step="5"
+      placeholder="0-100"
+      [ngModel]="metadata().progress ?? ''"
+      (ngModelChange)="setProgress($event)" />
+    <span class="suffix">%</span>
+  </div>
+
+  <div class="row tags-row">
+    <label>Tags</label>
+    <div class="tags">
+      @for (tag of tags(); track tag) {
+        <span class="tag">
+          {{ tag }}
+          <button type="button" (click)="removeTag(tag)" aria-label="Quitar tag">×</button>
+        </span>
+      }
+      <input
+        type="text"
+        class="tag-input"
+        placeholder="nuevo tag…"
+        [ngModel]="tagsDraft()"
+        (ngModelChange)="tagsDraft.set($event)"
+        (keydown.enter)="addTagFromDraft(); $event.preventDefault()"
+        (blur)="addTagFromDraft()" />
+    </div>
+  </div>
+
+  <footer>
+    <button type="button" class="secondary" (click)="markReviewed()">
+      Marcar revisado
+    </button>
+    <button type="button" class="danger" (click)="clearAll()">
+      Limpiar todo
+    </button>
+  </footer>
+</div>

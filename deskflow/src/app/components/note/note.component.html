@@ -74,6 +74,18 @@
       <div class="note-actions">
         <button
           class="action-btn tooltip"
+          [class.active]="showMetadataPanel()"
+          data-tooltip="Metadata"
+          (click)="toggleMetadataPanel(); $event.stopPropagation()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </button>
+        <button
+          class="action-btn tooltip"
           data-tooltip="Conectar"
           (click)="onStartConnection(); $event.stopPropagation()"
         >
@@ -103,7 +115,23 @@
           </svg>
         </button>
       </div>
+
+      @if (showMetadataPanel()) {
+        <app-note-metadata-panel
+          [note]="note"
+          (close)="showMetadataPanel.set(false)"
+          (metadataChange)="onMetadataChange($event)">
+        </app-note-metadata-panel>
+      }
     </div>
+
+    @if (metadataBadges().length > 0 && !note.minimized) {
+      <div class="note-meta-badges">
+        @for (badge of metadataBadges(); track badge) {
+          <span class="note-meta-badge">{{ badge }}</span>
+        }
+      </div>
+    }
 
     <!-- Content -->
     <div class="note-content">
