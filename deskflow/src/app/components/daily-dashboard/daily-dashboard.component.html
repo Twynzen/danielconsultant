@@ -1,0 +1,79 @@
+<div class="daily">
+  <header class="daily-header">
+    <div class="daily-row">
+      <a routerLink="/" class="daily-back">‹ Volver al escritorio</a>
+      <a routerLink="/views" class="daily-link">Smart Views →</a>
+    </div>
+    <h1>Daily Dashboard</h1>
+    <p class="daily-date">{{ today | date:'fullDate' }}</p>
+  </header>
+
+  <section class="daily-grid">
+    <article class="daily-card priorities">
+      <h2>Prioridades de hoy</h2>
+      @if (priorities().length === 0) {
+        <p class="daily-empty">Sin items priorizados. Asigna metadata a tus notas para que aparezcan aquí.</p>
+      }
+      <ol>
+        @for (item of priorities(); track item.note.id) {
+          <li (click)="open(item)">
+            <div class="title">{{ item.note.title }}</div>
+            <div class="meta">
+              <span class="desktop">{{ item.desktop.name }}</span>
+              @if (item.metadata.type) { <span class="chip">{{ item.metadata.type }}</span> }
+              @if (item.metadata.priority) { <span class="chip">P{{ item.metadata.priority }}</span> }
+              @if (item.metadata.dueDate) { <span class="chip">{{ item.metadata.dueDate | date:'shortDate' }}</span> }
+            </div>
+            @if (item.reasons.length > 0) {
+              <div class="reasons">
+                @for (reason of item.reasons; track reason) {
+                  <span class="reason">{{ reason }}</span>
+                }
+              </div>
+            }
+          </li>
+        }
+      </ol>
+    </article>
+
+    <article class="daily-card blocked">
+      <h2>Bloqueados ({{ blocked().length }})</h2>
+      @if (blocked().length === 0) {
+        <p class="daily-empty">Nada bloqueado. 🟢</p>
+      }
+      <ul>
+        @for (item of blocked(); track item.note.id) {
+          <li (click)="open(item)">
+            <strong>{{ item.note.title }}</strong>
+            <small>{{ item.desktop.name }}</small>
+          </li>
+        }
+      </ul>
+    </article>
+
+    <article class="daily-card projects">
+      <h2>Proyectos activos ({{ projectSummary().active }})</h2>
+      <div class="proj-summary">
+        <span>Total: {{ projectSummary().total }}</span>
+        <span class="proj-blocked">Bloqueados: {{ projectSummary().blocked }}</span>
+        <span class="proj-completed">Completados: {{ projectSummary().completed }}</span>
+      </div>
+      <ul>
+        @for (item of activeProjects(); track item.note.id) {
+          <li (click)="open(item)">
+            <strong>{{ item.note.title }}</strong>
+            <small>Actualizado {{ item.note.updatedAt | date:'shortDate' }}</small>
+            @if (item.metadata.progress !== undefined) {
+              <div class="progress-bar">
+                <div class="bar" [style.width.%]="item.metadata.progress"></div>
+              </div>
+            }
+          </li>
+        }
+        @if (activeProjects().length === 0) {
+          <li class="daily-empty">Marca tus notas como type=project, status=active para que aparezcan aquí.</li>
+        }
+      </ul>
+    </article>
+  </section>
+</div>

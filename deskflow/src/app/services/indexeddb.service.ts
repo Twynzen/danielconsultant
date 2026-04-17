@@ -48,6 +48,9 @@ export interface LocalNote {
   color?: string;
   zIndex: number;
   minimized: boolean;
+  // Intelligence layer (see NoteMetadata in desktop.model.ts).
+  // Stored as a plain object so Dexie serialises it transparently.
+  metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   syncedAt?: Date;

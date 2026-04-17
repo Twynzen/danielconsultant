@@ -3,6 +3,7 @@ import {
   AppState,
   Desktop,
   Note,
+  NoteMetadata,
   Folder,
   Connection,
   ThemeConfig,
@@ -190,6 +191,47 @@ export class StorageService {
   bringNoteToFront(noteId: string): void {
     const maxZ = this.getMaxZIndex();
     this.updateNote(noteId, { zIndex: maxZ + 1 });
+  }
+
+  /**
+   * Merge a partial metadata patch into a note's existing metadata.
+   * Set a key to `undefined` in `patch` to clear it.
+   */
+  updateNoteMetadata(noteId: string, patch: Partial<NoteMetadata>): void {
+    this.updateState(state => ({
+      ...state,
+      desktops: state.desktops.map(d =>
+        d.id === state.currentDesktopId
+          ? {
+              ...d,
+              notes: d.notes.map(n => {
+                if (n.id !== noteId) return n;
+                const merged: NoteMetadata = { ...(n.metadata ?? {}), ...patch };
+                // Strip undefined entries so cleared fields don't survive serialisation.
+                for (const key of Object.keys(merged) as (keyof NoteMetadata)[]) {
+                  if (merged[key] === undefined) delete merged[key];
+                }
+                return { ...n, metadata: merged, updatedAt: new Date() };
+              })
+            }
+          : d
+      )
+    }));
+  }
+
+  /**
+   * Returns every note across every desktop with the desktop it belongs to.
+   * Used by Smart Views and the Daily Intelligence dashboard, which both need
+   * a flat, cross-desktop projection of the workspace.
+   */
+  getAllNotes(): Array<{ note: Note; desktop: Desktop }> {
+    const out: Array<{ note: Note; desktop: Desktop }> = [];
+    for (const desktop of this.state().desktops) {
+      for (const note of desktop.notes) {
+        out.push({ note, desktop });
+      }
+    }
+    return out;
   }
 
   private getMaxZIndex(): number {

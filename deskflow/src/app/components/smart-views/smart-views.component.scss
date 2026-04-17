@@ -1,0 +1,241 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #050a05;
+  color: #c8ffd6;
+  font-family: 'Courier New', monospace;
+}
+
+.smart-views {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+
+.sv-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    color: #00ff41;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+    font-size: 1.8rem;
+  }
+
+  .sv-sub { color: #7ddc8e; margin: 0; font-size: 0.9rem; }
+}
+
+.sv-back {
+  color: #00ff41;
+  text-decoration: none;
+  font-size: 0.85rem;
+  &:hover { text-decoration: underline; }
+}
+
+.sv-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.25);
+  margin-bottom: 16px;
+}
+
+.sv-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #7ddc8e;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+
+  &.active {
+    color: #00ff41;
+    border-color: rgba(0, 255, 65, 0.4);
+    border-bottom-color: transparent;
+    background: rgba(0, 255, 65, 0.05);
+  }
+
+  &:hover:not(.active) { color: #c8ffd6; }
+}
+
+.sv-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+
+  input[type='search'],
+  select {
+    background: #0c180c;
+    color: #c8ffd6;
+    border: 1px solid rgba(0, 255, 65, 0.3);
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+
+  input[type='search'] { flex: 1; min-width: 220px; }
+}
+
+.sv-reset {
+  background: transparent;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  color: #7ddc8e;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover { color: #00ff41; border-color: #00ff41; }
+}
+
+/* ---------------- Table ---------------- */
+.sv-table-wrap { overflow-x: auto; }
+
+.sv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th, td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.12);
+    text-align: left;
+  }
+
+  thead th {
+    color: #00ff41;
+    border-bottom-color: rgba(0, 255, 65, 0.4);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    transition: background 120ms;
+    &:hover { background: rgba(0, 255, 65, 0.05); }
+  }
+
+  .sv-title { color: #00ff41; }
+  .sv-score { text-align: right; color: #7ddc8e; }
+}
+
+/* ---------------- Kanban ---------------- */
+.sv-kanban {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.sv-col {
+  background: rgba(0, 255, 65, 0.04);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  padding: 12px;
+  min-height: 200px;
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+    color: #00ff41;
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+.sv-count {
+  color: #7ddc8e;
+  font-weight: normal;
+}
+
+.sv-card {
+  background: #0c180c;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 120ms;
+
+  &:hover { border-color: #00ff41; }
+
+  .sv-card-title {
+    color: #c8ffd6;
+    font-weight: bold;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+
+  .sv-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+
+/* ---------------- Timeline ---------------- */
+.sv-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 16px;
+    padding: 12px 8px;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.12);
+    cursor: pointer;
+    transition: background 120ms;
+
+    &:hover { background: rgba(0, 255, 65, 0.05); }
+  }
+
+  time {
+    color: #00ff41;
+    font-size: 0.85rem;
+  }
+
+  .sv-tl-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  small { color: #7ddc8e; }
+}
+
+/* ---------------- Misc ---------------- */
+.sv-chip {
+  display: inline-block;
+  background: rgba(0, 255, 65, 0.12);
+  color: #c8ffd6;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  margin: 2px 2px 0 0;
+}
+
+.sv-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.sv-reason {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: #ffb84d;
+  border: 1px dashed rgba(255, 184, 77, 0.5);
+  padding: 1px 5px;
+}
+
+.sv-empty {
+  color: #6a8a72;
+  text-align: center;
+  font-style: italic;
+  padding: 16px 0;
+}

@@ -21,6 +21,20 @@ export const routes: Routes = [
     canActivate: [guestGuard]
   },
   {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./components/daily-dashboard/daily-dashboard.component')
+        .then(m => m.DailyDashboardComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'views',
+    loadComponent: () =>
+      import('./components/smart-views/smart-views.component')
+        .then(m => m.SmartViewsComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: ''
   }
