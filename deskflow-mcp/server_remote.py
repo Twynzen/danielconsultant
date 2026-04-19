@@ -992,7 +992,7 @@ async def list_api_keys(request: ApiKeyListRequest):
 
 
 @app.delete("/api/agent/keys/{key_id}")
-async def revoke_api_key(key_id: str, user_token: str = Query(...)):
+async def revoke_api_key(key_id: str, user_token: str = Header(..., alias="X-User-Token")):
     client = await get_supabase_client(user_token)
     me = client.auth.get_user()
     if not me or not me.user:

@@ -334,8 +334,8 @@ export class NoteComponent {
   }
 
   /** Compact chip text used in the header when the panel is closed. */
-  metadataBadges(): string[] {
-    const m = this.note.metadata;
+  metadataBadges = computed(() => {
+    const m = this.note?.metadata;
     if (!m) return [];
     const out: string[] = [];
     if (m.type) out.push(m.type);
@@ -348,7 +348,7 @@ export class NoteComponent {
       }
     }
     return out;
-  }
+  });
 
   // ==================== DROP DE IMÁGENES ====================
   onDragOver(event: DragEvent): void {

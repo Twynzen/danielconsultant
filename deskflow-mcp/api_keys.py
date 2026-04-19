@@ -92,6 +92,10 @@ def verify_api_key(
             detail=f"API key missing required scope: {required_scope}",
         )
 
+    # TODO: Enforce rate_limit per API key (row["rate_limit"] requests/min).
+    # Currently stored but not checked — implement with a sliding window
+    # counter (Redis or in-memory) when traffic justifies it.
+
     # Touch last_used_at; intentionally fire-and-forget.
     try:
         client.table("api_keys") \

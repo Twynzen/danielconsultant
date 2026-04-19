@@ -121,10 +121,16 @@ def register_connector_tools(mcp: FastMCP):
             raise ValueError("connector_id must be a UUID")
 
         client = await get_authenticated_client()
-        client.table("connectors") \
+        me = client.auth.get_user()
+        if not me or not me.user:
+            raise ValueError("Could not resolve authenticated user")
+        result = client.table("connectors") \
             .delete() \
             .eq("id", connector_id) \
+            .eq("user_id", me.user.id) \
             .execute()
+        if not result.data:
+            raise ValueError(f"Connector {connector_id} not found or not owned by you")
         return {"message": f"Connector {connector_id} eliminado"}
 
     @mcp.tool()
@@ -141,13 +147,17 @@ def register_connector_tools(mcp: FastMCP):
             raise ValueError("connector_id must be a UUID")
 
         client = await get_authenticated_client()
+        me = client.auth.get_user()
+        if not me or not me.user:
+            raise ValueError("Could not resolve authenticated user")
         result = client.table("connectors") \
             .update({
                 "last_sync_at": datetime.now(timezone.utc).isoformat(),
                 "last_sync_status": status,
             }) \
             .eq("id", connector_id) \
+            .eq("user_id", me.user.id) \
             .execute()
         if not result.data:
-            raise ValueError(f"Connector {connector_id} not found")
+            raise ValueError(f"Connector {connector_id} not found or not owned by you")
         return result.data[0]
