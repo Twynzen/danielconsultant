@@ -33,6 +33,7 @@ from tools import (
     register_view_tools,
     register_agent_api_tools,
     register_connector_tools,
+    register_calendar_tools,
 )
 from resources import register_resources
 from prompts import register_prompts
@@ -84,6 +85,9 @@ def create_server() -> FastMCP:
 
     log("Registering connector tools...")
     register_connector_tools(mcp)
+
+    log("Registering calendar tools...")
+    register_calendar_tools(mcp)
 
     # Register resources
     log("Registering resources...")

@@ -15,6 +15,7 @@ from .intelligence import register_intelligence_tools
 from .views import register_view_tools
 from .agent_api import register_agent_api_tools
 from .connectors import register_connector_tools
+from .calendar import register_calendar_tools
 
 __all__ = [
     "register_workspace_tools",
@@ -29,4 +30,5 @@ __all__ = [
     "register_view_tools",
     "register_agent_api_tools",
     "register_connector_tools",
+    "register_calendar_tools",
 ]
