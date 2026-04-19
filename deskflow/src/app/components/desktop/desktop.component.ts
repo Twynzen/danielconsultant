@@ -53,6 +53,11 @@ export class DesktopComponent {
   showStructure = signal(false);
   isTransitioning = signal(false);
   transitionDirection = signal<'in' | 'out'>('in');
+  isRecentering = signal(false);
+
+  private readonly TOOLBAR_OFFSET = 80;          // 50px toolbar + 30px breathing room
+  private readonly FOLDER_FOOTPRINT = 120;       // approximate folder size in px
+  private readonly RECENTER_ANIM_MS = 400;
 
   // Partículas para efecto visual
   particles = signal<Particle[]>([]);
@@ -120,6 +125,89 @@ export class DesktopComponent {
     if (confirm('¿Eliminar esta carpeta y todo su contenido?')) {
       this.storage.deleteFolder(folderId);
     }
+  }
+
+  // ==================== RECENTRAR ELEMENTOS ====================
+  /**
+   * Bring every off-screen note/folder back into the visible viewport while
+   * preserving their relative spacing. Triggered from the toolbar when an
+   * element has drifted behind the toolbar or beyond the viewport edges.
+   */
+  onRecenter(): void {
+    const area = this.desktopArea?.nativeElement;
+    if (!area) return;
+
+    const notes = this.notes();
+    const folders = this.folders();
+    if (notes.length === 0 && folders.length === 0) return;
+
+    // Build a uniform item list with footprints we can bound.
+    type Item =
+      | { kind: 'note'; id: string; x: number; y: number; w: number; h: number }
+      | { kind: 'folder'; id: string; x: number; y: number; w: number; h: number };
+
+    const items: Item[] = [
+      ...notes.map<Item>(n => ({
+        kind: 'note',
+        id: n.id,
+        x: n.position.x,
+        y: n.position.y,
+        w: n.size.width,
+        h: n.size.height
+      })),
+      ...folders.map<Item>(f => ({
+        kind: 'folder',
+        id: f.id,
+        x: f.position.x,
+        y: f.position.y,
+        w: this.FOLDER_FOOTPRINT,
+        h: this.FOLDER_FOOTPRINT
+      }))
+    ];
+
+    const safe = {
+      x: 0,
+      y: this.TOOLBAR_OFFSET,
+      w: area.clientWidth,
+      h: Math.max(0, area.clientHeight - this.TOOLBAR_OFFSET)
+    };
+
+    const minX = Math.min(...items.map(it => it.x));
+    const minY = Math.min(...items.map(it => it.y));
+    const maxX = Math.max(...items.map(it => it.x + it.w));
+    const maxY = Math.max(...items.map(it => it.y + it.h));
+
+    const needsRecenter =
+      items.some(it => it.y < safe.y) ||
+      minX < safe.x ||
+      minY < safe.y ||
+      maxX > safe.x + safe.w ||
+      maxY > safe.y + safe.h;
+
+    if (!needsRecenter) return;
+
+    const bw = Math.max(1, maxX - minX);
+    const bh = Math.max(1, maxY - minY);
+    const scale = Math.min(1, safe.w / bw, safe.h / bh);
+
+    const offsetX = safe.x + (safe.w - bw * scale) / 2 - minX * scale;
+    const offsetY = safe.y + (safe.h - bh * scale) / 2 - minY * scale;
+
+    this.isRecentering.set(true);
+
+    for (const it of items) {
+      const newPos = {
+        x: Math.round(it.x * scale + offsetX),
+        y: Math.round(it.y * scale + offsetY)
+      };
+      if (it.kind === 'note') {
+        this.storage.updateNote(it.id, { position: newPos });
+      } else {
+        this.storage.updateFolder(it.id, { position: newPos });
+      }
+    }
+
+    setTimeout(() => this.isRecentering.set(false), this.RECENTER_ANIM_MS);
   }
 
   onFolderOpen(folderId: string): void {

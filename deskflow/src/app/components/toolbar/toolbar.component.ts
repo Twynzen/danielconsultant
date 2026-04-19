@@ -26,6 +26,7 @@ export class ToolbarComponent {
   @Input() currentDesktopId: string = '';
   @Output() addNote = new EventEmitter<void>();
   @Output() addFolder = new EventEmitter<void>();
+  @Output() recenter = new EventEmitter<void>();
   @Output() navigateTo = new EventEmitter<string>();
   @Output() exportData = new EventEmitter<void>();
   @Output() importData = new EventEmitter<void>();

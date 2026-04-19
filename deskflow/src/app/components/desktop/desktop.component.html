@@ -19,6 +19,7 @@
   [currentDesktopId]="currentDesktopId()"
   (addNote)="onAddNote()"
   (addFolder)="onAddFolder()"
+  (recenter)="onRecenter()"
   (navigateTo)="onNavigateTo($event)"
   (exportData)="onExportData()"
   (importData)="onImportData()"
@@ -46,6 +47,7 @@
   [class.transition-in]="transitionDirection() === 'in'"
   [class.transition-out]="transitionDirection() === 'out'"
   [class.connecting]="isConnecting()"
+  [class.recentering]="isRecentering()"
 >
   <!-- Conexiones -->
   <app-connections
