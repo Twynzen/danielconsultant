@@ -30,6 +30,16 @@
     cursor: crosshair;
   }
 
+  // Smooth slide for the recenter button. Class is added for ~400ms while
+  // positions update, then removed so subsequent drags stay snappy.
+  &.recentering {
+    .note,
+    .folder {
+      transition: top 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                  left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+
   // Transiciones 3D
   &.transitioning {
     pointer-events: none;

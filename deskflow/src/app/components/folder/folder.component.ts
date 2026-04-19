@@ -60,11 +60,14 @@ export class FolderComponent {
     document.addEventListener('mouseup', this.onDragEnd);
   }
 
+  // 80 = 50px toolbar + 30px breathing room so folders never drift behind the toolbar.
+  private static readonly MIN_DRAG_Y = 80;
+
   private onDragMove = (event: MouseEvent): void => {
     if (!this.isDragging()) return;
 
     const newX = Math.max(0, event.clientX - this.dragOffset.x);
-    const newY = Math.max(0, event.clientY - this.dragOffset.y);
+    const newY = Math.max(FolderComponent.MIN_DRAG_Y, event.clientY - this.dragOffset.y);
 
     this.folderChange.emit({
       position: { x: newX, y: newY }
