@@ -146,6 +146,43 @@ class SendellContextRequest(BaseModel):
     include_tasks: bool = True
     max_content_length: int = 500
 
+
+# --- Calendar Models (Phase 2 — feature/calendar) ---
+
+class CalendarReminderInput(BaseModel):
+    minutes_before: int = Field(ge=0, le=43_200)         # up to 30 days ahead
+    channel: str = "whatsapp"                            # whatsapp | toast | both
+
+
+class CalendarCreateBody(BaseModel):
+    name: str
+    color: str = "#00ff41"
+    is_default: bool = False
+
+
+class EventCreateBody(BaseModel):
+    calendar_id: str
+    title: str
+    starts_at: str                                       # ISO 8601
+    ends_at: str
+    all_day: bool = False
+    description: Optional[str] = None
+    location: Optional[str] = None
+    rrule: Optional[str] = None
+    linked_note_id: Optional[str] = None
+    reminders: Optional[list[CalendarReminderInput]] = None
+
+
+class EventUpdateBody(BaseModel):
+    title: Optional[str] = None
+    starts_at: Optional[str] = None
+    ends_at: Optional[str] = None
+    all_day: Optional[bool] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    rrule: Optional[str] = None
+    linked_note_id: Optional[str] = None
+
 # =============================================================================
 # HEALTH CHECK (for UptimeRobot)
 # =============================================================================
@@ -1492,8 +1529,9 @@ async def agent_ingest_ics(
                     .eq("id", existing_id) \
                     .execute()
                 updated += 1
+                note_row_id = existing_id
             else:
-                service.table("notes").insert({
+                ins = service.table("notes").insert({
                     "desktop_id": desktop_id,
                     "title": summary[:200],
                     "content": content,
@@ -1507,6 +1545,34 @@ async def agent_ingest_ics(
                     "metadata": metadata,
                 }).execute()
                 created += 1
+                note_row_id = (ins.data[0]["id"] if ins.data else None)
+
+            # Mirror into calendar_events so the new calendar UI shows it.
+            # Idempotent via UNIQUE(user_id, ics_uid) — re-importing same UID
+            # updates the row instead of inserting. Best-effort: failures
+            # here don't break the note ingestion above.
+            if uid:
+                try:
+                    ics_calendar_id = _ensure_ics_calendar(service, user_id)
+                    end_dt = evt.get("end") or start
+                    event_row = {
+                        "user_id": user_id,
+                        "calendar_id": ics_calendar_id,
+                        "title": summary[:200],
+                        "description": evt.get("description"),
+                        "location": evt.get("location"),
+                        "starts_at": start.isoformat(),
+                        "ends_at": end_dt.isoformat(),
+                        "all_day": False,
+                        "ics_uid": uid,
+                        "linked_note_id": note_row_id,
+                        "updated_at": _utcnow().isoformat(),
+                    }
+                    service.table("calendar_events") \
+                        .upsert(event_row, on_conflict="user_id,ics_uid") \
+                        .execute()
+                except Exception as e:
+                    errors.append(f"calendar mirror {uid}: {e}")
 
         except Exception as e:
             errors.append(f"{evt.get('uid') or evt.get('summary', '?')}: {e}")
@@ -1537,6 +1603,495 @@ async def agent_ingest_ics(
         "skipped": skipped,
         "errors": errors[:20],
     }
+
+
+# =============================================================================
+# CALENDAR ENDPOINTS (Phase 2 — feature/calendar)
+# =============================================================================
+#
+# All endpoints below are scope-gated agent endpoints (X-API-Key auth).
+# Single source of truth for any external system that needs to read or
+# write the user's calendar — Sendell, Claude Desktop (via REST fallback),
+# n8n, custom cron jobs, you name it.
+
+from dateutil.rrule import rrulestr as _rrulestr  # noqa: E402  (intentional late import)
+
+
+def _calendar_parse_iso(value: str) -> datetime:
+    """Same semantics as tools/calendar.py _parse_iso, kept local to avoid
+    importing from `tools` into the FastAPI app."""
+    if not value:
+        raise HTTPException(status_code=400, detail="ISO datetime required")
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Bad ISO datetime: {e}")
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _calendar_serialize(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "calendar_id": row["calendar_id"],
+        "title": row["title"],
+        "description": row.get("description"),
+        "location": row.get("location"),
+        "starts_at": row["starts_at"],
+        "ends_at": row["ends_at"],
+        "all_day": row.get("all_day", False),
+        "rrule": row.get("rrule"),
+        "rrule_exdates": row.get("rrule_exdates") or [],
+        "recurrence_parent_id": row.get("recurrence_parent_id"),
+        "linked_note_id": row.get("linked_note_id"),
+        "ics_uid": row.get("ics_uid"),
+        "metadata": row.get("metadata") or {},
+        "created_at": row.get("created_at"),
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def _calendar_expand(row: dict[str, Any], wstart: datetime, wend: datetime) -> list[dict[str, Any]]:
+    base = _calendar_serialize(row)
+    if not row.get("rrule"):
+        starts = _calendar_parse_iso(row["starts_at"])
+        ends = _calendar_parse_iso(row["ends_at"])
+        if ends < wstart or starts > wend:
+            return []
+        base["instance_start"] = base["starts_at"]
+        return [base]
+    duration = _calendar_parse_iso(row["ends_at"]) - _calendar_parse_iso(row["starts_at"])
+    dtstart = _calendar_parse_iso(row["starts_at"])
+    rule = _rrulestr(row["rrule"], dtstart=dtstart)
+    exdates = {_calendar_parse_iso(d).isoformat() for d in (row.get("rrule_exdates") or [])}
+    out: list[dict[str, Any]] = []
+    for occ in rule.between(wstart, wend, inc=True):
+        starts_iso = occ.isoformat()
+        if starts_iso in exdates:
+            continue
+        instance = dict(base)
+        instance["starts_at"] = starts_iso
+        instance["ends_at"] = (occ + duration).isoformat()
+        instance["instance_start"] = starts_iso
+        out.append(instance)
+    return out
+
+
+def _ensure_default_calendar(service: Client, user_id: str) -> str:
+    """Returns the user's default calendar id, creating one on first use."""
+    found = service.table("calendars") \
+        .select("id") \
+        .eq("user_id", user_id) \
+        .eq("is_default", True) \
+        .limit(1) \
+        .execute()
+    if found.data:
+        return found.data[0]["id"]
+    created = service.table("calendars").insert({
+        "user_id": user_id,
+        "name": "Mi Calendario",
+        "color": "#00ff41",
+        "is_default": True,
+        "source": "manual",
+    }).execute()
+    return created.data[0]["id"]
+
+
+def _ensure_ics_calendar(service: Client, user_id: str, name: str = "Importado") -> str:
+    """One ICS bucket per user. Created lazily on first ingest."""
+    found = service.table("calendars") \
+        .select("id") \
+        .eq("user_id", user_id) \
+        .eq("source", "ics") \
+        .limit(1) \
+        .execute()
+    if found.data:
+        return found.data[0]["id"]
+    created = service.table("calendars").insert({
+        "user_id": user_id,
+        "name": name,
+        "color": "#00cfff",
+        "is_default": False,
+        "source": "ics",
+    }).execute()
+    return created.data[0]["id"]
+
+
+# ---------- Calendars CRUD ---------------------------------------------------
+
+@app.get("/api/agent/calendars")
+async def agent_list_calendars(api_key: dict = Depends(require_scope("read"))):
+    """Lista los calendarios del usuario."""
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+    result = service.table("calendars") \
+        .select("id, name, color, visible, is_default, source, created_at") \
+        .eq("user_id", user_id) \
+        .order("is_default", desc=True) \
+        .order("name") \
+        .execute()
+    log_api_call(api_key, "calendar.list", "agent_list_calendars")
+    return {"calendars": result.data or []}
+
+
+@app.post("/api/agent/calendars")
+async def agent_create_calendar(
+    body: CalendarCreateBody,
+    api_key: dict = Depends(require_scope("write")),
+):
+    """Crea un calendario."""
+    if not body.name.strip():
+        raise HTTPException(status_code=400, detail="name requerido")
+    if len(body.name) > 80:
+        raise HTTPException(status_code=400, detail="name <= 80")
+    if not body.color.startswith("#"):
+        raise HTTPException(status_code=400, detail="color debe empezar con #")
+
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+
+    if body.is_default:
+        service.table("calendars") \
+            .update({"is_default": False}) \
+            .eq("user_id", user_id) \
+            .eq("is_default", True) \
+            .execute()
+
+    created = service.table("calendars").insert({
+        "user_id": user_id,
+        "name": body.name.strip(),
+        "color": body.color,
+        "is_default": body.is_default,
+    }).execute()
+    log_api_call(api_key, "calendar.create", "agent_create_calendar",
+                 resource_id=created.data[0]["id"])
+    return created.data[0]
+
+
+@app.delete("/api/agent/calendars/{calendar_id}")
+async def agent_delete_calendar(
+    calendar_id: str,
+    api_key: dict = Depends(require_scope("write")),
+):
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+    result = service.table("calendars") \
+        .delete() \
+        .eq("id", calendar_id) \
+        .eq("user_id", user_id) \
+        .execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Calendar not found")
+    log_api_call(api_key, "calendar.delete", "agent_delete_calendar",
+                 resource_id=calendar_id)
+    return {"status": "ok"}
+
+
+# ---------- Events CRUD ------------------------------------------------------
+
+@app.get("/api/agent/events")
+async def agent_list_events(
+    start: str = Query(..., description="ISO 8601 inclusive lower bound"),
+    end: str = Query(..., description="ISO 8601 inclusive upper bound"),
+    calendar_ids: Optional[str] = Query(
+        None, description="Comma-separated calendar UUIDs to filter by"
+    ),
+    api_key: dict = Depends(require_scope("read")),
+):
+    """
+    Lista eventos en [start, end]. Recurring events se expanden server-side
+    — recibes una entrada por instancia con `instance_start` único.
+    """
+    wstart = _calendar_parse_iso(start)
+    wend = _calendar_parse_iso(end)
+    if wend < wstart:
+        raise HTTPException(status_code=400, detail="end >= start")
+
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+
+    cal_filter: list[str] = []
+    if calendar_ids:
+        cal_filter = [c.strip() for c in calendar_ids.split(",") if c.strip()]
+
+    query = service.table("calendar_events") \
+        .select("*") \
+        .eq("user_id", user_id)
+    if cal_filter:
+        query = query.in_("calendar_id", cal_filter)
+
+    rows = (query.execute().data) or []
+
+    # If no explicit filter, hide events from non-visible calendars.
+    if not cal_filter:
+        cals = service.table("calendars") \
+            .select("id, visible") \
+            .eq("user_id", user_id) \
+            .execute()
+        visible = {c["id"] for c in (cals.data or []) if c.get("visible", True)}
+        rows = [r for r in rows if r["calendar_id"] in visible]
+
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        out.extend(_calendar_expand(r, wstart, wend))
+    out.sort(key=lambda e: e["starts_at"])
+    log_api_call(api_key, "calendar.list_events", "agent_list_events")
+    return {"events": out}
+
+
+@app.post("/api/agent/events")
+async def agent_create_event(
+    body: EventCreateBody,
+    api_key: dict = Depends(require_scope("write")),
+):
+    if not body.title.strip():
+        raise HTTPException(status_code=400, detail="title requerido")
+
+    starts = _calendar_parse_iso(body.starts_at)
+    ends = _calendar_parse_iso(body.ends_at)
+    if ends < starts:
+        raise HTTPException(status_code=400, detail="ends_at >= starts_at")
+
+    if body.rrule:
+        try:
+            _rrulestr(body.rrule, dtstart=starts)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"RRULE inválida: {e}")
+
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+
+    # Verify calendar belongs to user.
+    cal = service.table("calendars") \
+        .select("id") \
+        .eq("id", body.calendar_id) \
+        .eq("user_id", user_id) \
+        .execute()
+    if not cal.data:
+        raise HTTPException(status_code=404, detail="Calendar not found")
+
+    row = {
+        "user_id": user_id,
+        "calendar_id": body.calendar_id,
+        "title": body.title.strip()[:200],
+        "description": body.description,
+        "location": body.location,
+        "starts_at": starts.isoformat(),
+        "ends_at": ends.isoformat(),
+        "all_day": body.all_day,
+        "rrule": body.rrule,
+        "linked_note_id": body.linked_note_id,
+    }
+    created = service.table("calendar_events").insert(row).execute()
+    event = created.data[0]
+
+    if body.reminders:
+        for r in body.reminders:
+            if r.channel not in ("whatsapp", "toast", "both"):
+                raise HTTPException(status_code=400, detail="channel inválido")
+            fire_at = starts.timestamp() - r.minutes_before * 60
+            fire_at_iso = datetime.fromtimestamp(fire_at, tz=timezone.utc).isoformat()
+            service.table("event_reminders").insert({
+                "user_id": user_id,
+                "event_id": event["id"],
+                "minutes_before": r.minutes_before,
+                "channel": r.channel,
+                "fire_at": fire_at_iso,
+            }).execute()
+
+    log_api_call(api_key, "calendar.create_event", "agent_create_event",
+                 resource_id=event["id"])
+    return _calendar_serialize(event)
+
+
+@app.patch("/api/agent/events/{event_id}")
+async def agent_update_event(
+    event_id: str,
+    body: EventUpdateBody,
+    scope: str = Query("this", regex="^(this|future|all)$"),
+    api_key: dict = Depends(require_scope("write")),
+):
+    """Mutate an event. `scope` only matters for recurring events."""
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+
+    existing = service.table("calendar_events") \
+        .select("*") \
+        .eq("id", event_id) \
+        .eq("user_id", user_id) \
+        .execute()
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Event not found")
+    row = existing.data[0]
+    is_recurring = bool(row.get("rrule"))
+
+    patch: dict[str, Any] = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if body.title is not None:
+        patch["title"] = body.title.strip()[:200]
+    if body.starts_at is not None:
+        patch["starts_at"] = _calendar_parse_iso(body.starts_at).isoformat()
+    if body.ends_at is not None:
+        patch["ends_at"] = _calendar_parse_iso(body.ends_at).isoformat()
+    if body.all_day is not None:
+        patch["all_day"] = body.all_day
+    if body.description is not None:
+        patch["description"] = body.description
+    if body.location is not None:
+        patch["location"] = body.location
+    if body.rrule is not None:
+        if body.rrule:
+            try:
+                _rrulestr(body.rrule, dtstart=_calendar_parse_iso(
+                    patch.get("starts_at") or row["starts_at"]))
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"RRULE inválida: {e}")
+        patch["rrule"] = body.rrule or None
+    if body.linked_note_id is not None:
+        patch["linked_note_id"] = body.linked_note_id or None
+
+    if not is_recurring or scope == "all":
+        service.table("calendar_events") \
+            .update(patch) \
+            .eq("id", event_id) \
+            .execute()
+        log_api_call(api_key, "calendar.update_event", "agent_update_event",
+                     resource_id=event_id)
+        return _calendar_serialize({**row, **patch})
+
+    if scope == "this":
+        instance_start = patch.get("starts_at") or row["starts_at"]
+        exdates = list(row.get("rrule_exdates") or [])
+        exdates.append(row["starts_at"])
+        service.table("calendar_events") \
+            .update({"rrule_exdates": exdates}) \
+            .eq("id", event_id) \
+            .execute()
+        isolated = {
+            "user_id": user_id,
+            "calendar_id": row["calendar_id"],
+            "title": patch.get("title", row["title"]),
+            "description": patch.get("description", row.get("description")),
+            "location": patch.get("location", row.get("location")),
+            "starts_at": instance_start,
+            "ends_at": patch.get("ends_at", row["ends_at"]),
+            "all_day": patch.get("all_day", row.get("all_day", False)),
+            "rrule": None,
+            "recurrence_parent_id": event_id,
+            "linked_note_id": patch.get("linked_note_id", row.get("linked_note_id")),
+        }
+        ins = service.table("calendar_events").insert(isolated).execute()
+        log_api_call(api_key, "calendar.update_event_this", "agent_update_event",
+                     resource_id=event_id)
+        return _calendar_serialize(ins.data[0])
+
+    # scope == "future"
+    cutoff = _calendar_parse_iso(patch.get("starts_at") or row["starts_at"])
+    until_str = cutoff.strftime("%Y%m%dT%H%M%SZ")
+    old_rrule = row["rrule"] or ""
+    new_parent = ";".join(
+        p for p in old_rrule.split(";") if not p.upper().startswith("UNTIL=")
+    )
+    new_parent += f";UNTIL={until_str}" if new_parent else f"UNTIL={until_str}"
+    service.table("calendar_events") \
+        .update({"rrule": new_parent}) \
+        .eq("id", event_id) \
+        .execute()
+    new_series = {
+        "user_id": user_id,
+        "calendar_id": row["calendar_id"],
+        "title": patch.get("title", row["title"]),
+        "description": patch.get("description", row.get("description")),
+        "location": patch.get("location", row.get("location")),
+        "starts_at": patch.get("starts_at") or row["starts_at"],
+        "ends_at": patch.get("ends_at") or row["ends_at"],
+        "all_day": patch.get("all_day", row.get("all_day", False)),
+        "rrule": patch.get("rrule", row.get("rrule")),
+        "linked_note_id": patch.get("linked_note_id", row.get("linked_note_id")),
+    }
+    ins = service.table("calendar_events").insert(new_series).execute()
+    log_api_call(api_key, "calendar.update_event_future", "agent_update_event",
+                 resource_id=event_id)
+    return _calendar_serialize(ins.data[0])
+
+
+@app.delete("/api/agent/events/{event_id}")
+async def agent_delete_event(
+    event_id: str,
+    scope: str = Query("this", regex="^(this|future|all)$"),
+    api_key: dict = Depends(require_scope("write")),
+):
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+
+    existing = service.table("calendar_events") \
+        .select("*") \
+        .eq("id", event_id) \
+        .eq("user_id", user_id) \
+        .execute()
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Event not found")
+    row = existing.data[0]
+    is_recurring = bool(row.get("rrule"))
+
+    if not is_recurring or scope == "all":
+        service.table("calendar_events") \
+            .delete() \
+            .eq("id", event_id) \
+            .execute()
+        log_api_call(api_key, "calendar.delete_event", "agent_delete_event",
+                     resource_id=event_id)
+        return {"status": "ok"}
+
+    if scope == "this":
+        exdates = list(row.get("rrule_exdates") or [])
+        exdates.append(row["starts_at"])
+        service.table("calendar_events") \
+            .update({"rrule_exdates": exdates}) \
+            .eq("id", event_id) \
+            .execute()
+        log_api_call(api_key, "calendar.delete_event_this", "agent_delete_event",
+                     resource_id=event_id)
+        return {"status": "ok", "scope": "this"}
+
+    cutoff = _calendar_parse_iso(row["starts_at"])
+    until_str = cutoff.strftime("%Y%m%dT%H%M%SZ")
+    old_rrule = row["rrule"] or ""
+    new_rrule = ";".join(
+        p for p in old_rrule.split(";") if not p.upper().startswith("UNTIL=")
+    )
+    new_rrule += f";UNTIL={until_str}" if new_rrule else f"UNTIL={until_str}"
+    service.table("calendar_events") \
+        .update({"rrule": new_rrule}) \
+        .eq("id", event_id) \
+        .execute()
+    log_api_call(api_key, "calendar.delete_event_future", "agent_delete_event",
+                 resource_id=event_id)
+    return {"status": "ok", "scope": "future"}
+
+
+@app.get("/api/agent/calendar/today")
+async def agent_calendar_today(api_key: dict = Depends(require_scope("read"))):
+    """Conveniencia: devuelve los eventos de hoy ya expandidos."""
+    user_id = api_key["user_id"]
+    now = datetime.now(timezone.utc)
+    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = now.replace(hour=23, minute=59, second=59, microsecond=999_999)
+
+    service = supabase_for_user(user_id)
+    rows = (service.table("calendar_events")
+            .select("*")
+            .eq("user_id", user_id)
+            .execute()
+            .data) or []
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        out.extend(_calendar_expand(r, day_start, day_end))
+    out.sort(key=lambda e: e["starts_at"])
+    log_api_call(api_key, "calendar.today", "agent_calendar_today")
+    return {"date": day_start.date().isoformat(), "events": out}
 
 
 # =============================================================================

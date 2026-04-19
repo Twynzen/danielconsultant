@@ -19,6 +19,9 @@ pydantic>=2.0.0
 # JWT handling (for token refresh)
 PyJWT>=2.8.0
 
+# Date utilities — used for RRULE expansion in calendar.py
+python-dateutil>=2.8.2
+
 # === REMOTE SERVER (Render) ===
 # FastAPI for HTTP/SSE endpoints
 fastapi>=0.109.0
