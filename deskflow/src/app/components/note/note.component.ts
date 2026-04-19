@@ -12,13 +12,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Note, NoteImage, Position, Size } from '../../models/desktop.model';
+import { Note, NoteImage, NoteMetadata, Position, Size } from '../../models/desktop.model';
 import { DeviceService } from '../../services/device.service';
+import { NoteMetadataPanelComponent } from '../note-metadata-panel/note-metadata-panel.component';
 
 @Component({
   selector: 'app-note',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NoteMetadataPanelComponent],
   templateUrl: './note.component.html',
   styleUrl: './note.component.scss'
 })
@@ -39,6 +40,7 @@ export class NoteComponent {
   isEditing = signal(false);
   editingTitle = signal(false);
   showImageMenu = signal<string | null>(null);
+  showMetadataPanel = signal(false);
 
   private dragOffset = { x: 0, y: 0 };
   private initialSize = { width: 0, height: 0 };
@@ -305,6 +307,48 @@ export class NoteComponent {
   onStartConnection(): void {
     this.connectionStart.emit(this.note.id);
   }
+
+  toggleMetadataPanel(): void {
+    this.showMetadataPanel.update(v => !v);
+  }
+
+  /**
+   * Merge a metadata patch into the note. Keys set to `undefined` are
+   * removed. Emits `noteChange` so storage/sync layer sees the update.
+   */
+  onMetadataChange(patch: Partial<NoteMetadata>): void {
+    const current: NoteMetadata = { ...(this.note.metadata ?? {}) };
+    for (const key of Object.keys(patch) as (keyof NoteMetadata)[]) {
+      const value = patch[key];
+      if (value === undefined) {
+        delete current[key];
+      } else {
+        (current as Record<string, unknown>)[key as string] = value;
+      }
+    }
+    // An entirely empty metadata blob should reset to undefined so the
+    // JSONB default and the UI hide-state stay consistent.
+    const metadata: NoteMetadata | undefined =
+      Object.keys(current).length === 0 ? undefined : current;
+    this.noteChange.emit({ metadata });
+  }
+
+  /** Compact chip text used in the header when the panel is closed. */
+  metadataBadges = computed(() => {
+    const m = this.note?.metadata;
+    if (!m) return [];
+    const out: string[] = [];
+    if (m.type) out.push(m.type);
+    if (m.status) out.push(m.status);
+    if (m.priority) out.push(`P${m.priority}`);
+    if (m.dueDate) {
+      const d = new Date(m.dueDate);
+      if (!isNaN(d.getTime())) {
+        out.push(d.toLocaleDateString());
+      }
+    }
+    return out;
+  });
 
   // ==================== DROP DE IMÁGENES ====================
   onDragOver(event: DragEvent): void {

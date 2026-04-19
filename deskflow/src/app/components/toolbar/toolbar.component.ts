@@ -1,7 +1,7 @@
 import { Component, Output, EventEmitter, Input, signal, ViewEncapsulation, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ThemeService, ThemeColors } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { SyncService } from '../../services/sync.service';
@@ -16,7 +16,7 @@ import { SyncIndicatorComponent } from '../sync-indicator/sync-indicator.compone
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [CommonModule, FormsModule, SyncIndicatorComponent],
+  imports: [CommonModule, FormsModule, RouterModule, SyncIndicatorComponent],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.scss',
   encapsulation: ViewEncapsulation.None

@@ -18,6 +18,49 @@ export interface NoteImage {
   position: Position;
 }
 
+// ==================== INTELLIGENCE METADATA ====================
+// Optional metadata layer that turns plain notes into typed knowledge items.
+// Backwards-compatible: notes without metadata continue working exactly as before.
+
+export type NoteType =
+  | 'note'
+  | 'task'
+  | 'project'
+  | 'reference'
+  | 'contact'
+  | 'meeting'
+  | 'idea'
+  | 'log';
+
+export type NoteStatus =
+  | 'active'
+  | 'inactive'
+  | 'completed'
+  | 'archived'
+  | 'blocked';
+
+export type NotePriority = 1 | 2 | 3 | 4 | 5; // 1 = urgent, 5 = someday
+
+export interface NoteLinkedResource {
+  type: string;       // e.g. 'url', 'gmail', 'calendar', 'github'
+  uri: string;        // canonical pointer
+  label: string;      // human-friendly description
+}
+
+export interface NoteMetadata {
+  type?: NoteType;
+  status?: NoteStatus;
+  priority?: NotePriority;
+  tags?: string[];
+  dueDate?: string;             // ISO 8601
+  assignee?: string;
+  source?: string;              // 'manual' | 'agent:<name>' | 'connector:<name>'
+  linkedResources?: NoteLinkedResource[];
+  customFields?: Record<string, unknown>;
+  lastReviewedAt?: string;      // ISO 8601, used by stale-item engine
+  progress?: number;            // 0-100 for projects
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -30,6 +73,7 @@ export interface Note {
   minimized: boolean;
   createdAt: Date;
   updatedAt: Date;
+  metadata?: NoteMetadata; // Opt-in intelligence layer
 }
 
 export interface Connection {

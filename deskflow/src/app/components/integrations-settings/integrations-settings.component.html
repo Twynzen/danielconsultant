@@ -1,0 +1,152 @@
+<div class="integrations">
+  <header>
+    <a routerLink="/" class="back">‹ Volver al escritorio</a>
+    <h1>Integraciones</h1>
+    <p class="sub">
+      Crea API keys para que cualquier agente (Sendell, Claude, GPT, n8n, Zapier,
+      agentes custom) hable con tu DeskFlow. Cada key tiene su propio scope y
+      rate limit, y registra qué hizo en el audit log.
+    </p>
+  </header>
+
+  @if (serviceError()) {
+    <div class="banner error">
+      ⚠ {{ serviceError() }}
+    </div>
+  }
+
+  @if (justMinted(); as minted) {
+    <section class="just-minted">
+      <header>
+        <strong>API key creada — guárdala AHORA</strong>
+        <button type="button" class="icon" (click)="dismissJustMinted()">×</button>
+      </header>
+      <p>
+        Esta es la única vez que verás la key completa. Cópiala e inyéctala en
+        tu agente. Si la pierdes, tendrás que revocarla y crear una nueva.
+      </p>
+      <div class="key-display">
+        <code>{{ minted.key }}</code>
+        <button type="button" (click)="copy(minted.key, 'API key copiada')">
+          Copiar
+        </button>
+      </div>
+      <div class="curl-hint">
+        <small>Uso:</small>
+        <code>curl -H "X-API-Key: {{ minted.key }}" $MCP_HOST/api/agent/briefing</code>
+      </div>
+    </section>
+  }
+
+  <section class="create">
+    <h2>Crear nueva key</h2>
+    @if (createError()) {
+      <div class="banner error small">⚠ {{ createError() }}</div>
+    }
+    <div class="form">
+      <label>
+        <span>Nombre</span>
+        <input
+          type="text"
+          placeholder="Sendell Bot, n8n workflow, Claude scope X…"
+          [ngModel]="newKeyName()"
+          (ngModelChange)="newKeyName.set($event)" />
+      </label>
+
+      <fieldset class="scopes">
+        <legend>Scopes</legend>
+        <label>
+          <input type="checkbox"
+            [ngModel]="scopeRead()"
+            (ngModelChange)="scopeRead.set($event)" />
+          read
+          <small>briefings, búsquedas, vistas</small>
+        </label>
+        <label>
+          <input type="checkbox"
+            [ngModel]="scopeWrite()"
+            (ngModelChange)="scopeWrite.set($event)" />
+          write
+          <small>crear notas, tasks, logs</small>
+        </label>
+        <label>
+          <input type="checkbox"
+            [ngModel]="scopeAdmin()"
+            (ngModelChange)="scopeAdmin.set($event)" />
+          admin
+          <small>reorganización total (úsala con cuidado)</small>
+        </label>
+      </fieldset>
+
+      <label class="rate">
+        <span>Rate limit</span>
+        <input type="number" min="1" max="1000" step="5"
+          [ngModel]="rateLimit()"
+          (ngModelChange)="rateLimit.set($event)" />
+        <small>requests / min</small>
+      </label>
+
+      <button
+        type="button"
+        class="primary"
+        [disabled]="creating()"
+        (click)="create()">
+        @if (creating()) { Creando… } @else { Generar API key }
+      </button>
+    </div>
+  </section>
+
+  <section class="list">
+    <h2>Keys activas ({{ activeKeys().length }})</h2>
+    @if (loading()) { <p class="dim">Cargando…</p> }
+    @if (!loading() && activeKeys().length === 0) {
+      <p class="dim">Todavía no creaste ninguna.</p>
+    }
+    <ul>
+      @for (key of activeKeys(); track key.id) {
+        <li>
+          <div class="main">
+            <strong>{{ key.name }}</strong>
+            <code>{{ key.key_prefix }}…</code>
+          </div>
+          <div class="meta">
+            @for (scope of key.scopes; track scope) {
+              <span class="chip">{{ scope }}</span>
+            }
+            <span class="chip dim">{{ key.rate_limit }}/min</span>
+            <span class="chip dim">creada {{ key.created_at | date:'shortDate' }}</span>
+            @if (key.last_used_at) {
+              <span class="chip dim">última {{ key.last_used_at | date:'short' }}</span>
+            } @else {
+              <span class="chip dim">sin uso</span>
+            }
+          </div>
+          <div class="actions">
+            <button type="button" class="danger" (click)="revoke(key.id)">
+              Revocar
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  </section>
+
+  @if (revokedKeys().length > 0) {
+    <section class="list revoked">
+      <h2>Revocadas ({{ revokedKeys().length }})</h2>
+      <ul>
+        @for (key of revokedKeys(); track key.id) {
+          <li class="revoked-row">
+            <strong>{{ key.name }}</strong>
+            <code>{{ key.key_prefix }}…</code>
+            <span class="dim">revocada</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (copyFeedback()) {
+    <div class="toast">{{ copyFeedback() }}</div>
+  }
+</div>

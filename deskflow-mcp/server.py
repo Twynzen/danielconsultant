@@ -28,6 +28,11 @@ from tools import (
     register_connection_tools,
     register_asset_tools,
     register_search_tools,
+    register_metadata_tools,
+    register_intelligence_tools,
+    register_view_tools,
+    register_agent_api_tools,
+    register_connector_tools,
 )
 from resources import register_resources
 from prompts import register_prompts
@@ -64,6 +69,21 @@ def create_server() -> FastMCP:
 
     log("Registering search tools...")
     register_search_tools(mcp)
+
+    log("Registering metadata tools...")
+    register_metadata_tools(mcp)
+
+    log("Registering intelligence tools...")
+    register_intelligence_tools(mcp)
+
+    log("Registering view tools...")
+    register_view_tools(mcp)
+
+    log("Registering agent-api tools...")
+    register_agent_api_tools(mcp)
+
+    log("Registering connector tools...")
+    register_connector_tools(mcp)
 
     # Register resources
     log("Registering resources...")

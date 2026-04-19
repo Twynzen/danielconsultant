@@ -12,13 +12,14 @@ Deploy: Render, Railway, Fly.io, etc.
 import os
 import json
 import asyncio
+from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -26,6 +27,16 @@ load_dotenv()
 
 # Supabase imports
 from supabase import create_client, Client
+
+# Agent API key auth (Phase 4 — Intelligence Engine)
+from api_keys import (
+    generate_key,
+    hash_key,
+    log_api_call,
+    require_scope,
+    supabase_for_user,
+    verify_api_key,
+)
 
 # =============================================================================
 # CONFIGURATION
@@ -144,7 +155,7 @@ async def root():
     """Root endpoint - shows server info."""
     return {
         "service": "DeskFlow MCP Remote Server",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "status": "running",
         "endpoints": {
             "health": "/health",
@@ -153,6 +164,11 @@ async def root():
             "rest_api": "/api/*",
             "sendell_init": "/api/v2/sendell/init",
             "sendell_context": "/api/v2/sendell/context",
+            "agent_briefing": "/api/agent/briefing",
+            "agent_ingest": "/api/agent/ingest",
+            "agent_ingest_ics": "/api/agent/ingest-ics",
+            "agent_priorities": "/api/agent/priorities",
+            "agent_keys": "/api/agent/keys",
         }
     }
 
@@ -755,6 +771,771 @@ async def sendell_context(request: SendellContextRequest):
             "conversations_count": len(recent_conversations),
             "tasks_count": len(tasks),
         }
+    }
+
+
+# =============================================================================
+# AGENT API — Multi-agent endpoints authenticated via X-API-Key
+# =============================================================================
+#
+# These routes are designed for ANY agent (Claude, GPT, Gemini, n8n, Make,
+# Zapier, custom code) — not Sendell-specific. Authentication is per-API-key
+# so each integration has its own scopes, rate limit, and audit trail.
+
+# ---------- Pydantic ----------------------------------------------------------
+
+class ApiKeyCreateRequest(BaseModel):
+    user_token: str
+    name: str = Field(..., min_length=1, max_length=80)
+    scopes: List[str] = Field(default_factory=lambda: ["read"])
+    rate_limit: int = 60
+
+
+class ApiKeyListRequest(BaseModel):
+    user_token: str
+
+
+class IngestNoteRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = ""
+    type: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[int] = None
+    tags: Optional[List[str]] = None
+    due_date: Optional[str] = None
+    source: Optional[str] = None
+    desktop_id: Optional[str] = None
+    workspace_id: Optional[str] = None
+
+
+class BriefingRequest(BaseModel):
+    workspace_id: Optional[str] = None
+    max_priorities: int = 10
+    max_recent: int = 20
+    upcoming_window_hours: int = 48
+    stale_threshold_days: int = 14
+
+
+class IcsIngestRequest(BaseModel):
+    # Raw ICS feed (VCALENDAR text). Can be a pasted export or the body of an
+    # http-accessible .ics URL — we don't fetch it ourselves so the caller
+    # stays in control of whatever auth the feed needs.
+    ics: str
+    workspace_id: Optional[str] = None
+    target_desktop_id: Optional[str] = None
+    connector_id: Optional[str] = None
+    # Only ingest events that start on or after this cutoff. Defaults to
+    # today so past meetings don't flood the workspace.
+    start_after: Optional[str] = None
+    # Safety cap per ingestion call.
+    max_events: int = 100
+
+
+# ---------- Helpers ----------------------------------------------------------
+
+VALID_TYPES = {"note", "task", "project", "reference", "contact",
+               "meeting", "idea", "log"}
+VALID_STATUSES = {"active", "inactive", "completed", "archived", "blocked"}
+VALID_SCOPES = {"read", "write", "admin"}
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _parse_iso(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _resolve_default_workspace(client: Client, user_id: str) -> str:
+    ws = client.table("workspaces") \
+        .select("id") \
+        .eq("user_id", user_id) \
+        .eq("is_default", True) \
+        .is_("deleted_at", "null") \
+        .single() \
+        .execute()
+    if not ws.data:
+        raise HTTPException(status_code=404, detail="No default workspace for user")
+    return ws.data["id"]
+
+
+def _score_briefing_note(note: dict, now: datetime, degree: int):
+    metadata = note.get("metadata") or {}
+    reasons: List[str] = []
+    score = 0.0
+
+    status = metadata.get("status")
+    if status in ("archived", "completed"):
+        return -1.0, [status]
+    if status == "blocked":
+        score += 5
+        reasons.append("blocked")
+    if status == "active":
+        score += 2
+
+    priority = metadata.get("priority")
+    if isinstance(priority, int) and 1 <= priority <= 5:
+        score += (6 - priority) * 1.5
+        if priority <= 2:
+            reasons.append(f"priority {priority}")
+
+    due = _parse_iso(metadata.get("dueDate"))
+    if due is not None:
+        delta_h = (due - now).total_seconds() / 3600
+        if delta_h < 0:
+            score += 8
+            reasons.append("overdue")
+        elif delta_h <= 24:
+            score += 6
+            reasons.append("due today")
+        elif delta_h <= 72:
+            score += 4
+            reasons.append("due soon")
+
+    note_type = metadata.get("type")
+    if note_type in ("meeting", "task"):
+        score += 1.5
+    elif note_type == "project":
+        score += 1
+    elif note_type in ("reference", "log"):
+        score -= 0.5
+
+    if degree >= 5:
+        score += 1.5
+        reasons.append("hub")
+    elif degree >= 2:
+        score += 0.5
+
+    updated = _parse_iso(note.get("updated_at"))
+    if updated is not None:
+        age_h = (now - updated).total_seconds() / 3600
+        if age_h <= 48:
+            score += 1
+
+    return score, reasons
+
+
+# ---------- API key management (uses Supabase user-token auth) ---------------
+
+@app.post("/api/agent/keys")
+async def create_api_key(request: ApiKeyCreateRequest):
+    """
+    Create a new API key for the authenticated user. The plaintext is
+    returned ONCE — store it immediately, it cannot be retrieved later.
+    """
+    # Validate scopes
+    invalid = [s for s in request.scopes if s not in VALID_SCOPES]
+    if invalid:
+        raise HTTPException(status_code=400, detail=f"Invalid scopes: {invalid}")
+
+    # Authenticate the human user via their refresh token
+    client = await get_supabase_client(request.user_token)
+    me = client.auth.get_user()
+    if not me or not me.user:
+        raise HTTPException(status_code=401, detail="Could not resolve user")
+    user_id = me.user.id
+
+    plaintext, prefix, digest = generate_key()
+
+    # Store via service client so RLS policies don't fight us; the row carries
+    # the user_id so the user-scoped RLS policy still applies on later reads.
+    service = supabase_for_user(user_id)
+    inserted = service.table("api_keys").insert({
+        "user_id": user_id,
+        "name": request.name,
+        "key_prefix": prefix,
+        "key_hash": digest,
+        "scopes": request.scopes,
+        "rate_limit": max(1, min(request.rate_limit, 1000)),
+    }).execute()
+
+    if not inserted.data:
+        raise HTTPException(status_code=500, detail="Failed to mint API key")
+
+    row = inserted.data[0]
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "key": plaintext,                 # SHOWN ONCE
+        "key_prefix": row["key_prefix"],
+        "scopes": row["scopes"],
+        "rate_limit": row["rate_limit"],
+        "created_at": row["created_at"],
+        "warning": "Store the `key` value now. It will not be shown again.",
+    }
+
+
+@app.post("/api/agent/keys/list")
+async def list_api_keys(request: ApiKeyListRequest):
+    client = await get_supabase_client(request.user_token)
+    me = client.auth.get_user()
+    if not me or not me.user:
+        raise HTTPException(status_code=401, detail="Could not resolve user")
+    user_id = me.user.id
+
+    service = supabase_for_user(user_id)
+    rows = service.table("api_keys") \
+        .select("id, name, key_prefix, scopes, rate_limit, revoked, created_at, last_used_at") \
+        .eq("user_id", user_id) \
+        .order("created_at", desc=True) \
+        .execute()
+    return {"keys": rows.data or []}
+
+
+@app.delete("/api/agent/keys/{key_id}")
+async def revoke_api_key(key_id: str, user_token: str = Header(..., alias="X-User-Token")):
+    client = await get_supabase_client(user_token)
+    me = client.auth.get_user()
+    if not me or not me.user:
+        raise HTTPException(status_code=401, detail="Could not resolve user")
+    user_id = me.user.id
+
+    service = supabase_for_user(user_id)
+    service.table("api_keys") \
+        .update({"revoked": True}) \
+        .eq("id", key_id) \
+        .eq("user_id", user_id) \
+        .execute()
+    return {"status": "revoked", "id": key_id}
+
+
+# ---------- Agent-facing endpoints (X-API-Key auth) --------------------------
+
+@app.post("/api/agent/briefing")
+async def agent_briefing(
+    request: BriefingRequest,
+    api_key: dict = Depends(require_scope("read")),
+):
+    """
+    Aggregated briefing of the user's current state — the recommended first
+    call for any agent. Returns priorities, blocked items, projects,
+    upcoming meetings, recent activity, stale items and a weekly summary.
+    """
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+    workspace_id = request.workspace_id or _resolve_default_workspace(service, user_id)
+
+    # Pull desktops + notes + connections for the workspace.
+    desktops = service.table("desktops") \
+        .select("id, name") \
+        .eq("workspace_id", workspace_id) \
+        .execute()
+    desktop_rows = desktops.data or []
+    desktop_ids = [d["id"] for d in desktop_rows]
+    desktop_lookup = {d["id"]: d for d in desktop_rows}
+
+    notes_rows = []
+    if desktop_ids:
+        notes_q = service.table("notes") \
+            .select("id, title, desktop_id, color, metadata, created_at, updated_at") \
+            .in_("desktop_id", desktop_ids) \
+            .execute()
+        notes_rows = notes_q.data or []
+        for n in notes_rows:
+            n["_desktop"] = desktop_lookup.get(n["desktop_id"])
+            n["metadata"] = n.get("metadata") or {}
+
+    degree: dict[str, int] = {}
+    if desktop_ids:
+        conns = service.table("connections") \
+            .select("from_note_id, to_note_id") \
+            .in_("desktop_id", desktop_ids) \
+            .execute()
+        for c in conns.data or []:
+            degree[c["from_note_id"]] = degree.get(c["from_note_id"], 0) + 1
+            degree[c["to_note_id"]] = degree.get(c["to_note_id"], 0) + 1
+
+    now = _utcnow()
+    upcoming_cutoff = now + timedelta(hours=request.upcoming_window_hours)
+    stale_cutoff = now - timedelta(days=request.stale_threshold_days)
+    week_ago = now - timedelta(days=7)
+
+    priorities, active_projects, blocked_items, upcoming_meetings = [], [], [], []
+    stale_items = []
+    completed_week = new_week = 0
+
+    for n in notes_rows:
+        m = n["metadata"]
+        score, reasons = _score_briefing_note(n, now, degree.get(n["id"], 0))
+        if score >= 0:
+            priorities.append({
+                "id": n["id"], "title": n["title"],
+                "desktop_name": (n["_desktop"] or {}).get("name"),
+                "metadata": m, "score": round(score, 2), "reasons": reasons,
+            })
+
+        if m.get("type") == "project" and m.get("status") == "active":
+            active_projects.append({
+                "id": n["id"], "title": n["title"],
+                "progress": m.get("progress"), "tags": m.get("tags") or [],
+                "updated_at": n.get("updated_at"),
+            })
+        if m.get("status") == "blocked":
+            blocked_items.append({
+                "id": n["id"], "title": n["title"], "type": m.get("type"),
+            })
+        if m.get("type") == "meeting":
+            due = _parse_iso(m.get("dueDate"))
+            if due is not None and now <= due <= upcoming_cutoff:
+                upcoming_meetings.append({
+                    "id": n["id"], "title": n["title"], "due_date": m.get("dueDate"),
+                })
+
+        updated = _parse_iso(n.get("updated_at"))
+        created = _parse_iso(n.get("created_at"))
+        if m.get("type") in ("task", "project") \
+                and m.get("status") not in ("completed", "archived"):
+            anchor = _parse_iso(m.get("lastReviewedAt")) or updated
+            if anchor is not None and anchor < stale_cutoff:
+                stale_items.append({
+                    "id": n["id"], "title": n["title"],
+                    "days_since": (now - anchor).days,
+                })
+
+        if updated is not None and updated >= week_ago:
+            if m.get("status") == "completed":
+                completed_week += 1
+            if created is not None and created >= week_ago:
+                new_week += 1
+
+    priorities.sort(key=lambda x: x["score"], reverse=True)
+    upcoming_meetings.sort(key=lambda x: x["due_date"] or "")
+    stale_items.sort(key=lambda x: x["days_since"], reverse=True)
+    recent = sorted(notes_rows, key=lambda r: r.get("updated_at") or "",
+                    reverse=True)[:request.max_recent]
+    recent_activity = [{
+        "id": r["id"], "title": r["title"],
+        "desktop_name": (r["_desktop"] or {}).get("name"),
+        "updated_at": r.get("updated_at"),
+        "type": r["metadata"].get("type"),
+        "status": r["metadata"].get("status"),
+    } for r in recent]
+
+    log_api_call(api_key, "briefing.read", "agent_briefing")
+
+    return {
+        "date": now.date().isoformat(),
+        "generated_at": now.isoformat(),
+        "workspace_id": workspace_id,
+        "priorities_today": priorities[:request.max_priorities],
+        "active_projects": active_projects,
+        "blocked_items": blocked_items,
+        "upcoming_meetings": upcoming_meetings,
+        "recent_activity": recent_activity,
+        "stale_items": stale_items[:20],
+        "weekly_summary": {
+            "completed": completed_week,
+            "new": new_week,
+            "window_start": week_ago.isoformat(),
+            "window_end": now.isoformat(),
+        },
+        "totals": {
+            "notes": len(notes_rows),
+            "active_projects": len(active_projects),
+            "blocked": len(blocked_items),
+        },
+    }
+
+
+@app.post("/api/agent/ingest")
+async def agent_ingest(
+    request: IngestNoteRequest,
+    api_key: dict = Depends(require_scope("write")),
+):
+    """
+    Generic ingestion endpoint. Any service (Slack bot, n8n workflow,
+    cron job, custom agent) can POST here to create a note with metadata.
+    """
+    if request.type and request.type not in VALID_TYPES:
+        raise HTTPException(status_code=400, detail=f"Invalid type: {request.type}")
+    if request.status and request.status not in VALID_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {request.status}")
+    if request.priority is not None and not (1 <= request.priority <= 5):
+        raise HTTPException(status_code=400, detail="priority must be 1..5")
+    if request.due_date and _parse_iso(request.due_date) is None:
+        raise HTTPException(status_code=400, detail="due_date must be ISO-8601")
+
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+    workspace_id = request.workspace_id or _resolve_default_workspace(service, user_id)
+
+    desktop_id = request.desktop_id
+    if not desktop_id:
+        first = service.table("desktops") \
+            .select("id") \
+            .eq("workspace_id", workspace_id) \
+            .order("position_order") \
+            .limit(1) \
+            .execute()
+        if not first.data:
+            raise HTTPException(status_code=404, detail="Workspace has no desktops")
+        desktop_id = first.data[0]["id"]
+    else:
+        # Confirm the desktop belongs to a workspace owned by this user.
+        check = service.table("desktops") \
+            .select("workspace_id") \
+            .eq("id", desktop_id) \
+            .single() \
+            .execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="desktop_id not found")
+        owner = service.table("workspaces") \
+            .select("user_id") \
+            .eq("id", check.data["workspace_id"]) \
+            .single() \
+            .execute()
+        if not owner.data or owner.data["user_id"] != user_id:
+            raise HTTPException(status_code=403, detail="desktop_id does not belong to caller")
+
+    metadata: dict[str, Any] = {
+        "source": request.source or f"api:{api_key['name']}",
+    }
+    if request.type:
+        metadata["type"] = request.type
+    if request.status:
+        metadata["status"] = request.status
+    if request.priority is not None:
+        metadata["priority"] = request.priority
+    if request.tags:
+        metadata["tags"] = request.tags
+    if request.due_date:
+        metadata["dueDate"] = request.due_date
+
+    inserted = service.table("notes").insert({
+        "desktop_id": desktop_id,
+        "title": request.title.strip(),
+        "content": request.content,
+        "position_x": 100,
+        "position_y": 100,
+        "width": 300,
+        "height": 200,
+        "color": "#0c2a18",
+        "z_index": 1,
+        "minimized": False,
+        "metadata": metadata,
+    }).execute()
+
+    if not inserted.data:
+        raise HTTPException(status_code=500, detail="Failed to ingest note")
+
+    row = inserted.data[0]
+    log_api_call(api_key, "note.create", "agent_ingest", resource_id=row["id"])
+    return {"status": "ok", "note": row}
+
+
+@app.get("/api/agent/priorities")
+async def agent_priorities(
+    workspace_id: Optional[str] = None,
+    max_items: int = 20,
+    api_key: dict = Depends(require_scope("read")),
+):
+    """
+    Lightweight priorities endpoint — the briefing's top section without the
+    rest of the payload. Useful for status-bar style integrations.
+    """
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+    wid = workspace_id or _resolve_default_workspace(service, user_id)
+    max_items = min(max(1, max_items), 100)
+
+    desktops = service.table("desktops") \
+        .select("id, name") \
+        .eq("workspace_id", wid) \
+        .execute()
+    desktop_rows = desktops.data or []
+    desktop_ids = [d["id"] for d in desktop_rows]
+    desktop_lookup = {d["id"]: d for d in desktop_rows}
+    if not desktop_ids:
+        return {"workspace_id": wid, "items": []}
+
+    notes_q = service.table("notes") \
+        .select("id, title, desktop_id, metadata, updated_at") \
+        .in_("desktop_id", desktop_ids) \
+        .execute()
+    rows = notes_q.data or []
+
+    conns = service.table("connections") \
+        .select("from_note_id, to_note_id") \
+        .in_("desktop_id", desktop_ids) \
+        .execute()
+    degree: dict[str, int] = {}
+    for c in conns.data or []:
+        degree[c["from_note_id"]] = degree.get(c["from_note_id"], 0) + 1
+        degree[c["to_note_id"]] = degree.get(c["to_note_id"], 0) + 1
+
+    now = _utcnow()
+    scored: list[dict[str, Any]] = []
+    for n in rows:
+        n["_desktop"] = desktop_lookup.get(n["desktop_id"])
+        n["metadata"] = n.get("metadata") or {}
+        score, reasons = _score_briefing_note(n, now, degree.get(n["id"], 0))
+        if score < 0:
+            continue
+        scored.append({
+            "id": n["id"], "title": n["title"],
+            "desktop_name": n["_desktop"]["name"] if n["_desktop"] else None,
+            "metadata": n["metadata"],
+            "score": round(score, 2),
+            "reasons": reasons,
+        })
+
+    scored.sort(key=lambda r: r["score"], reverse=True)
+    log_api_call(api_key, "priorities.read", "agent_priorities")
+    return {"workspace_id": wid, "items": scored[:max_items]}
+
+
+# ---------- ICS (Google Calendar / iCal) ingestion ---------------------------
+#
+# Rather than implementing OAuth against every calendar provider, we accept
+# the raw ICS feed and parse it here. Any provider exposing an ICS URL works
+# (Google, Outlook, Apple, Fastmail, CalDAV, ...). The caller passes the ICS
+# body it already has — this keeps provider auth out of the MCP server.
+
+def _ics_unfold(ics_text: str) -> list[str]:
+    """ICS lines can wrap with a leading space/tab. Unfold them per RFC 5545."""
+    lines = ics_text.replace("\r\n", "\n").split("\n")
+    unfolded: list[str] = []
+    for line in lines:
+        if line.startswith((" ", "\t")) and unfolded:
+            unfolded[-1] += line[1:]
+        else:
+            unfolded.append(line)
+    return unfolded
+
+
+def _ics_parse_dt(value: str) -> Optional[datetime]:
+    """
+    Parse a DTSTART/DTEND value. Returns a timezone-aware UTC datetime or
+    None when the value is unparseable. VALUE=DATE (all-day) produces a
+    midnight-UTC datetime on that date.
+    """
+    if not value:
+        return None
+    raw = value.strip()
+    # Strip a trailing Z and remember it so we can mark UTC.
+    is_utc = raw.endswith("Z")
+    raw = raw.rstrip("Z")
+
+    try:
+        if "T" in raw:
+            dt = datetime.strptime(raw, "%Y%m%dT%H%M%S")
+        else:
+            dt = datetime.strptime(raw, "%Y%m%d")
+    except ValueError:
+        return None
+
+    return dt.replace(tzinfo=timezone.utc) if is_utc or "T" not in raw else dt.replace(tzinfo=timezone.utc)
+
+
+def _ics_events(ics_text: str) -> list[dict[str, Any]]:
+    """Extract events from an ICS feed as dicts with uid/summary/start/end/location/description."""
+    events: list[dict[str, Any]] = []
+    current: Optional[dict[str, Any]] = None
+
+    for raw_line in _ics_unfold(ics_text):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line == "BEGIN:VEVENT":
+            current = {}
+            continue
+        if line == "END:VEVENT":
+            if current is not None:
+                events.append(current)
+            current = None
+            continue
+        if current is None:
+            continue
+
+        # Split KEY[;PARAMS]:VALUE — params live between the first ; and :.
+        sep = line.find(":")
+        if sep == -1:
+            continue
+        head = line[:sep]
+        value = line[sep + 1:]
+        key = head.split(";", 1)[0].upper()
+
+        if key == "UID":
+            current["uid"] = value
+        elif key == "SUMMARY":
+            current["summary"] = _ics_unescape(value)
+        elif key == "DESCRIPTION":
+            current["description"] = _ics_unescape(value)
+        elif key == "LOCATION":
+            current["location"] = _ics_unescape(value)
+        elif key == "DTSTART":
+            current["start"] = _ics_parse_dt(value)
+        elif key == "DTEND":
+            current["end"] = _ics_parse_dt(value)
+
+    return events
+
+
+def _ics_unescape(value: str) -> str:
+    return (value
+            .replace("\\n", "\n")
+            .replace("\\N", "\n")
+            .replace("\\,", ",")
+            .replace("\\;", ";")
+            .replace("\\\\", "\\"))
+
+
+@app.post("/api/agent/ingest-ics")
+async def agent_ingest_ics(
+    request: IcsIngestRequest,
+    api_key: dict = Depends(require_scope("write")),
+):
+    """
+    Ingest an ICS feed (Google Calendar / Outlook / Apple / any iCal source).
+
+    For each VEVENT in the feed a note is created (or kept idempotent via
+    the event UID) with metadata.type='meeting', dueDate=DTSTART and
+    linkedResources pointing back to the original UID.
+    """
+    if not request.ics or not request.ics.strip():
+        raise HTTPException(status_code=400, detail="ics body is required")
+    if len(request.ics) > 2_000_000:
+        raise HTTPException(status_code=400, detail="ICS payload too large (2MB cap)")
+
+    max_events = min(max(1, request.max_events), 500)
+
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+    workspace_id = request.workspace_id or _resolve_default_workspace(service, user_id)
+
+    # Resolve target desktop.
+    desktop_id = request.target_desktop_id
+    if not desktop_id:
+        first = service.table("desktops") \
+            .select("id") \
+            .eq("workspace_id", workspace_id) \
+            .order("position_order") \
+            .limit(1) \
+            .execute()
+        if not first.data:
+            raise HTTPException(status_code=404, detail="Workspace has no desktops")
+        desktop_id = first.data[0]["id"]
+
+    cutoff = _parse_iso(request.start_after) if request.start_after else _utcnow()
+
+    events = _ics_events(request.ics)[:max_events]
+
+    created = 0
+    updated = 0
+    skipped = 0
+    errors: list[str] = []
+
+    for evt in events:
+        try:
+            start: Optional[datetime] = evt.get("start")
+            summary = evt.get("summary") or "(Sin título)"
+            uid = evt.get("uid")
+
+            if start is None:
+                skipped += 1
+                continue
+            if cutoff is not None and start < cutoff:
+                skipped += 1
+                continue
+
+            metadata: dict[str, Any] = {
+                "type": "meeting",
+                "status": "active",
+                "source": f"connector:calendar:{api_key['name']}",
+                "dueDate": start.isoformat(),
+                "tags": ["calendar"],
+            }
+            if uid:
+                metadata["linkedResources"] = [{
+                    "type": "ics",
+                    "uri": f"ics:uid:{uid}",
+                    "label": "Calendar event UID",
+                }]
+
+            content_lines = []
+            if evt.get("location"):
+                content_lines.append(f"📍 {evt['location']}")
+            if evt.get("description"):
+                content_lines.append(evt["description"])
+            content = "\n\n".join(content_lines)
+
+            # Idempotency: if the event UID was already ingested (linkedResources
+            # contains its uri), update instead of inserting.
+            existing_id = None
+            if uid:
+                match = service.table("notes") \
+                    .select("id") \
+                    .eq("desktop_id", desktop_id) \
+                    .contains("metadata->linkedResources", [{"uri": f"ics:uid:{uid}"}]) \
+                    .limit(1) \
+                    .execute()
+                if match.data:
+                    existing_id = match.data[0]["id"]
+
+            if existing_id:
+                service.table("notes") \
+                    .update({
+                        "title": summary[:200],
+                        "content": content,
+                        "metadata": metadata,
+                        "updated_at": _utcnow().isoformat(),
+                    }) \
+                    .eq("id", existing_id) \
+                    .execute()
+                updated += 1
+            else:
+                service.table("notes").insert({
+                    "desktop_id": desktop_id,
+                    "title": summary[:200],
+                    "content": content,
+                    "position_x": 100,
+                    "position_y": 100,
+                    "width": 300,
+                    "height": 180,
+                    "color": "#15311f",
+                    "z_index": 1,
+                    "minimized": False,
+                    "metadata": metadata,
+                }).execute()
+                created += 1
+
+        except Exception as e:
+            errors.append(f"{evt.get('uid') or evt.get('summary', '?')}: {e}")
+
+    if request.connector_id:
+        try:
+            service.table("connectors") \
+                .update({
+                    "last_sync_at": _utcnow().isoformat(),
+                    "last_sync_status": f"ok ({created} new, {updated} updated)"
+                        if not errors else f"partial ({len(errors)} errors)",
+                }) \
+                .eq("id", request.connector_id) \
+                .eq("user_id", user_id) \
+                .execute()
+        except Exception:
+            pass
+
+    log_api_call(api_key, "ingest.ics", "agent_ingest_ics",
+                 resource_id=desktop_id, status=200 if not errors else 207)
+
+    return {
+        "status": "ok" if not errors else "partial",
+        "workspace_id": workspace_id,
+        "desktop_id": desktop_id,
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+        "errors": errors[:20],
     }
 
 

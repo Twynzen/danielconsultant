@@ -213,7 +213,8 @@
 
   animation: slideIn 0.2s ease-out;
 
-  button {
+  button,
+  a.menu-link {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -226,6 +227,7 @@
     font-size: 12px;
     cursor: pointer;
     text-align: left;
+    text-decoration: none;
 
     svg {
       width: 16px;
@@ -338,7 +340,8 @@
   }
 }
 
-.user-dropdown button {
+.user-dropdown button,
+.user-dropdown a.menu-link {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -351,6 +354,7 @@
   font-size: 12px;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
 
   svg {
     width: 16px;

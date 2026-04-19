@@ -269,6 +269,10 @@ export class SyncService {
             color: rn.color,
             zIndex: rn.z_index || 1,
             minimized: rn.minimized || false,
+            // Tolerate older rows where the column does not exist yet.
+            metadata: rn.metadata && Object.keys(rn.metadata).length > 0
+              ? rn.metadata
+              : undefined,
             createdAt: new Date(rn.created_at),
             updatedAt: new Date(rn.updated_at)
           });
@@ -502,6 +506,9 @@ export class SyncService {
         color: note.color,
         z_index: note.zIndex,
         minimized: note.minimized,
+        // Intelligence layer — defaults to {} if not present, matching the
+        // NOT NULL DEFAULT '{}' column constraint on Supabase.
+        metadata: note.metadata ?? {},
         local_id: note.id
       })
       .select('id')

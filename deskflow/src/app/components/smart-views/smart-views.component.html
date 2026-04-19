@@ -1,0 +1,165 @@
+<div class="smart-views">
+  <header class="sv-header">
+    <a routerLink="/" class="sv-back">‹ Volver al escritorio</a>
+    <h1>Smart Views</h1>
+    <p class="sv-sub">Vistas transversales sobre todos tus escritorios.</p>
+  </header>
+
+  <nav class="sv-tabs">
+    <button
+      type="button"
+      class="sv-tab"
+      [class.active]="view() === 'table'"
+      (click)="setView('table')">
+      Tabla
+    </button>
+    <button
+      type="button"
+      class="sv-tab"
+      [class.active]="view() === 'kanban'"
+      (click)="setView('kanban')">
+      Kanban
+    </button>
+    <button
+      type="button"
+      class="sv-tab"
+      [class.active]="view() === 'timeline'"
+      (click)="setView('timeline')">
+      Timeline
+    </button>
+  </nav>
+
+  <section class="sv-filters">
+    <input
+      type="search"
+      placeholder="Buscar por título o contenido…"
+      [ngModel]="filterSearch()"
+      (ngModelChange)="filterSearch.set($event)" />
+
+    <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)">
+      <option value="">Tipo: todos</option>
+      <option value="task">Tarea</option>
+      <option value="project">Proyecto</option>
+      <option value="meeting">Reunión</option>
+      <option value="note">Nota</option>
+      <option value="reference">Referencia</option>
+      <option value="contact">Contacto</option>
+      <option value="idea">Idea</option>
+      <option value="log">Log</option>
+    </select>
+
+    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+      <option value="">Estado: todos</option>
+      <option value="active">Activo</option>
+      <option value="blocked">Bloqueado</option>
+      <option value="inactive">Inactivo</option>
+      <option value="completed">Completado</option>
+      <option value="archived">Archivado</option>
+    </select>
+
+    <select [ngModel]="filterTag()" (ngModelChange)="filterTag.set($event)">
+      <option value="">Tag: todos</option>
+      @for (tag of tags(); track tag) {
+        <option [value]="tag">{{ tag }}</option>
+      }
+    </select>
+
+    <button type="button" class="sv-reset" (click)="resetFilters()">Limpiar</button>
+  </section>
+
+  @if (view() === 'table') {
+    <div class="sv-table-wrap">
+      <table class="sv-table">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Prioridad</th>
+            <th>Vence</th>
+            <th>Escritorio</th>
+            <th>Tags</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of tableItems(); track item.note.id) {
+            <tr (click)="openNote(item)">
+              <td class="sv-title">{{ item.note.title }}</td>
+              <td>{{ item.metadata.type ?? '—' }}</td>
+              <td>{{ item.metadata.status ?? '—' }}</td>
+              <td>{{ item.metadata.priority ?? '—' }}</td>
+              <td>{{ item.metadata.dueDate ? (item.metadata.dueDate | date:'short') : '—' }}</td>
+              <td>{{ item.desktop.name }}</td>
+              <td>
+                @for (tag of (item.metadata.tags ?? []); track tag) {
+                  <span class="sv-chip">{{ tag }}</span>
+                }
+              </td>
+              <td class="sv-score">{{ item.score | number:'1.0-1' }}</td>
+            </tr>
+          }
+          @if (tableItems().length === 0) {
+            <tr><td colspan="8" class="sv-empty">Sin notas que coincidan.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (view() === 'kanban') {
+    <div class="sv-kanban">
+      @for (col of kanbanColumns(); track col.status) {
+        <div class="sv-col">
+          <h3>{{ col.label }} <span class="sv-count">{{ col.items.length }}</span></h3>
+          @for (item of col.items; track item.note.id) {
+            <article class="sv-card" (click)="openNote(item)">
+              <div class="sv-card-title">{{ item.note.title }}</div>
+              <div class="sv-card-meta">
+                @if (item.metadata.type) { <span class="sv-chip">{{ item.metadata.type }}</span> }
+                @if (item.metadata.priority) { <span class="sv-chip">P{{ item.metadata.priority }}</span> }
+                @if (item.metadata.dueDate) {
+                  <span class="sv-chip">{{ item.metadata.dueDate | date:'shortDate' }}</span>
+                }
+              </div>
+              @if (item.reasons.length > 0) {
+                <div class="sv-reasons">
+                  @for (reason of item.reasons; track reason) {
+                    <span class="sv-reason">{{ reason }}</span>
+                  }
+                </div>
+              }
+            </article>
+          }
+          @if (col.items.length === 0) {
+            <p class="sv-empty">—</p>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (view() === 'timeline') {
+    <ol class="sv-timeline">
+      @for (item of timelineItems(); track item.note.id) {
+        <li (click)="openNote(item)">
+          <time>{{ item.metadata.dueDate | date:'medium' }}</time>
+          <div class="sv-tl-body">
+            <strong>{{ item.note.title }}</strong>
+            <small>{{ item.desktop.name }}</small>
+            @if (item.reasons.length > 0) {
+              <div class="sv-reasons">
+                @for (reason of item.reasons; track reason) {
+                  <span class="sv-reason">{{ reason }}</span>
+                }
+              </div>
+            }
+          </div>
+        </li>
+      }
+      @if (timelineItems().length === 0) {
+        <li class="sv-empty">No hay items con fecha asignada.</li>
+      }
+    </ol>
+  }
+</div>
