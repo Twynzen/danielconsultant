@@ -1,0 +1,167 @@
+<div class="event-modal-backdrop" (click)="onBackdropClick($event)">
+  <div class="event-modal cyber-panel">
+
+    <header class="modal-header">
+      <h2 class="font-display">{{ editing ? 'EDITAR EVENTO' : 'NUEVO EVENTO' }}</h2>
+      <button class="close-btn" (click)="onCancel()" title="Cerrar">×</button>
+    </header>
+
+    <div class="modal-body">
+
+      <!-- Título -->
+      <div class="field">
+        <label>Título *</label>
+        <input
+          type="text"
+          maxlength="200"
+          placeholder="Reunión, tarea, recordatorio..."
+          [value]="title()"
+          (input)="title.set($any($event.target).value)"
+          autofocus />
+      </div>
+
+      <!-- Calendario -->
+      <div class="field">
+        <label>Calendario</label>
+        <select [value]="calendarId()" (change)="calendarId.set($any($event.target).value)">
+          <option *ngFor="let cal of calendars" [value]="cal.id">
+            {{ cal.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- All day toggle -->
+      <div class="field-row">
+        <label class="checkbox-label">
+          <input type="checkbox" [checked]="allDay()" (change)="toggleAllDay()" />
+          <span>Todo el día</span>
+        </label>
+      </div>
+
+      <!-- Inicio -->
+      <div class="field-row">
+        <div class="field flex-1">
+          <label>Inicio</label>
+          <input type="date"
+                 [value]="startDate()"
+                 (input)="startDate.set($any($event.target).value)" />
+        </div>
+        <div class="field flex-1" *ngIf="!allDay()">
+          <label>Hora</label>
+          <input type="time"
+                 [value]="startTime()"
+                 (input)="startTime.set($any($event.target).value)" />
+        </div>
+      </div>
+
+      <!-- Fin -->
+      <div class="field-row">
+        <div class="field flex-1">
+          <label>Fin</label>
+          <input type="date"
+                 [value]="endDate()"
+                 (input)="endDate.set($any($event.target).value)" />
+        </div>
+        <div class="field flex-1" *ngIf="!allDay()">
+          <label>Hora</label>
+          <input type="time"
+                 [value]="endTime()"
+                 (input)="endTime.set($any($event.target).value)" />
+        </div>
+      </div>
+
+      <!-- Repetición -->
+      <div class="field">
+        <label>Repetición</label>
+        <div class="rrule-presets">
+          <button *ngFor="let preset of rrulePresets"
+                  type="button"
+                  class="preset-chip"
+                  [class.active]="rrule() === preset.value"
+                  (click)="selectRrulePreset(preset.value)">
+            {{ preset.label }}
+          </button>
+        </div>
+        <input *ngIf="rrule()"
+               type="text"
+               class="rrule-raw"
+               placeholder="RFC 5545 RRULE (avanzado)"
+               [value]="rrule()"
+               (input)="rrule.set($any($event.target).value)" />
+      </div>
+
+      <!-- Ubicación -->
+      <div class="field">
+        <label>Ubicación</label>
+        <input type="text"
+               placeholder="Zoom, dirección, link..."
+               [value]="location()"
+               (input)="location.set($any($event.target).value)" />
+      </div>
+
+      <!-- Descripción -->
+      <div class="field">
+        <label>Notas</label>
+        <textarea rows="3"
+                  placeholder="Agenda, links, contexto..."
+                  [value]="description()"
+                  (input)="description.set($any($event.target).value)"></textarea>
+      </div>
+
+      <!-- Recordatorios -->
+      <div class="field">
+        <label>Recordatorios</label>
+        <div class="reminders-list">
+          <div *ngFor="let r of reminders(); let i = index" class="reminder-row">
+            <span class="reminder-label">{{ reminderLabel(r.minutesBefore) }}</span>
+            <select [value]="r.channel"
+                    (change)="setReminderChannel(i, $any($event.target).value)">
+              <option *ngFor="let c of channels" [value]="c">
+                {{ c === 'whatsapp' ? 'WhatsApp' : (c === 'toast' ? 'En la app' : 'WhatsApp + App') }}
+              </option>
+            </select>
+            <button type="button" class="reminder-remove" (click)="removeReminder(i)" title="Quitar">×</button>
+          </div>
+          <div class="reminders-empty" *ngIf="reminders().length === 0">
+            Sin recordatorios. Añade uno:
+          </div>
+          <div class="reminder-presets">
+            <button *ngFor="let preset of reminderPresets"
+                    type="button"
+                    class="preset-chip"
+                    (click)="addReminder(preset.minutes)">
+              + {{ preset.label }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linked note -->
+      <div class="field" *ngIf="notesList().length > 0">
+        <label>Vincular a nota (opcional)</label>
+        <select [value]="linkedNoteId()" (change)="linkedNoteId.set($any($event.target).value)">
+          <option value="">Sin vincular</option>
+          <option *ngFor="let n of notesList()" [value]="n.id">
+            {{ n.title }} — {{ n.desktopName }}
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+    <footer class="modal-footer">
+      <button *ngIf="editing"
+              type="button"
+              class="btn btn-danger"
+              (click)="onDelete()">
+        Eliminar
+      </button>
+      <div class="footer-spacer"></div>
+      <button type="button" class="btn btn-ghost" (click)="onCancel()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="onSave()">
+        {{ editing ? 'Guardar' : 'Crear' }}
+      </button>
+    </footer>
+
+  </div>
+</div>

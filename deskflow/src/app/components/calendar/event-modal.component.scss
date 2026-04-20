@@ -1,0 +1,240 @@
+.event-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.event-modal {
+  background: #050807;
+  border: 1px solid rgba(0, 255, 65, 0.4);
+  border-radius: 6px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 40px rgba(0, 255, 65, 0.25);
+  font-family: 'Source Code Pro', 'Courier New', monospace;
+  color: #d6f5dc;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.25);
+
+  h2 {
+    margin: 0;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #00ff41;
+    text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: #d6f5dc;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 6px;
+
+    &:hover { color: #00ff41; }
+  }
+}
+
+.modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 11px;
+    color: #8db4a0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 255, 65, 0.25);
+    border-radius: 3px;
+    padding: 8px 10px;
+    color: #d6f5dc;
+    font-family: inherit;
+    font-size: 13px;
+
+    &:focus {
+      outline: none;
+      border-color: #00ff41;
+      box-shadow: 0 0 6px rgba(0, 255, 65, 0.3);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+
+  .flex-1 { flex: 1; }
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #d6f5dc;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    accent-color: #00ff41;
+  }
+}
+
+.rrule-presets, .reminder-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.preset-chip {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  border-radius: 3px;
+  color: #8db4a0;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #00ff41;
+    color: #00ff41;
+  }
+  &.active {
+    background: rgba(0, 255, 65, 0.15);
+    color: #00ff41;
+    border-color: #00ff41;
+  }
+}
+
+.rrule-raw {
+  margin-top: 6px;
+}
+
+.reminders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reminder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(0, 255, 65, 0.05);
+  border-radius: 3px;
+
+  .reminder-label {
+    flex: 1;
+    font-size: 12px;
+    color: #d6f5dc;
+  }
+
+  select { padding: 4px 8px; font-size: 11px; }
+
+  .reminder-remove {
+    width: 22px; height: 22px;
+    background: transparent;
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    color: #ff5050;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    &:hover { background: rgba(255, 80, 80, 0.15); }
+  }
+}
+
+.reminders-empty {
+  font-size: 11px;
+  color: #5a8c70;
+  font-style: italic;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(0, 255, 65, 0.25);
+
+  .footer-spacer { flex: 1; }
+}
+
+.btn {
+  padding: 8px 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+
+  &.btn-primary {
+    background: rgba(0, 255, 65, 0.15);
+    border: 1px solid #00ff41;
+    color: #00ff41;
+    &:hover {
+      background: rgba(0, 255, 65, 0.28);
+      box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+    }
+  }
+  &.btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(0, 255, 65, 0.25);
+    color: #8db4a0;
+    &:hover { color: #00ff41; border-color: #00ff41; }
+  }
+  &.btn-danger {
+    background: transparent;
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    color: #ff5050;
+    &:hover {
+      background: rgba(255, 80, 80, 0.15);
+      box-shadow: 0 0 8px rgba(255, 80, 80, 0.3);
+    }
+  }
+}
