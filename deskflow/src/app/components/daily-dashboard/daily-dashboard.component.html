@@ -9,6 +9,23 @@
   </header>
 
   <section class="daily-grid">
+    <article class="daily-card calendar-today">
+      <h2>Hoy en el calendario ({{ todayEvents().length }})</h2>
+      @if (todayEvents().length === 0) {
+        <p class="daily-empty">Sin eventos hoy. <a routerLink="/calendar">Crear uno →</a></p>
+      }
+      <ul class="event-timeline">
+        @for (event of todayEvents(); track event.id + '-' + event.instanceStart) {
+          <li (click)="openEventInCalendar(event)">
+            <span class="event-time">{{ formatEventTime(event) }}</span>
+            <span class="event-color-dot" [style.background]="event.color"></span>
+            <span class="event-title">{{ event.title }}</span>
+            @if (event.location) { <span class="event-loc">📍 {{ event.location }}</span> }
+          </li>
+        }
+      </ul>
+    </article>
+
     <article class="daily-card priorities">
       <h2>Prioridades de hoy</h2>
       @if (priorities().length === 0) {
