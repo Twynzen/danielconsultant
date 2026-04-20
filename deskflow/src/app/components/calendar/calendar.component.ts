@@ -8,7 +8,8 @@ import {
   differenceInMinutes, isWithinInterval, eachDayOfInterval,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarStorageService, CalendarInstance } from '../../services/calendar-storage.service';
+import { CalendarStorageService, CalendarInstance, NOTE_PSEUDO_CALENDAR_ID } from '../../services/calendar-storage.service';
+import { StorageService } from '../../services/storage.service';
 import { CalendarView } from '../../models/calendar.model';
 import { EventModalComponent, EventModalResult } from './event-modal.component';
 import { RecurrenceScopeModalComponent } from './recurrence-scope-modal.component';
@@ -33,6 +34,7 @@ const SLOT_MINUTES = 15;    // snap drag-to-create to 15-min increments
 })
 export class CalendarComponent implements OnInit, OnDestroy {
   private storage = inject(CalendarStorageService);
+  private noteStorage = inject(StorageService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -270,23 +272,100 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
   // ===== modal flows =====
 
+  /**
+   * Primary flow for "arrastré 10am–11am, créalo". Asks once whether the
+   * user prefers creating a note (the default / Daniel's workflow) or a
+   * calendar_events row (for recurring / ICS-sourced events). Remembers
+   * the choice via localStorage so subsequent drags don't re-prompt.
+   */
   openCreate(prefill?: { startsAt?: string; endsAt?: string }): void {
-    this.editingEvent.set(null);
-    if (prefill?.startsAt && prefill?.endsAt) {
-      this.modalPrefill.set({ startsAt: prefill.startsAt, endsAt: prefill.endsAt });
-    } else {
+    const startsAt = prefill?.startsAt ?? (() => {
       const now = new Date();
       now.setMinutes(0, 0, 0);
-      const end = new Date(now.getTime() + 60 * 60 * 1000);
-      this.modalPrefill.set({ startsAt: now.toISOString(), endsAt: end.toISOString() });
+      return now.toISOString();
+    })();
+    const endsAt = prefill?.endsAt ?? new Date(
+      new Date(startsAt).getTime() + 60 * 60 * 1000
+    ).toISOString();
+
+    const saved = localStorage.getItem('calendar.createAs');
+    const createAs = saved === 'note' || saved === 'event'
+      ? saved
+      : this.askCreateKind();
+    if (!createAs) return;
+
+    if (createAs === 'note') {
+      this.createScheduledNote(startsAt, endsAt);
+    } else {
+      this.editingEvent.set(null);
+      this.modalPrefill.set({ startsAt, endsAt });
+      this.showEventModal.set(true);
     }
-    this.showEventModal.set(true);
   }
 
+  /**
+   * Opens the note in its home desktop. The schedule bar inside the note
+   * is the primary edit surface — there's nothing calendar-specific to
+   * edit here, the note and its metadata own the state.
+   */
   openEdit(event: CalendarInstance): void {
+    if (event.calendarId === NOTE_PSEUDO_CALENDAR_ID && event.linkedNoteId) {
+      const all = this.noteStorage.getAllNotes();
+      const entry = all.find(e => e.note.id === event.linkedNoteId);
+      if (entry) {
+        this.noteStorage.navigateToDesktop(entry.desktop.id);
+        this.noteStorage.bringNoteToFront(entry.note.id);
+      }
+      this.router.navigate(['/']);
+      return;
+    }
     this.editingEvent.set(event);
     this.modalPrefill.set(null);
     this.showEventModal.set(true);
+  }
+
+  private askCreateKind(): 'note' | 'event' | null {
+    const msg =
+      'Crear aquí como:\n\n' +
+      '  OK    → Nota con horario (recomendado)\n' +
+      '  Cancelar → Evento de calendario (recurrente / importable)';
+    const chose = window.confirm(msg);
+    // Not ideal UX long-term (should be a real modal), but acceptable for
+    // MVP. Remember the choice so the prompt only appears once per user.
+    if (chose === null) return null;
+    const kind = chose ? 'note' : 'event';
+    localStorage.setItem('calendar.createAs', kind);
+    return kind;
+  }
+
+  /**
+   * Creates a blank note on the root desktop with scheduledStart/End
+   * prefilled. The user lands on the calendar after creation — the new
+   * block is immediately visible on the grid because the events() computed
+   * reacts to the notes signal.
+   */
+  private createScheduledNote(startsAt: string, endsAt: string): void {
+    // Pick the root desktop as the default home. Could extend later to
+    // remember the last-edited desktop.
+    const root = this.noteStorage.desktops().find(d => !d.parentId);
+    const targetDesktopId = root?.id ?? this.noteStorage.desktops()[0]?.id;
+    if (!targetDesktopId) {
+      console.warn('[Calendar] no desktop available to host a scheduled note');
+      return;
+    }
+    if (this.noteStorage.currentDesktop()?.id !== targetDesktopId) {
+      this.noteStorage.navigateToDesktop(targetDesktopId);
+    }
+    // Place the note somewhere visible. We reuse the same randomisation
+    // desktop.component does for manual Add Note.
+    const x = 80 + Math.random() * 200;
+    const y = 100 + Math.random() * 150;
+    const created = this.noteStorage.addNote({ x, y });
+    this.noteStorage.updateNoteMetadata(created.id, {
+      scheduledStart: startsAt,
+      scheduledEnd: endsAt,
+      type: 'task',
+    });
   }
 
   async onModalSave(result: EventModalResult): Promise<void> {

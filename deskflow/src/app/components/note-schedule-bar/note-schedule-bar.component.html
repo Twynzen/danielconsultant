@@ -1,0 +1,55 @@
+<div class="schedule-bar" [class.active]="hasSchedule()" [class.expanded]="expanded()">
+
+  @if (!hasSchedule() && !expanded()) {
+    <!-- Collapsed: no schedule yet, just the activation pill -->
+    <button type="button" class="schedule-pill" (click)="initializeToday($event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      <span>Hoy · añadir hora</span>
+    </button>
+  }
+
+  @if (hasSchedule() && !expanded()) {
+    <!-- Collapsed: chip showing the range with clear + edit actions -->
+    <button type="button" class="schedule-chip" (click)="toggleExpanded($event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span>{{ compactLabel() }}</span>
+      <span class="schedule-clear" (click)="clearSchedule($event)" title="Quitar horario">×</span>
+    </button>
+  }
+
+  @if (expanded()) {
+    <!-- Expanded: full picker + visual duration bar -->
+    <div class="schedule-edit">
+      <div class="schedule-inputs">
+        <input type="time"
+               [value]="startValue()"
+               (change)="onStartChange($any($event.target).value)"
+               title="Inicio" />
+        <span class="schedule-arrow">→</span>
+        <input type="time"
+               [value]="endValue()"
+               (change)="onEndChange($any($event.target).value)"
+               title="Fin" />
+        <button type="button" class="schedule-close" (click)="toggleExpanded($event)" title="Cerrar">✓</button>
+        <button type="button" class="schedule-clear-btn" (click)="clearSchedule($event)" title="Quitar horario">×</button>
+      </div>
+
+      @if (hasSchedule()) {
+        <div class="schedule-track">
+          <div class="schedule-fill"
+               [style.left.%]="fillOffset()"
+               [style.width.%]="fillPercent()"></div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

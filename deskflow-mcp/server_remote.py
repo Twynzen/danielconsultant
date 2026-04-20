@@ -2138,6 +2138,37 @@ async def agent_calendar_daily_briefing(
             inst["calendar_name"] = (cal or {}).get("name")
             inst["calendar_color"] = (cal or {}).get("color")
             schedule.append(inst)
+
+    # Notes whose metadata.scheduledStart/End fall within the day are
+    # also surfaced as schedule items — they are the primary way users
+    # block out hours of their day in DeskFlow. The frontend renders them
+    # identically to calendar_events.
+    notes_for_schedule = service.table("notes") \
+        .select("id, title, desktop_id, metadata") \
+        .not_.is_("metadata->>scheduledStart", "null") \
+        .gte("metadata->>scheduledStart", day_start.isoformat()) \
+        .lte("metadata->>scheduledStart", day_end.isoformat()) \
+        .execute()
+    for n in (notes_for_schedule.data or []):
+        m = n.get("metadata") or {}
+        s = m.get("scheduledStart")
+        e = m.get("scheduledEnd")
+        if not s or not e:
+            continue
+        schedule.append({
+            "id": f"note-{n['id']}",
+            "calendar_id": "__notes__",
+            "title": n.get("title") or "(sin título)",
+            "starts_at": s,
+            "ends_at": e,
+            "all_day": False,
+            "linked_note_id": n["id"],
+            "instance_start": s,
+            "calendar_name": "Notas",
+            "calendar_color": "#00ff41",
+            "metadata": m,
+        })
+
     schedule.sort(key=lambda e: e["starts_at"])
 
     now_iso = datetime.now(timezone.utc).isoformat()

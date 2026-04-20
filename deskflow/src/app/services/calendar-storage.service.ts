@@ -1,6 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { rrulestr, RRule } from 'rrule';
 import { SupabaseService } from './supabase.service';
+import { StorageService } from './storage.service';
 import {
   Calendar,
   CalendarEvent,
@@ -17,9 +18,17 @@ import {
  * we expand instances client-side for the active view window, so the same
  * pattern works regardless of how many years of recurrence the user has.
  */
+/**
+ * Marker for instances that originated from a note's metadata scheduling
+ * rather than a calendar_events row. Used to route clicks back to the
+ * note instead of the EventModal.
+ */
+export const NOTE_PSEUDO_CALENDAR_ID = '__notes__';
+
 @Injectable({ providedIn: 'root' })
 export class CalendarStorageService {
   private supabase = inject(SupabaseService);
+  private noteStorage = inject(StorageService);
 
   // Raw rows pulled from Supabase (recurring rows kept as series).
   private _calendars = signal<Calendar[]>([]);
@@ -37,10 +46,15 @@ export class CalendarStorageService {
   );
 
   /**
-   * All event INSTANCES inside the current window. Recurring series are
-   * expanded here so callers iterate flat occurrences.
-   * Each instance preserves the parent `id` and adds an `instance_start`
-   * field that uniquely identifies the occurrence.
+   * All event INSTANCES inside the current window. Includes two sources:
+   *   1. Rows from calendar_events (including recurring series expanded)
+   *   2. Notes whose metadata.scheduledStart/End falls in the window —
+   *      rendered with a synthetic `calendarId = NOTE_PSEUDO_CALENDAR_ID`
+   *      so the UI can route clicks back to the note instead of opening
+   *      the event modal.
+   *
+   * Notes are the primary entity in Daniel's workflow; the calendar is a
+   * view. A note with a schedule appears here automatically.
    */
   readonly events = computed(() => {
     const start = this._windowStart();
@@ -48,10 +62,45 @@ export class CalendarStorageService {
     if (!start || !end) return [] as CalendarInstance[];
     const visible = this.visibleCalendarIds();
     const out: CalendarInstance[] = [];
+
+    // Source 1: calendar_events rows (with RRULE expansion)
     for (const row of this._eventRows()) {
       if (!visible.has(row.calendarId)) continue;
       out.push(...this.expandInstances(row, start, end));
     }
+
+    // Source 2: notes with metadata.scheduledStart/End in the window.
+    // Read the notes signal so this computed re-runs when notes change.
+    // StorageService exposes `desktops` as a computed signal — reading it
+    // here creates the reactive dependency we need for auto-refresh.
+    this.noteStorage.desktops();
+    for (const { note, desktop } of this.noteStorage.scheduledNotes(start, end)) {
+      const s = note.metadata?.scheduledStart;
+      const e = note.metadata?.scheduledEnd;
+      if (!s || !e) continue;
+      out.push({
+        id: `note-${note.id}`,
+        userId: '',
+        calendarId: NOTE_PSEUDO_CALENDAR_ID,
+        title: note.title || '(sin título)',
+        description: desktop.name,
+        location: undefined,
+        startsAt: s,
+        endsAt: e,
+        allDay: false,
+        rrule: undefined,
+        rruleExdates: undefined,
+        recurrenceParentId: undefined,
+        linkedNoteId: note.id,
+        icsUid: undefined,
+        metadata: {},
+        createdAt: new Date(note.createdAt).toISOString(),
+        updatedAt: new Date(note.updatedAt).toISOString(),
+        instanceStart: s,
+        color: note.color ?? '#00ff41',
+      } satisfies CalendarInstance);
+    }
+
     out.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
     return out;
   });

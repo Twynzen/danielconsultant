@@ -213,6 +213,18 @@
 
   animation: slideIn 0.2s ease-out;
 
+  .menu-version {
+    padding: 6px 14px;
+    border-top: 1px solid rgba(0, 255, 65, 0.15);
+    text-align: right;
+    small {
+      font-size: 10px;
+      color: rgba(0, 255, 65, 0.4);
+      letter-spacing: 0.5px;
+      font-family: 'Share Tech Mono', monospace;
+    }
+  }
+
   button,
   a.menu-link {
     display: flex;

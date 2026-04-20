@@ -52,7 +52,13 @@ export interface NoteMetadata {
   status?: NoteStatus;
   priority?: NotePriority;
   tags?: string[];
-  dueDate?: string;             // ISO 8601
+  dueDate?: string;             // ISO 8601 — soft deadline, not a time block
+  // Time-block scheduling (Phase 2 of feature/notes-with-schedule).
+  // When both are set, the note renders as a block on /calendar in the
+  // corresponding hour range. Keeps notes as the primary entity — calendar
+  // becomes a view, not a separate concept.
+  scheduledStart?: string;      // ISO 8601 — when the task's time-block starts
+  scheduledEnd?: string;        // ISO 8601 — when it ends (must be > scheduledStart)
   assignee?: string;
   source?: string;              // 'manual' | 'agent:<name>' | 'connector:<name>'
   linkedResources?: NoteLinkedResource[];

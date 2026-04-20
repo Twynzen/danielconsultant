@@ -12,6 +12,7 @@ import { DeviceService } from '../../services/device.service';
 import { WindowManagerService } from '../../services/window-manager.service';
 import { Desktop } from '../../models/desktop.model';
 import { SyncIndicatorComponent } from '../sync-indicator/sync-indicator.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-toolbar',
@@ -39,6 +40,11 @@ export class ToolbarComponent {
   private wm = inject(WindowManagerService);
 
   showTaskbar = signal(false);
+
+  // App version chip in menu footer — lets users verify their browser has
+  // the latest deployed bundle without opening DevTools.
+  readonly appVersion = environment.app.version;
+  readonly buildHash = environment.app.buildHash;
 
   currentDesktopWindows() {
     return this.wm.windows().filter(w => w.desktopId === this.currentDesktopId);

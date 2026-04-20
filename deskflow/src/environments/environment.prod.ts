@@ -18,6 +18,8 @@ export const environment = {
   },
   app: {
     name: 'MultiDesktopFlow',
-    version: '1.0.0'
+    version: '1.0.0',
+    // Injected at build time via angular.json `define` (see inject-env.js).
+    buildHash: env.BUILD_HASH || 'dev'
   }
 };

@@ -32,6 +32,18 @@ if (fs.existsSync(envPath)) {
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
+// Capture the current git short SHA so the toolbar version chip can show
+// which deployed bundle the user has loaded. Falls back to a Date-based
+// stamp on environments without git (rare on Netlify but possible).
+let BUILD_HASH;
+try {
+  BUILD_HASH = require('child_process')
+    .execSync('git rev-parse --short HEAD', { encoding: 'utf8' })
+    .trim();
+} catch {
+  BUILD_HASH = `t${Math.floor(Date.now() / 1000).toString(36)}`;
+}
+
 // Validate
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.warn('[inject-env] WARNING: Supabase credentials not found!');
@@ -46,7 +58,8 @@ const angularJson = JSON.parse(fs.readFileSync(angularJsonPath, 'utf-8'));
 // Inject define section with environment variables
 angularJson.projects['multidesktop-app'].architect.build.options.define = {
   'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(SUPABASE_URL),
-  'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(SUPABASE_ANON_KEY)
+  'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(SUPABASE_ANON_KEY),
+  'import.meta.env.BUILD_HASH': JSON.stringify(BUILD_HASH)
 };
 
 // Write back
