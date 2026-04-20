@@ -2094,6 +2094,190 @@ async def agent_calendar_today(api_key: dict = Depends(require_scope("read"))):
     return {"date": day_start.date().isoformat(), "events": out}
 
 
+# ---------- Daily briefing (Phase 4 — calendar+priorities+free slots) --------
+#
+# Single-call answer for agents asking "what should the user do today?".
+# Combines events from calendar_events + ranked priorities from notes
+# metadata + free time slots inside a configurable work window.
+
+@app.get("/api/agent/calendar/daily-briefing")
+async def agent_calendar_daily_briefing(
+    date: Optional[str] = Query(None, description="ISO date; default today UTC"),
+    window_start: str = Query("09:00", description="Work window start HH:MM"),
+    window_end: str = Query("19:00", description="Work window end HH:MM"),
+    min_slot_minutes: int = Query(30, ge=5, le=480),
+    api_key: dict = Depends(require_scope("read")),
+):
+    """Aggregated daily briefing — events + priorities + free slots."""
+    user_id = api_key["user_id"]
+    service = supabase_for_user(user_id)
+
+    anchor = _calendar_parse_iso(date) if date else datetime.now(timezone.utc)
+    day_start = anchor.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = anchor.replace(hour=23, minute=59, second=59, microsecond=999_999)
+
+    # ----- Events for the day (with calendar metadata) -----
+    rows = (service.table("calendar_events")
+            .select("*")
+            .eq("user_id", user_id)
+            .execute()
+            .data) or []
+    cal_rows = (service.table("calendars")
+                .select("id, name, color, visible")
+                .eq("user_id", user_id)
+                .execute()
+                .data) or []
+    cals = {c["id"]: c for c in cal_rows}
+
+    schedule: list[dict[str, Any]] = []
+    for r in rows:
+        cal = cals.get(r["calendar_id"])
+        if cal and cal.get("visible") is False:
+            continue
+        for inst in _calendar_expand(r, day_start, day_end):
+            inst["calendar_name"] = (cal or {}).get("name")
+            inst["calendar_color"] = (cal or {}).get("color")
+            schedule.append(inst)
+    schedule.sort(key=lambda e: e["starts_at"])
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    next_event = next((e for e in schedule if e["starts_at"] >= now_iso), None)
+
+    # ----- Priorities + blocked + stale (re-uses briefing scoring) -----
+    workspace = service.table("workspaces") \
+        .select("id") \
+        .eq("user_id", user_id) \
+        .eq("is_default", True) \
+        .is_("deleted_at", "null") \
+        .limit(1) \
+        .execute()
+    workspace_id = workspace.data[0]["id"] if workspace.data else None
+
+    priorities: list[dict[str, Any]] = []
+    blocked: list[dict[str, Any]] = []
+    stale: list[dict[str, Any]] = []
+
+    if workspace_id:
+        desktops_q = service.table("desktops") \
+            .select("id, name") \
+            .eq("workspace_id", workspace_id) \
+            .execute()
+        desktop_rows = desktops_q.data or []
+        desktop_ids = [d["id"] for d in desktop_rows]
+        desktop_lookup = {d["id"]: d for d in desktop_rows}
+
+        notes_rows: list[dict[str, Any]] = []
+        if desktop_ids:
+            notes_q = service.table("notes") \
+                .select("id, title, desktop_id, color, metadata, created_at, updated_at") \
+                .in_("desktop_id", desktop_ids) \
+                .execute()
+            notes_rows = notes_q.data or []
+            for n in notes_rows:
+                n["_desktop"] = desktop_lookup.get(n["desktop_id"])
+                n["metadata"] = n.get("metadata") or {}
+
+        degree: dict[str, int] = {}
+        if desktop_ids:
+            conns = service.table("connections") \
+                .select("from_note_id, to_note_id") \
+                .in_("desktop_id", desktop_ids) \
+                .execute()
+            for c in conns.data or []:
+                degree[c["from_note_id"]] = degree.get(c["from_note_id"], 0) + 1
+                degree[c["to_note_id"]] = degree.get(c["to_note_id"], 0) + 1
+
+        now_dt = datetime.now(timezone.utc)
+        stale_cutoff = now_dt - timedelta(days=14)
+
+        for n in notes_rows:
+            m = n["metadata"]
+            score, reasons = _score_briefing_note(n, now_dt, degree.get(n["id"], 0))
+            if score >= 0:
+                priorities.append({
+                    "id": n["id"], "title": n["title"],
+                    "desktop_name": (n["_desktop"] or {}).get("name"),
+                    "metadata": m, "score": round(score, 2), "reasons": reasons,
+                })
+            if m.get("status") == "blocked":
+                blocked.append({"id": n["id"], "title": n["title"], "type": m.get("type")})
+            if m.get("type") in ("task", "project") and m.get("status") not in ("completed", "archived"):
+                anchor_dt = _parse_iso(m.get("lastReviewedAt")) or _parse_iso(n.get("updated_at"))
+                if anchor_dt is not None and anchor_dt < stale_cutoff:
+                    stale.append({
+                        "id": n["id"], "title": n["title"],
+                        "days_since": (now_dt - anchor_dt).days,
+                    })
+
+        priorities.sort(key=lambda x: x["score"], reverse=True)
+        stale.sort(key=lambda x: x["days_since"], reverse=True)
+
+    # ----- Free slots inside the work window -----
+    try:
+        ws_h, ws_m = (int(x) for x in window_start.split(":"))
+        we_h, we_m = (int(x) for x in window_end.split(":"))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="window_start/end must be HH:MM")
+    win_start = anchor.replace(hour=ws_h, minute=ws_m, second=0, microsecond=0)
+    win_end = anchor.replace(hour=we_h, minute=we_m, second=0, microsecond=0)
+
+    busy: list[tuple[datetime, datetime]] = []
+    for evt in schedule:
+        s = _calendar_parse_iso(evt["starts_at"])
+        e = _calendar_parse_iso(evt["ends_at"])
+        s = max(s, win_start)
+        e = min(e, win_end)
+        if e > s:
+            busy.append((s, e))
+    busy.sort(key=lambda x: x[0])
+    merged: list[tuple[datetime, datetime]] = []
+    for s, e in busy:
+        if merged and s <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+    free_slots: list[dict[str, Any]] = []
+    cursor = win_start
+    for s, e in merged:
+        if s > cursor:
+            minutes = int((s - cursor).total_seconds() / 60)
+            if minutes >= min_slot_minutes:
+                free_slots.append({
+                    "start": cursor.isoformat(),
+                    "end": s.isoformat(),
+                    "minutes": minutes,
+                })
+        cursor = max(cursor, e)
+    if cursor < win_end:
+        minutes = int((win_end - cursor).total_seconds() / 60)
+        if minutes >= min_slot_minutes:
+            free_slots.append({
+                "start": cursor.isoformat(),
+                "end": win_end.isoformat(),
+                "minutes": minutes,
+            })
+
+    free_minutes = sum(s["minutes"] for s in free_slots)
+
+    log_api_call(api_key, "calendar.daily_briefing", "agent_calendar_daily_briefing")
+
+    return {
+        "date": day_start.date().isoformat(),
+        "summary": {
+            "events": len(schedule),
+            "priorities": len(priorities),
+            "blocked": len(blocked),
+            "free_minutes": free_minutes,
+        },
+        "next_event": next_event,
+        "schedule": schedule,
+        "priorities": priorities[:8],
+        "free_slots": free_slots,
+        "blocked": blocked[:10],
+        "stale": stale[:10],
+    }
+
+
 # =============================================================================
 # MCP SSE ENDPOINT (for Claude Desktop)
 # =============================================================================
