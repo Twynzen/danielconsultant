@@ -4,8 +4,10 @@ Maneja la autenticación con Supabase usando refresh tokens
 """
 
 import os
+import re
 import sys
 import time
+from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass
 from supabase import create_client, Client
@@ -13,6 +15,10 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Path to the .env file we read from. Used to persist rotated refresh tokens
+# so the next process start doesn't fail with "Invalid Refresh Token".
+_ENV_FILE = Path(__file__).resolve().parent / ".env"
 
 # Logging to stderr (MCP requirement - stdout is for JSON-RPC only)
 def log(message: str, level: str = "INFO"):
@@ -124,10 +130,15 @@ class AuthManager:
 
             self._token_expires_at = session.expires_at or 0
 
-            # Update the refresh token in case it was rotated
-            if session.refresh_token != self.config.user_refresh_token:
-                log("Refresh token was rotated. Update your .env file with the new token.")
-                log(f"New refresh token: {session.refresh_token[:20]}...", "WARNING")
+            # Persist rotated refresh token to .env so the next process start
+            # doesn't fail with "Invalid Refresh Token: Already Used".
+            # Supabase rotates the refresh token on every refresh_session call;
+            # before this fix users had to manually copy a new token from the
+            # web UI every time the daemon was bounced.
+            if session.refresh_token and session.refresh_token != self.config.user_refresh_token:
+                self.config.user_refresh_token = session.refresh_token
+                _persist_refresh_token(session.refresh_token)
+                log("Refresh token rotated and saved to .env")
 
             log(f"Authenticated as: {self._current_user.email}")
             return self._current_user
@@ -188,6 +199,35 @@ class AuthManager:
             )
 
         self._request_timestamps.append(now)
+
+
+def _persist_refresh_token(new_token: str) -> None:
+    """
+    Rewrite the USER_REFRESH_TOKEN line in .env preserving everything else.
+    Best-effort: failures are logged but do not break authentication —
+    the in-memory token is still good for the current process lifetime.
+    """
+    try:
+        if not _ENV_FILE.exists():
+            log(f".env not found at {_ENV_FILE}; skipping token persistence", "WARNING")
+            return
+        text = _ENV_FILE.read_text(encoding="utf-8")
+        new_line = f"USER_REFRESH_TOKEN={new_token}"
+        if re.search(r"^\s*USER_REFRESH_TOKEN\s*=.*$", text, flags=re.MULTILINE):
+            updated = re.sub(
+                r"^\s*USER_REFRESH_TOKEN\s*=.*$",
+                new_line,
+                text,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            # Append if the variable was missing entirely.
+            sep = "" if text.endswith("\n") or not text else "\n"
+            updated = text + sep + new_line + "\n"
+        _ENV_FILE.write_text(updated, encoding="utf-8")
+    except Exception as e:
+        log(f"Could not persist rotated refresh token: {e}", "WARNING")
 
 
 # Global auth manager instance
