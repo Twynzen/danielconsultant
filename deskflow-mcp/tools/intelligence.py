@@ -548,6 +548,35 @@ def register_intelligence_tools(mcp: FastMCP):
                 inst["calendar_color"] = (cal or {}).get("color")
                 out.append(inst)
 
+        # Notes with metadata.scheduledStart/End in the window are surfaced
+        # as schedule items too — the primary way users block hours of their
+        # day in DeskFlow without touching calendar_events.
+        notes_q = client.table("notes") \
+            .select("id, title, desktop_id, metadata") \
+            .not_.is_("metadata->>scheduledStart", "null") \
+            .gte("metadata->>scheduledStart", day_start.isoformat()) \
+            .lte("metadata->>scheduledStart", day_end.isoformat()) \
+            .execute()
+        for n in (notes_q.data or []):
+            m = n.get("metadata") or {}
+            s = m.get("scheduledStart")
+            e = m.get("scheduledEnd")
+            if not s or not e:
+                continue
+            out.append({
+                "id": f"note-{n['id']}",
+                "calendar_id": "__notes__",
+                "title": n.get("title") or "(sin título)",
+                "starts_at": s,
+                "ends_at": e,
+                "all_day": False,
+                "linked_note_id": n["id"],
+                "instance_start": s,
+                "calendar_name": "Notas",
+                "calendar_color": "#00ff41",
+                "metadata": m,
+            })
+
         out.sort(key=lambda e: e["starts_at"])
         now_iso = _utcnow().isoformat()
         next_event = next((e for e in out if e["starts_at"] >= now_iso), None)

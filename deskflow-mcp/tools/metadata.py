@@ -86,6 +86,22 @@ def _validate_metadata_patch(patch: dict[str, Any]) -> dict[str, Any]:
         else:
             raise ValueError("metadata.dueDate must be an ISO-8601 string")
 
+    # Time-block scheduling — presence of both fields promotes the note to a
+    # calendar entry. Validation is symmetric: bad value raises, None clears.
+    for key in ("scheduledStart", "scheduledEnd"):
+        if key in patch:
+            value = patch[key]
+            if value is None:
+                cleaned[key] = None
+            elif isinstance(value, str):
+                try:
+                    datetime.fromisoformat(value.replace("Z", "+00:00"))
+                except ValueError as exc:
+                    raise ValueError(f"metadata.{key} must be ISO-8601: {exc}") from exc
+                cleaned[key] = value
+            else:
+                raise ValueError(f"metadata.{key} must be an ISO-8601 string")
+
     if "progress" in patch:
         value = patch["progress"]
         if value is None:
@@ -125,6 +141,8 @@ def register_metadata_tools(mcp: FastMCP):
         priority: Optional[int] = None,
         tags: Optional[list[str]] = None,
         due_date: Optional[str] = None,
+        scheduled_start: Optional[str] = None,
+        scheduled_end: Optional[str] = None,
         assignee: Optional[str] = None,
         source: Optional[str] = None,
         progress: Optional[float] = None,
@@ -143,7 +161,13 @@ def register_metadata_tools(mcp: FastMCP):
             status: One of active|inactive|completed|archived|blocked.
             priority: Integer 1 (urgent) .. 5 (someday).
             tags: List of free-form tags.
-            due_date: ISO-8601 date or datetime.
+            due_date: ISO-8601 soft deadline (not a time block).
+            scheduled_start: ISO-8601 start of a time block. When paired with
+                scheduled_end the note renders as a calendar event on the day
+                timeline — this is how agents schedule hourly tasks without
+                touching the calendar_events table.
+            scheduled_end: ISO-8601 end of the time block. Must be after
+                scheduled_start.
             assignee: Free-form responsible party.
             source: Origin marker, e.g. 'manual', 'agent:sendell', 'connector:gmail'.
             progress: 0..100 percent complete (useful for type='project').
@@ -169,6 +193,10 @@ def register_metadata_tools(mcp: FastMCP):
             patch_input["tags"] = tags
         if due_date is not None:
             patch_input["dueDate"] = due_date
+        if scheduled_start is not None:
+            patch_input["scheduledStart"] = scheduled_start
+        if scheduled_end is not None:
+            patch_input["scheduledEnd"] = scheduled_end
         if assignee is not None:
             patch_input["assignee"] = assignee
         if source is not None:

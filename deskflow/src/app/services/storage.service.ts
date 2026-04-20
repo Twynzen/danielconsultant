@@ -234,6 +234,32 @@ export class StorageService {
     return out;
   }
 
+  /**
+   * Notes that have both metadata.scheduledStart AND metadata.scheduledEnd
+   * set and fall within [rangeStart, rangeEnd]. The calendar UI uses this
+   * to render scheduled notes as time-block events on the grid — notes
+   * themselves remain the primary entity, the calendar is just a view.
+   */
+  scheduledNotes(rangeStart: Date, rangeEnd: Date): Array<{ note: Note; desktop: Desktop }> {
+    const startMs = rangeStart.getTime();
+    const endMs = rangeEnd.getTime();
+    const out: Array<{ note: Note; desktop: Desktop }> = [];
+    for (const desktop of this.state().desktops) {
+      for (const note of desktop.notes) {
+        const s = note.metadata?.scheduledStart;
+        const e = note.metadata?.scheduledEnd;
+        if (!s || !e) continue;
+        const sMs = Date.parse(s);
+        const eMs = Date.parse(e);
+        if (isNaN(sMs) || isNaN(eMs)) continue;
+        // Include any note whose block overlaps the window.
+        if (eMs < startMs || sMs > endMs) continue;
+        out.push({ note, desktop });
+      }
+    }
+    return out;
+  }
+
   private getMaxZIndex(): number {
     const notes = this.currentDesktop()?.notes || [];
     return notes.reduce((max, n) => Math.max(max, n.zIndex), 0);

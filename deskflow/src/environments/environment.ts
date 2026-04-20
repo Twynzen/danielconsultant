@@ -14,6 +14,10 @@ export const environment = {
   },
   app: {
     name: 'MultiDesktopFlow',
-    version: '1.0.0'
+    version: '1.0.0',
+    // Injected at build time via angular.json `define` (see inject-env.js).
+    // Used by the toolbar version chip so users can verify the browser has
+    // the latest deployed bundle without opening DevTools.
+    buildHash: import.meta.env.BUILD_HASH || 'dev'
   }
 };

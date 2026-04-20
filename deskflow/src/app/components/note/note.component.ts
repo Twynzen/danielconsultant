@@ -15,11 +15,12 @@ import { FormsModule } from '@angular/forms';
 import { Note, NoteImage, NoteMetadata, Position, Size } from '../../models/desktop.model';
 import { DeviceService } from '../../services/device.service';
 import { NoteMetadataPanelComponent } from '../note-metadata-panel/note-metadata-panel.component';
+import { NoteScheduleBarComponent } from '../note-schedule-bar/note-schedule-bar.component';
 
 @Component({
   selector: 'app-note',
   standalone: true,
-  imports: [CommonModule, FormsModule, NoteMetadataPanelComponent],
+  imports: [CommonModule, FormsModule, NoteMetadataPanelComponent, NoteScheduleBarComponent],
   templateUrl: './note.component.html',
   styleUrl: './note.component.scss'
 })
@@ -334,6 +335,15 @@ export class NoteComponent {
     const metadata: NoteMetadata | undefined =
       Object.keys(current).length === 0 ? undefined : current;
     this.noteChange.emit({ metadata });
+  }
+
+  /**
+   * Schedule bar wants to set/clear scheduledStart and/or scheduledEnd.
+   * Forward the patch through the same metadata merge pipeline so the
+   * existing noteChange → storage flow handles persistence.
+   */
+  onScheduleChange(patch: { scheduledStart?: string; scheduledEnd?: string }): void {
+    this.onMetadataChange(patch);
   }
 
   /** Compact chip text used in the header when the panel is closed. */

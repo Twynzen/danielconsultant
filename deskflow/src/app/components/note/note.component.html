@@ -133,6 +133,12 @@
       </div>
     }
 
+    <!-- Time-block scheduling: makes this note appear on /calendar. -->
+    <app-note-schedule-bar
+      [note]="note"
+      (scheduleChange)="onScheduleChange($event)">
+    </app-note-schedule-bar>
+
     <!-- Content -->
     <div class="note-content">
     <!-- Imágenes -->
