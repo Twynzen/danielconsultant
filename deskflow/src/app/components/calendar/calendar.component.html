@@ -1,0 +1,203 @@
+<!-- =============== TOP BAR ================================================= -->
+<header class="cal-topbar cyber-panel">
+  <div class="topbar-left">
+    <a routerLink="/" class="back-btn" title="Volver al escritorio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <h1 class="font-display">CALENDARIO</h1>
+  </div>
+
+  <div class="topbar-center">
+    <button class="cal-nav-btn" (click)="navigatePrev()" title="Anterior">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <button class="cal-today-btn" (click)="navigateToday()">Hoy</button>
+    <button class="cal-nav-btn" (click)="navigateNext()" title="Siguiente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+    <span class="period-label">{{ periodLabel() }}</span>
+  </div>
+
+  <div class="topbar-right">
+    <div class="view-switcher">
+      <button [class.active]="currentView() === 'day'" (click)="setView('day')">Día</button>
+      <button [class.active]="currentView() === 'week'" (click)="setView('week')">Semana</button>
+      <button [class.active]="currentView() === 'month'" (click)="setView('month')">Mes</button>
+      <button [class.active]="currentView() === 'agenda'" (click)="setView('agenda')">Agenda</button>
+    </div>
+    <button class="cal-create-btn" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nuevo evento
+    </button>
+  </div>
+</header>
+
+<!-- =============== MAIN LAYOUT ============================================ -->
+<div class="cal-layout">
+  <app-calendar-sidebar
+    [calendars]="calendars()"
+    (visibilityChanged)="onCalendarVisibilityChanged($event.id, $event.visible)"
+    (calendarCreated)="onCalendarCreated($event)"
+    (calendarDeleted)="onCalendarDeleted($event)"
+  ></app-calendar-sidebar>
+
+  <main class="cal-main">
+
+    <!-- ============ DAY VIEW ============================================== -->
+    <div *ngIf="currentView() === 'day'" class="cal-day-view">
+      <div class="cal-time-col">
+        <div class="cal-hour-cell" *ngFor="let h of hours">
+          <span>{{ formatHour(h) }}</span>
+        </div>
+      </div>
+      <div class="cal-day-grid"
+           [class.is-today]="isToday(windowDays()[0])"
+           (pointerdown)="onGridPointerDown(windowDays()[0], $event)"
+           (pointermove)="onGridPointerMove(windowDays()[0], $event)"
+           (pointerup)="onGridPointerUp()">
+        <div class="cal-hour-line" *ngFor="let h of hours" [style.top.px]="h * 56"></div>
+
+        <div *ngIf="isToday(windowDays()[0])" class="cal-now-indicator" [style.top.px]="nowIndicatorTop()"></div>
+
+        <div *ngFor="let event of eventsForDay(windowDays()[0]); trackBy: trackEvent"
+             class="cal-event-block"
+             [style.top.px]="blockTop(event)"
+             [style.height.px]="blockHeight(event)"
+             [style.borderLeftColor]="event.color"
+             [style.background]="event.color + '22'"
+             (click)="$event.stopPropagation(); openEdit(event)">
+          <div class="event-title">{{ event.title }}</div>
+          <div class="event-time">{{ formatTimeRange(event) }}</div>
+          <div class="event-loc" *ngIf="event.location">📍 {{ event.location }}</div>
+        </div>
+
+        <div class="cal-ghost" [ngStyle]="ghostStyle()"></div>
+      </div>
+    </div>
+
+    <!-- ============ WEEK VIEW ============================================= -->
+    <div *ngIf="currentView() === 'week'" class="cal-week-view">
+      <div class="cal-week-header">
+        <div class="cal-time-col-spacer"></div>
+        <div *ngFor="let day of windowDays(); trackBy: trackDay"
+             class="cal-day-header"
+             [class.is-today]="isToday(day)">
+          {{ formatDayHeader(day) }}
+        </div>
+      </div>
+      <div class="cal-week-body">
+        <div class="cal-time-col">
+          <div class="cal-hour-cell" *ngFor="let h of hours">
+            <span>{{ formatHour(h) }}</span>
+          </div>
+        </div>
+        <div *ngFor="let day of windowDays(); trackBy: trackDay"
+             class="cal-day-grid"
+             [class.is-today]="isToday(day)"
+             (pointerdown)="onGridPointerDown(day, $event)"
+             (pointermove)="onGridPointerMove(day, $event)"
+             (pointerup)="onGridPointerUp()">
+          <div class="cal-hour-line" *ngFor="let h of hours" [style.top.px]="h * 56"></div>
+
+          <div *ngIf="isToday(day)" class="cal-now-indicator" [style.top.px]="nowIndicatorTop()"></div>
+
+          <div *ngFor="let event of eventsForDay(day); trackBy: trackEvent"
+               class="cal-event-block"
+               [style.top.px]="blockTop(event)"
+               [style.height.px]="blockHeight(event)"
+               [style.borderLeftColor]="event.color"
+               [style.background]="event.color + '22'"
+               (click)="$event.stopPropagation(); openEdit(event)">
+            <div class="event-title">{{ event.title }}</div>
+            <div class="event-time">{{ formatTimeRange(event) }}</div>
+          </div>
+
+          <div *ngIf="ghostBelongsTo(day)" class="cal-ghost" [ngStyle]="ghostStyle()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MONTH VIEW ============================================ -->
+    <div *ngIf="currentView() === 'month'" class="cal-month-view">
+      <div class="cal-month-header">
+        <div *ngFor="let label of weekdayLabels" class="cal-month-day-label">{{ label }}</div>
+      </div>
+      <div class="cal-month-grid">
+        <div *ngFor="let day of windowDays(); trackBy: trackDay"
+             class="cal-month-cell"
+             [class.is-today]="isToday(day)"
+             [class.other-month]="!isCurrentMonth(day)"
+             (click)="openCreate({ startsAt: day.toISOString(), endsAt: day.toISOString() })">
+          <div class="cal-month-date">{{ day.getDate() }}</div>
+          <div class="cal-month-events">
+            <div *ngFor="let event of eventsForDay(day) | slice:0:3; trackBy: trackEvent"
+                 class="cal-month-event-chip"
+                 [style.background]="event.color"
+                 (click)="$event.stopPropagation(); openEdit(event)"
+                 [title]="event.title">
+              {{ event.title }}
+            </div>
+            <div *ngIf="eventsForDay(day).length > 3" class="cal-month-overflow">
+              +{{ eventsForDay(day).length - 3 }} más
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ AGENDA VIEW =========================================== -->
+    <div *ngIf="currentView() === 'agenda'" class="cal-agenda-view">
+      <ng-container *ngFor="let day of windowDays(); trackBy: trackDay">
+        <ng-container *ngIf="eventsForDay(day).length > 0">
+          <div class="cal-agenda-day-header" [class.is-today]="isToday(day)">
+            {{ formatAgendaDay(day) }}
+          </div>
+          <div *ngFor="let event of eventsForDay(day); trackBy: trackEvent"
+               class="cal-agenda-row"
+               (click)="openEdit(event)">
+            <div class="agenda-time">{{ formatTimeRange(event) }}</div>
+            <div class="agenda-color-dot" [style.background]="event.color"></div>
+            <div class="agenda-body">
+              <div class="agenda-title">{{ event.title }}</div>
+              <div class="agenda-meta" *ngIf="event.location || event.description">
+                <span *ngIf="event.location">📍 {{ event.location }}</span>
+                <span *ngIf="event.description" class="agenda-desc">{{ event.description }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+      <div class="cal-agenda-empty" *ngIf="events().length === 0">
+        Sin eventos en esta ventana de tiempo. Crea uno con el botón "Nuevo evento" arriba.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- =============== MODALS ================================================== -->
+<app-event-modal
+  *ngIf="showEventModal()"
+  [calendars]="calendars()"
+  [editing]="editingEvent()"
+  [prefill]="modalPrefill()"
+  (save)="onModalSave($event)"
+  (deleteRequested)="onModalDelete()"
+  (cancel)="onModalCancel()">
+</app-event-modal>
+
+<app-recurrence-scope-modal
+  *ngIf="showScopeModal()"
+  [action]="pendingScopeAction()"
+  (chosen)="onScopeChosen($event)"
+  (cancelled)="onScopeCancelled()">
+</app-recurrence-scope-modal>

@@ -1,0 +1,457 @@
+// ============================================================================
+// Calendar — Matrix cyberpunk theme
+// ============================================================================
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #050807;
+  color: #d6f5dc;
+  font-family: 'Source Code Pro', 'Courier New', monospace;
+  overflow: hidden;
+}
+
+// ============================================================================
+// TOP BAR
+// ============================================================================
+.cal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.25);
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.topbar-left, .topbar-center, .topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.back-btn, .cal-nav-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  border-radius: 4px;
+  color: #00ff41;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    border-color: #00ff41;
+    background: rgba(0, 255, 65, 0.08);
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+  }
+}
+
+.cal-topbar h1 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 3px;
+  color: #00ff41;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+}
+
+.cal-today-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  border-radius: 4px;
+  color: #00ff41;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #00ff41;
+    background: rgba(0, 255, 65, 0.08);
+  }
+}
+
+.period-label {
+  font-size: 13px;
+  color: #d6f5dc;
+  margin-left: 12px;
+  text-transform: capitalize;
+}
+
+.view-switcher {
+  display: flex;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+
+  button {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    color: #8db4a0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    transition: all 0.15s ease;
+
+    &:not(:last-child) {
+      border-right: 1px solid rgba(0, 255, 65, 0.25);
+    }
+    &:hover { color: #00ff41; }
+    &.active {
+      background: rgba(0, 255, 65, 0.15);
+      color: #00ff41;
+      text-shadow: 0 0 4px rgba(0, 255, 65, 0.6);
+    }
+  }
+}
+
+.cal-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(0, 255, 65, 0.12);
+  border: 1px solid #00ff41;
+  border-radius: 4px;
+  color: #00ff41;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+
+  svg { width: 14px; height: 14px; }
+  &:hover {
+    background: rgba(0, 255, 65, 0.22);
+    box-shadow: 0 0 12px rgba(0, 255, 65, 0.5);
+  }
+}
+
+// ============================================================================
+// MAIN LAYOUT
+// ============================================================================
+.cal-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cal-main {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+}
+
+// ============================================================================
+// TIME COLUMN (shared by day + week)
+// ============================================================================
+.cal-time-col {
+  width: 56px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(0, 255, 65, 0.15);
+  background: #050807;
+}
+.cal-time-col-spacer { width: 56px; flex-shrink: 0; }
+
+.cal-hour-cell {
+  height: 56px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 2px 6px 0 0;
+  font-size: 10px;
+  color: #5a8c70;
+  border-bottom: 1px dotted rgba(0, 255, 65, 0.08);
+}
+
+// ============================================================================
+// DAY VIEW
+// ============================================================================
+.cal-day-view {
+  display: flex;
+  height: 100%;
+}
+
+.cal-day-grid {
+  position: relative;
+  flex: 1;
+  border-right: 1px solid rgba(0, 255, 65, 0.1);
+  cursor: crosshair;
+  user-select: none;
+
+  &.is-today {
+    background: linear-gradient(to bottom,
+      rgba(0, 255, 65, 0.04),
+      rgba(0, 255, 65, 0.01) 50%,
+      transparent);
+  }
+}
+
+.cal-hour-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: rgba(0, 255, 65, 0.08);
+  pointer-events: none;
+}
+
+.cal-now-indicator {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: #ff3366;
+  box-shadow: 0 0 8px rgba(255, 51, 102, 0.7);
+  z-index: 3;
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -4px; top: -3px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ff3366;
+  }
+}
+
+// ============================================================================
+// EVENT BLOCKS (day + week)
+// ============================================================================
+.cal-event-block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-left: 3px solid #00ff41;
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.1s ease;
+  z-index: 2;
+
+  &:hover {
+    z-index: 4;
+    box-shadow: 0 0 12px rgba(0, 255, 65, 0.4);
+    filter: brightness(1.2);
+  }
+
+  .event-title {
+    font-weight: 600;
+    color: #d6f5dc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .event-time, .event-loc {
+    font-size: 10px;
+    color: #8db4a0;
+    margin-top: 2px;
+  }
+}
+
+.cal-ghost {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  background: rgba(0, 255, 65, 0.18);
+  border: 1px dashed #00ff41;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+// ============================================================================
+// WEEK VIEW
+// ============================================================================
+.cal-week-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cal-week-header {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background: #050807;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.25);
+  z-index: 4;
+}
+
+.cal-day-header {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 12px;
+  color: #8db4a0;
+  text-transform: capitalize;
+  border-right: 1px solid rgba(0, 255, 65, 0.1);
+
+  &.is-today {
+    color: #00ff41;
+    background: rgba(0, 255, 65, 0.08);
+    text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+  }
+}
+
+.cal-week-body {
+  display: flex;
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+// ============================================================================
+// MONTH VIEW
+// ============================================================================
+.cal-month-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-month-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid rgba(0, 255, 65, 0.25);
+}
+
+.cal-month-day-label {
+  text-align: center;
+  padding: 10px 0;
+  font-size: 11px;
+  color: #5a8c70;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.cal-month-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(110px, 1fr);
+}
+
+.cal-month-cell {
+  border-right: 1px solid rgba(0, 255, 65, 0.08);
+  border-bottom: 1px solid rgba(0, 255, 65, 0.08);
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 0.1s ease;
+
+  &:hover { background: rgba(0, 255, 65, 0.04); }
+  &.is-today {
+    background: rgba(0, 255, 65, 0.08);
+    .cal-month-date { color: #00ff41; text-shadow: 0 0 6px rgba(0, 255, 65, 0.6); }
+  }
+  &.other-month {
+    opacity: 0.4;
+  }
+}
+
+.cal-month-date {
+  font-size: 13px;
+  color: #d6f5dc;
+  font-weight: 600;
+}
+
+.cal-month-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.cal-month-event-chip {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #050807;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+
+  &:hover { filter: brightness(1.15); }
+}
+
+.cal-month-overflow {
+  font-size: 10px;
+  color: #5a8c70;
+  padding-left: 6px;
+}
+
+// ============================================================================
+// AGENDA VIEW
+// ============================================================================
+.cal-agenda-view {
+  padding: 16px;
+}
+
+.cal-agenda-day-header {
+  font-size: 13px;
+  color: #00ff41;
+  letter-spacing: 1px;
+  padding: 14px 4px 6px;
+  border-bottom: 1px dotted rgba(0, 255, 65, 0.2);
+  margin-bottom: 6px;
+  text-transform: capitalize;
+
+  &.is-today {
+    text-shadow: 0 0 6px rgba(0, 255, 65, 0.6);
+  }
+}
+
+.cal-agenda-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+
+  &:hover { background: rgba(0, 255, 65, 0.06); }
+}
+
+.agenda-time {
+  width: 110px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #8db4a0;
+}
+
+.agenda-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
+}
+
+.agenda-body { flex: 1; }
+.agenda-title { font-size: 13px; color: #d6f5dc; }
+.agenda-meta { font-size: 11px; color: #8db4a0; margin-top: 4px; display: flex; gap: 12px; }
+.agenda-desc { color: #5a8c70; }
+
+.cal-agenda-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #5a8c70;
+  font-size: 13px;
+}
